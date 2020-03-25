@@ -1,9 +1,15 @@
-function [AHV_tsd, S, tc_out] = AHV_tuning
+function [AHV_tsd, S, tc_out] = AHV_tuning(cfg_in)
 %2020-03-12. JJS. Pulls out the encoder data and calculates AHV. Creates an tuning curve of AHV from velocity and spikes.
 %   Detailed explanation goes here
+%
+% cfg_def.subsample_factor = 10;
+
+cfg_def.subsample_factor = 10;
+
+cfg = ProcessConfig(cfg_def, cfg_in);
 
 [csc_tsd, hd_tsd, samplingrate, dt] = GetOrientationValues([]); %#ok<ASGLU>
-hd_ss_tsd = downsampleOrientationValues(hd_tsd, 10);
+hd_ss_tsd = downsampleOrientationValues(hd_tsd, cfg.subsample_factor);
 AHV_tsd = GetAHV_values(hd_ss_tsd);
 
 % newrange = AHVtsd.tvec - AHVtsd.tvec(1);    % timestamps are in microseconds instead of seconds. Figure out why this is still happenning.
