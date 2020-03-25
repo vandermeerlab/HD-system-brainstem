@@ -44,7 +44,7 @@ if Rrange ~= Lrange; warning('Left and Right ranges do not coincide.'); end
 subtractedvoltage = tsd(csc_tsd.tvec, csc_tsd.data - baseline);
 divisionconstant = max(subtractedvoltage.data)/rangetouse;  % this is the constant value to normalize by to get a max of 90 degrees rotation.
 orientation = tsd(csc_tsd.tvec, subtractedvoltage.data./divisionconstant);
-dt = mean(diff(orientation.tvec));
+dt = median(diff(orientation.tvec));
 samplingrate = 1/dt;
 
 if CheckPlot == 1;

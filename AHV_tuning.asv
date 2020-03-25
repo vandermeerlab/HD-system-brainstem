@@ -3,17 +3,15 @@ function [AHV_tsd, S, tc_out] = AHV_tuning
 %   Detailed explanation goes here
 
 [csc_tsd, hd_tsd, samplingrate, dt] = GetOrientationValues([]); %#ok<ASGLU>
-hd_ss_tsd = downsampleOrientationValues(hd_tsd, 10);
-AHV_tsd = GetAHV_values(hd_ss_tsd);
+[hd_ss_tsd] = downsampleOrientationValues(hd_tsd, 10);
+[AHV_tsd] = GetAHV_values(hd_ss_tsd);
 
 % newrange = AHVtsd.tvec - AHVtsd.tvec(1);    % timestamps are in microseconds instead of seconds. Figure out why this is still happenning.
 % AHVtsdnew = tsd(newrange, AHVtsd.data);
 
 S = LoadSpikes([]);
 
-cfg_tc = [];
-cfg_tc.dt = median(diff(AHV_tsd.tvec));
-tc_out = TuningCurves(cfg_tc, S, AHV_tsd);
+tc_out = TuningCurves([], S, AHV_tsd);
 
 % binsToUse = TC.min:(TC.max-TC.min)/(TC.nBin-1):TC.max;
 % 
