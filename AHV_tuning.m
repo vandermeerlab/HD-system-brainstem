@@ -12,7 +12,7 @@ AHV_tsd = GetAHV_values(hd_ss_tsd);
 S = LoadSpikes([]);
 
 cfg_tc = [];
-cfg_tc.dt = median(diff(AHV_tsd.tvec));
+cfg_tc.occ_dt = median(diff(AHV_tsd.tvec));
 tc_out = TuningCurves(cfg_tc, S, AHV_tsd);
 
 % binsToUse = TC.min:(TC.max-TC.min)/(TC.nBin-1):TC.max;
