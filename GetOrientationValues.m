@@ -55,14 +55,3 @@ if CheckPlot == 1;
     plot(orientation.tvec, orientation.data);
     ylabel('Orientation (deg)')
 end
-
-
-
-
-
-
-
-
-
-
-

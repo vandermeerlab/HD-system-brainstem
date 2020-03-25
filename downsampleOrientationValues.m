@@ -10,4 +10,3 @@ orientationtouse = tsd(orientationtouserange, orientationtousedata);
 
 % change this to decimate 
 end
-
