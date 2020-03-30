@@ -1,8 +1,5 @@
 function [AHV_tsd, S, tc_out] = AHV_tuning(cfg_in)
 %2020-03-12. JJS. Pulls out the encoder data and calculates AHV. Creates an tuning curve of AHV from velocity and spikes.
-%   Detailed explanation goes here
-%
-% cfg_def.subsample_factor = 10;
 
 cfg_def.subsample_factor = 10;
 
@@ -19,24 +16,7 @@ S = LoadSpikes([]);
 
 cfg_tc = [];
 cfg_tc.occ_dt = median(diff(AHV_tsd.tvec));
+cfg_tc.minOcc = 10;
 tc_out = TuningCurves(cfg_tc, S, AHV_tsd);
-
-% binsToUse = TC.min:(TC.max-TC.min)/(TC.nBin-1):TC.max;
-% 
-% fc = FindFiles('*.t', 'CheckSubdirs', 0);
-% numCells = size(TC.H,1);
-% figure
-% for iCell = 1:numCells;
-%     subplot(1,numCells,iCell)
-%     plot(-binsToUse, TC.H(iCell,:)./TC.Occ', 'LineWidth', 5);    % binsToUse gets reversed because we need to flip things about the y-axis. The way the encoder is set up with the
-%     % arduino, clockwise rotations yield positive values and CCW negative. But the convention in the field is that CCW turns are pos and CW turns negative.
-%     %     pause
-%     [a, b, c] = fileparts(fc{iCell}); %#ok<NASGU,ASGLU>
-%     title(b, 'FontSize', 18)
-%     set(gca, 'FontSize', 18)
-%     ylabel('Firing Rate', 'FontSize', 18)
-%     xlabel('AHV', 'FontSize', 18)
-%     %     clf
-% end
 
 end

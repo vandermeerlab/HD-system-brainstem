@@ -15,7 +15,3 @@ Q = MakeQfromS([],S);
 
 cfg_in.dt = .05;
 F = tsd(Q.tvec, Q.data.*1/cfg_in.dt);
-
-tcmin = min(tc_out.tc);
-tcmax = max(tc_out.tc);
-binsToUse = tcmin:(tcmax-tcmin)/(tc_out.usr.nBins-1):tcmax;
