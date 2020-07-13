@@ -15,3 +15,7 @@ Q = MakeQfromS([],S);
 
 cfg_in.dt = .05;
 F = tsd(Q.tvec, Q.data.*1/cfg_in.dt);
+
+
+[AHV_tsd, S, tc_out] = AHV_tuning([]);
+plot(tc_out.usr.binCenters, tc_out.tc, 'LineWidth', 5)
