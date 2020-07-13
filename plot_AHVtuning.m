@@ -80,3 +80,17 @@ for iPlot = 3*numCells+1: 4*numCells;   % fourth row is the HistISI
     xlabel('Time (sec)', 'FontSize', FontSize)
 end
 
+%% Spikes snippet 
+iCell = 0;
+for iPlot = 4*numCells+1: 5*numCells;   % fifth row is a snippet of spiking activity 
+    iCell = iCell +1;
+    subplot(5,numCells,iPlot)
+
+
+    
+    
+end
+
+
+
+
