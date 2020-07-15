@@ -1,6 +1,8 @@
 %% cd to data folder
 % miscellaney
 FontSize = 16;
+histXmin = 0.01;  
+histXmax = 0.2;
 SSN = HD_GetSSN('SingleSession');
 %% get AHV
 cfg_AHV = [];
@@ -74,19 +76,28 @@ end
 iCell = 0;
 for iPlot = 3*numCells+1: 4*numCells;   % fourth row is the HistISI
     iCell = iCell +1;
-    subplot(5,numCells,iPlot)
-    set(gca, 'TickDir', 'out', 'FontSize', FontSize)
+    subplot(5,numCells,iPlot); hold on
+%     set(gca, 'TickDir', 'out', 'FontSize', FontSize)
+    [h, ncenters] = HistISIsubplot(S.t{iCell});
     HistISIsubplot(S.t{iCell});
+    [c, i] = max(h);
+    line([N(i) N(i)], [0 162]);
+    
+    grid on 
+    set(gca, 'TickDir', 'out', 'XLim', [histXmin histXmax], 'FontSize', FontSize)
     xlabel('Time (sec)', 'FontSize', FontSize)
 end
 
-%% Spikes snippet 
+%% Firing Rate  
 iCell = 0;
-for iPlot = 4*numCells+1: 5*numCells;   % fifth row is a snippet of spiking activity 
+for iPlot = 4*numCells+1: 5*numCells;   % firing rate plot for the whole session
     iCell = iCell +1;
     subplot(5,numCells,iPlot)
-
-
+    set(gca, 'TickDir', 'out', 'XLim', [0.01 0.5])
+    cfg_Q = []; cfg_Q.dt = 0.001; cfg_Q.gausswin_sd = 0.05;cfg_Q.smooth = 'gauss';
+    Q = MakeQfromS(cfg_Q, S);
+    plot(Q.tvec, Q.data./cfg_Q.dt)
+    
     
     
 end
