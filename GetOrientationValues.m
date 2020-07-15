@@ -20,6 +20,10 @@ extract_varargin;
 
 if isempty(cfg) == 1;
     cfg = [];
+<<<<<<< HEAD
+=======
+    %FindFile = '*CSC21.ncs'; 
+>>>>>>> 3cccb29ac1a637fa28ce8f795a8ea4a3afd3d9fc
     cfg.fc = {FindFile('*CSC21.ncs')};
     cfg.VoltageConvFactor = 10^6;
 end
