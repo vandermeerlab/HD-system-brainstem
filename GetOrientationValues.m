@@ -51,7 +51,7 @@ orientation = tsd(csc_tsd.tvec, subtractedvoltage.data./divisionconstant);
 dt = median(diff(orientation.tvec));
 samplingrate = 1/dt;
 
-if CheckPlot == 1;
+if CheckPlot == 1;git 
     figure
     subplot(2,1,1);
     plot(csc_tsd.tvec, csc_tsd.data);
