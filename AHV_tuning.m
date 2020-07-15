@@ -12,7 +12,9 @@ AHV_tsd = GetAHV_values(hd_ss_tsd);
 % newrange = AHVtsd.tvec - AHVtsd.tvec(1);    % timestamps are in microseconds instead of seconds. Figure out why this is still happenning.
 % AHVtsdnew = tsd(newrange, AHVtsd.data);
 
-S = LoadSpikes([]);
+cfg = [];
+cfg.uint = '64';
+S = LoadSpikes(cfg);
 
 cfg_tc = [];
 cfg_tc.occ_dt = median(diff(AHV_tsd.tvec));
