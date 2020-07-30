@@ -28,13 +28,13 @@ for iSess = startSess:endSess;
         java.io.File(File).renameTo(java.io.File(strcat(SSNstr, '-Events.Nev')));
     end
     
-    Temp = dir('DD*.mat');
-    if exist(Temp.name, 'file')>=1 && ~strcmp(Temp.name,strcat(SSNstr, '-DD.mat'));
-        RenamedSomething =1;
-        disp('Renaming DD.mat file.');
-        File= Temp.name;
-        java.io.File(File).renameTo(java.io.File(strcat(SSNstr, '-DD.mat')));
-    end
+%     Temp = dir('DD*.mat');
+%     if exist(Temp.name, 'file')>=1 && ~strcmp(Temp.name,strcat(SSNstr, '-DD.mat'));
+%         RenamedSomething =1;
+%         disp('Renaming DD.mat file.');
+%         File= Temp.name;
+%         java.io.File(File).renameTo(java.io.File(strcat(SSNstr, '-DD.mat')));
+%     end
     %% Rename TT Files
     for number=1:8
         numstr=num2str(number);

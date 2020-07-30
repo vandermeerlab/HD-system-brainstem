@@ -78,10 +78,10 @@ for iPlot = 3*numCells+1: 4*numCells;   % fourth row is the HistISI
     iCell = iCell +1;
     subplot(5,numCells,iPlot); hold on
 %     set(gca, 'TickDir', 'out', 'FontSize', FontSize)
-    [h, ncenters] = HistISIsubplot(S.t{iCell});
+    [h, n] = HistISIsubplot(S.t{iCell});
     HistISIsubplot(S.t{iCell});
     [c, i] = max(h);
-    line([N(i) N(i)], [0 162]);
+    line([n(i) n(i)], [0 162]);
     
     grid on 
     set(gca, 'TickDir', 'out', 'XLim', [histXmin histXmax], 'FontSize', FontSize)

@@ -17,6 +17,7 @@ cfg.uint = '64';
 S = LoadSpikes(cfg);
 
 cfg_tc = [];
+cfg_tc.nBins = 64;
 cfg_tc.occ_dt = median(diff(AHV_tsd.tvec));
 cfg_tc.minOcc = 10;
 tc_out = TuningCurves(cfg_tc, S, AHV_tsd);
