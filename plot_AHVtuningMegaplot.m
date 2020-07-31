@@ -10,10 +10,21 @@ histXmin = 0.01;
 histXmax = 0.2;
 LineWidth = 3;
 subtractStartTime = 1; 
+% Load Spikes
+cfg = [];
+cfg.uint = '64';
+S = LoadSpikes(cfg);
+if subtractStartTime == 1 % New cheetah versions have timestamps 
+    events_ts = LoadEvents([]);
+    assert(strcmp(events_ts.label{1}, 'Starting Recording'))=1;
+    for iCell = 1:length(S.t) 
+        S.t{iCell} = S.t{iCell} - events_ts.t{1}(1);  % subtract the very first time stamp to convert from Unix time to 'start at zero' time. 
+    end
+end
 % get AHV
 cfg_AHV = [];
 cfg_AHV.subsample_factor = 10;
-[AHV_tsd, S, tc_out] = AHV_tuning(cfg_AHV);
+[AHV_tsd, tc_out] = AHV_tuning(S, cfg_AHV);
 AHV_dt = median(diff(AHV_tsd.tvec));
 
 %% #2 plot scatterplot
@@ -130,10 +141,10 @@ maxFR = max(Q.data(iCell,:)./cfg_Q.dt);
 set(gca, 'Xlim', [0 tvec(end)], 'FontSize', FontSize)
 ylabel('FR (Hz)', 'FontSize', FontSize)
 
-tnew = AHV_tsd.tvec - AHV_tsd.tvec(1);
-AHV_tsdnew = tsd(tnew, AHV_tsd.data);
+% tnew = AHV_tsd.tvec - AHV_tsd.tvec(1);
+% AHV_tsdnew = tsd(tnew, AHV_tsd.data);
 yyaxis right
-plot(AHV_tsdnew.tvec, AHV_tsdnew.data)
+plot(AHV_tsd.tvec, AHV_tsd.data)
 ylabel('AHV (deg./sec)')
 
 
@@ -141,13 +152,8 @@ ylabel('AHV (deg./sec)')
 subplot(3,6,13:18)
 title(strcat(b, c), 'FontSize', FontSize)
 cfg_mr = [];
-cfg_mr.lfp = AHV_tsdnew;
+cfg_mr.lfp = AHV_tsd;
 cfg_mr.openNewFig = 0;
-if subtractStartTime == 1 % New cheetah versions have timestamps 
-    for iCell = 1:length(S.t) 
-        S.t{iCell} = S.t{iCell} - AHV_tsd.tvec(1);
-    end
-end
 h = MultiRaster(cfg_mr, S);
 set(gca, 'FontSize', FontSize)
 ylabel('AHV')
