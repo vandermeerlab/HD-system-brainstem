@@ -2,6 +2,10 @@ function [csc_tsd, orientation, samplingrate, dt] = GetOrientationValues(cfg, va
 %2019-12-20. JJS.
 %   Pulls out the raw trace from the encoder and converts the signal into orientation in degrees.
 %   Current configuration of the arduino is for it to process 180 deg rotation total (90 deg clockwise, 90 deg counterclockwise).
+
+% Update: the arduino was reconfigured to process 360 deg of rotation total
+%  
+%
 %   When the arduino is turned on, the angle of the rig at that time will correspond to a voltage directly in the middle of the range
 %   of the signal (62.5mV). -180deg is ~0mV and +180 deg is ~125mV. The signal in cheetah roughly ranges between 0 and -20,000. This will depend
 %   upon the gain of that channel in cheetah. It is likely? recorded in units of microvolts.
@@ -14,7 +18,7 @@ function [csc_tsd, orientation, samplingrate, dt] = GetOrientationValues(cfg, va
 
 %2020-03-04.  Updated to be compatible with Mvdm lab codeset.
 
-rangetouse = 180;
+rangetouse = 360;  % this was previously set to 180, which is incorrect. The full range of the platform is 180 degrees in either direction, which is 360 degrees total. 
 CheckPlot = 0;
 extract_varargin;
 
@@ -42,7 +46,7 @@ disp(strcat('Rrange = ', num2str(Rrange)))
 if Rrange ~= Lrange; warning('Left and Right ranges do not coincide.'); end
 
 subtractedvoltage = tsd(csc_tsd.tvec, csc_tsd.data - baseline);
-divisionconstant = max(subtractedvoltage.data)/rangetouse;  % this is the constant value to normalize by to get a max of 90 degrees rotation.
+divisionconstant = Fullrange/rangetouse;  % this is the constant value to normalize by to get a max of 180 degrees rotation in either direction.
 orientation = tsd(csc_tsd.tvec, subtractedvoltage.data./divisionconstant);
 dt = median(diff(orientation.tvec));
 samplingrate = 1/dt;
