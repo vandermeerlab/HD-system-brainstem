@@ -38,11 +38,13 @@ maxL = min(csc_tsd.data);                   % Counterclockwise rotation produces
 % ***Convention in Taube papers is for CW rotation to plotted as negative and CCW as positve, so I need a sign change
 Rrange = abs(maxR-baseline);
 Lrange = abs(maxL-baseline);
+rangediff = Lrange/Rrange;
 
 Fullrange = abs(maxL - maxR);           % ***Figure out what this value is and make sure it is the same from session to session. Add a warning.
 disp(strcat('Fullrange = ', num2str(Fullrange)))
 disp(strcat('Lrange = ', num2str(Lrange)))
 disp(strcat('Rrange = ', num2str(Rrange)))
+sprintf('Percentage difference equals: %d', rangediff)
 
 if Rrange ~= Lrange; warning('Left and Right ranges do not coincide.'); end
 
