@@ -47,8 +47,8 @@ set(gca, 'Ylim', [0 ymax], 'FontSize', FontSize)
 xlabel('AHV (deg./sec)', 'FontSize', FontSize)
 ylabel('FR (Hz)', 'FontSize', FontSize)
 title('Scatterplot')
-text(-100, 10, 'CW', 'FontSize', 12)
-text(75, 10, 'CCW', 'FontSize', 12)
+text(-50, 10, 'CW', 'FontSize', 12)
+text(35, 10, 'CCW', 'FontSize', 12)
 
 %% #1 plot tuning curves
 subplot(3,6,1)
@@ -61,8 +61,8 @@ xlabel('AHV (deg./sec)', 'FontSize', FontSize)
 ylabel('FR (Hz)', 'FontSize', FontSize)
 set(groot, 'DefaultLegendInterpreter', 'none')
 title('Tuning Curve')
-text(-100, 10, 'CW', 'FontSize', 12)
-text(75, 10, 'CCW', 'FontSize', 12)
+text(-50, 10, 'CW', 'FontSize', 12)
+text(35, 10, 'CCW', 'FontSize', 12)
 
 
 %% #3 acf

@@ -51,6 +51,7 @@ if Rrange ~= Lrange; warning('Left and Right ranges do not coincide.'); end
 subtractedvoltage = tsd(csc_tsd.tvec, csc_tsd.data - baseline);
 divisionconstant = Fullrange/rangetouse;  % this is the constant value to normalize by to get a max of 180 degrees rotation in either direction.
 orientation = tsd(csc_tsd.tvec, subtractedvoltage.data./divisionconstant);
+orientation.data = -orientation.data;  % THIS STEP IS CRITICAL. CW turns are defined as negative changes in angle (as with the unit circle). We need a sign change of the voltage values to make the raw voltage correspond to head direction (i.e. 'orientation'). 
 dt = median(diff(orientation.tvec));
 samplingrate = 1/dt;
 
@@ -58,6 +59,7 @@ if CheckPlot == 1;
     figure
     subplot(2,1,1);
     plot(csc_tsd.tvec, csc_tsd.data);
+    ylabel('Raw voltage')
     subplot(2,1,2);
     plot(orientation.tvec, orientation.data);
     ylabel('Orientation (deg)')
