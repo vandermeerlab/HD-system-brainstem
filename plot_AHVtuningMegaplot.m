@@ -17,8 +17,8 @@ S = LoadSpikes(cfg);
 if subtractStartTime == 1 % New cheetah versions have timestamps 
     events_ts = LoadEvents([]);
     assert(strcmp(events_ts.label{1}, 'Starting Recording'))=1;
-    for iCell = 1:length(S.t) 
-        S.t{iCell} = S.t{iCell} - events_ts.t{1}(1);  % subtract the very first time stamp to convert from Unix time to 'start at zero' time. 
+    for iC = 1:length(S.t) 
+        S.t{iC} = S.t{iC} - events_ts.t{1}(1);  % subtract the very first time stamp to convert from Unix time to 'start at zero' time. 
     end
 end
 % get AHV
@@ -47,7 +47,7 @@ set(gca, 'Ylim', [0 ymax], 'FontSize', FontSize)
 xlabel('AHV (deg./sec)', 'FontSize', FontSize)
 ylabel('FR (Hz)', 'FontSize', FontSize)
 title('Scatterplot')
-text(-50, 10, 'CW', 'FontSize', 12)
+text(-75, 10, 'CW', 'FontSize', 12)
 text(35, 10, 'CCW', 'FontSize', 12)
 
 %% #1 plot tuning curves
@@ -61,7 +61,7 @@ xlabel('AHV (deg./sec)', 'FontSize', FontSize)
 ylabel('FR (Hz)', 'FontSize', FontSize)
 set(groot, 'DefaultLegendInterpreter', 'none')
 title('Tuning Curve')
-text(-50, 10, 'CW', 'FontSize', 12)
+text(-75, 10, 'CW', 'FontSize', 12)
 text(35, 10, 'CCW', 'FontSize', 12)
 
 

@@ -11,6 +11,8 @@ tic
 AHV = dxdt(orientationtouse.tvec, orientationtouse.data, 'window', window, 'postsmoothing', postsmoothing);
 toc
 
+AHV = -AHV; % THIS STEP IS NECESSARY BECAUSE dxdt GIVES VALUES THAT ARE CORRECT, BUT WITH A SIGN FLIP.
+
 AHVtsd = tsd(orientationtouse.tvec, AHV);
 
 end
