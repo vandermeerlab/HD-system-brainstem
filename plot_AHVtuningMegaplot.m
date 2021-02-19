@@ -47,8 +47,9 @@ set(gca, 'Ylim', [0 ymax], 'FontSize', FontSize)
 xlabel('AHV (deg./sec)', 'FontSize', FontSize)
 ylabel('FR (Hz)', 'FontSize', FontSize)
 title('Scatterplot')
-text(-75, 10, 'CW', 'FontSize', 12)
-text(35, 10, 'CCW', 'FontSize', 12)
+h = get(gca, 'XLim');
+text(.75*h(1), 10, 'CW', 'FontSize', 12)
+text(.5*h(2), 10, 'CCW', 'FontSize', 12)
 
 %% #1 plot tuning curves
 subplot(3,6,1)
@@ -61,8 +62,9 @@ xlabel('AHV (deg./sec)', 'FontSize', FontSize)
 ylabel('FR (Hz)', 'FontSize', FontSize)
 set(groot, 'DefaultLegendInterpreter', 'none')
 title('Tuning Curve')
-text(-75, 10, 'CW', 'FontSize', 12)
-text(35, 10, 'CCW', 'FontSize', 12)
+h = get(gca, 'XLim');
+text(.75*h(1), 10, 'CW', 'FontSize', 12)
+text(.5*h(2), 10, 'CCW', 'FontSize', 12)
 
 
 %% #3 acf
@@ -117,21 +119,14 @@ title('HistISI')
 
 %% #6 HistISI zoomed in 
 subplot(3,6,6); hold on
-[h, n] = HistISIsubplot(S.t{iCell});
-HistISIsubplot(S.t{iCell});
-c = axis;
-[~, i] = max(h);
-line([n(i) n(i)], [0 c(4)], 'color', 'k');
-% axis([.001 .1 0 c(4)])
-grid on
-set(gca, 'TickDir', 'out', 'XLim', [.01 hist2Xmax], 'FontSize', FontSize)
-xlabel('Time (sec)', 'FontSize', FontSize)
-title('HistISI')
-% ylabel('Count')
 
 
-%%  Firing Rate
-subplot(3,6,7:12); hold on
+
+
+
+
+%%  #7 Firing Rate
+plot7 = subplot(3,6,7:12); hold on
 cfg_Q = []; cfg_Q.dt = 0.001; cfg_Q.gausswin_sd = 0.05;cfg_Q.smooth = 'gauss';
 Q = MakeQfromS(cfg_Q, S);
 tvec = Q.tvec - Q.tvec(1);
@@ -148,8 +143,8 @@ plot(AHV_tsd.tvec, AHV_tsd.data)
 ylabel('AHV (deg./sec)')
 
 
-%% MultiRaster
-subplot(3,6,13:18)
+%% #8 MultiRaster
+plot8 = subplot(3,6,13:18)
 title(strcat(b, c), 'FontSize', FontSize)
 cfg_mr = [];
 cfg_mr.lfp = AHV_tsd;
@@ -158,3 +153,5 @@ h = MultiRaster(cfg_mr, S);
 set(gca, 'FontSize', FontSize)
 ylabel('AHV')
 set(gca, 'YTickLabel', [])
+
+linkaxes([plot7 plot8], 'x')
