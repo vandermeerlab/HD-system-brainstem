@@ -1,3 +1,8 @@
+SSN = HD_GetSSN;
+f = FindFiles('*VT1_proc.mat'); 
+load(f{1}, 'pupil');
+
+
 splitthresh = 100;
 
 idxh = AHVtsd.data > 1;
@@ -10,7 +15,6 @@ IDXH = find(idxh);
 diffidxh = diff(IDXH);
 tStartH = find(diffidxh>100);
 StartPointsH = IDXH(tStartH); 
-gitgit s
 
 IDXL = find(idxl);
 diffidxl = diff(IDXL);

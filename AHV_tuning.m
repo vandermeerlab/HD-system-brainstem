@@ -9,15 +9,13 @@ cfg = ProcessConfig(cfg_def, cfg_in);
 hd_ss_tsd = downsampleOrientationValues(hd_tsd, cfg.subsample_factor);
 AHV_tsd = GetAHV_values(hd_ss_tsd);
 
-% newrange = AHVtsd.tvec - AHVtsd.tvec(1);    % timestamps are in microseconds instead of seconds. Figure out why this is still happenning.
-% AHVtsdnew = tsd(newrange, AHVtsd.data);
-
 % cfg = [];
 % cfg.uint = '64';
 % S = LoadSpikes(cfg);
 
 cfg_tc = [];
-cfg_tc.nBins = 64;
+cfg_tc.nBins = 100;
+cfg_tc.binEdges = {linspace(-200, 200, 101)};
 cfg_tc.occ_dt = median(diff(AHV_tsd.tvec));
 cfg_tc.minOcc = 10;
 tc_out = TuningCurves(cfg_tc, S, AHV_tsd);

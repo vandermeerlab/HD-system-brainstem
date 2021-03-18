@@ -23,7 +23,7 @@ CheckPlot = 0;
 
 dateswitch = datetime('2020-10-06');
 SSN = HD_GetSSN;
-sessiondate = SSN(6:end);
+sessiondate = SSN(6:15);
 sessiondate = datetime(sessiondate);
 
 if sessiondate < dateswitch

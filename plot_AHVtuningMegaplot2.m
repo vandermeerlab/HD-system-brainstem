@@ -1,9 +1,9 @@
 function plot_AHVtuningMegaplot2(iCell, varargin)
-% JJS. 2020. 
-% For plotting most/all of the relevant data for a single cell for a headfixed brainstem recording session. 
-% 2021-02-16. Added more elements, like platform orientation and eye position. Expanded from 3x6 subplot to 4x6. 
+% JJS. 2020.
+% For plotting most/all of the relevant data for a single cell for a headfixed brainstem recording session.
+% 2021-02-16. Added more elements, like platform orientation and eye position. Expanded from 3x6 subplot to 4x6.
 
-VT1fps = 50;                    % This is the sampling rate of video tracker 1. 
+VT1fps = 50;                    % This is the sampling rate of video tracker 1.
 hist2Xmax = 0.1;
 process_varargin(varargin)
 % cd to data folder
@@ -13,19 +13,19 @@ FontSize = 13;
 histXmin = 0.01;
 histXmax = 0.2;
 LineWidth = 3;
-subtractStartTime = 1; 
+subtractStartTime = 1;
 % Load Spikes
 cfg = [];
 cfg.uint = '64';
 % spikefiles = FindFiles('*.t');
-% cfg.fc = {spikefiles{iCell}}; 
+% cfg.fc = {spikefiles{iCell}};
 S = LoadSpikes(cfg);
 
-if subtractStartTime == 1 % New cheetah versions have timestamps 
+if subtractStartTime == 1 % New cheetah versions have timestamps
     events_ts = LoadEvents([]);
     assert(strcmp(events_ts.label{1}, 'Starting Recording'))=1;
-    for iC = 1:length(S.t) 
-        S.t{iC} = S.t{iC} - events_ts.t{1}(1);  % subtract the very first time stamp to convert from Unix time to 'start at zero' time. 
+    for iC = 1:length(S.t)
+        S.t{iC} = S.t{iC} - events_ts.t{1}(1);  % subtract the very first time stamp to convert from Unix time to 'start at zero' time.
     end
 end
 % get AHV
@@ -92,7 +92,7 @@ set(gca, 'xtick', [-.5 -.25 0 .25 .5], 'FontSize', FontSize); grid on;
 title('Acorr')
 
 
-%% #4 acf zoomed in 
+%% #4 acf zoomed in
 subplot(4,6,4); hold on
 cfg_acf = [];
 cfg_acf.binsize = 0.001;
@@ -137,7 +137,7 @@ plot7 = subplot(4,6,7:12); hold on
 cfg_Q = []; cfg_Q.dt = 0.001; cfg_Q.gausswin_sd = 0.05;cfg_Q.smooth = 'gauss';
 Q = MakeQfromS(cfg_Q, S);
 tvec = Q.tvec - Q.tvec(1);
-yyaxis left 
+yyaxis left
 plot(tvec, Q.data(iCell,:)./cfg_Q.dt)
 maxFR = max(Q.data(iCell,:)./cfg_Q.dt);
 set(gca, 'Xlim', [0 tvec(end)], 'FontSize', FontSize)
@@ -150,7 +150,7 @@ plot(AHV_tsd.tvec, AHV_tsd.data)
 ylabel('AHV (deg./sec)')
 
 events_ts = LoadEvents([]);
-endtime = events_ts.t{2} - events_ts.t{1};
+endtime = events_ts.t{2}(end) - events_ts.t{1}(1);
 c = axis;
 axis([c(1) endtime c(3) c(4)]);
 
@@ -160,14 +160,14 @@ plot8 = subplot(4,6,13:18);
 cfg = [];
 cfg.uint = '64';
 spikefiles = FindFiles('*.t');
-cfg.fc = {spikefiles{iCell}}; 
+cfg.fc = {spikefiles{iCell}};
 Sp = LoadSpikes(cfg);
 
 title(strcat(b, c), 'FontSize', FontSize)
 cfg_mr = [];
 cfg_mr.lfp = AHV_tsd;
 cfg_mr.openNewFig = 0;
-h = MultiRaster(cfg_mr, S);  % this is a hack   
+h = MultiRaster(cfg_mr, S);  % this is a hack
 % h = MultiRaster(cfg_mr, Sp);
 set(gca, 'FontSize', FontSize)
 ylabel('AHV')
@@ -175,30 +175,33 @@ set(gca, 'YTickLabel', [])
 c = axis;
 axis([c(1) endtime c(3) c(4)]);
 
-%% #9 AHV and horizontal eye position 
+%% #9 AHV and horizontal eye position
 plot9 = subplot(4,6,19:24);
-SSN = HD_GetSSN; 
-load(strcat(SSN, '-VT1_proc.mat'));         % load the output of facemap
-% pupiltime = [1:length(pupil{1}.area)] ./ VT1fps;   % this is slightly off. Need to load timestamps from the Nvt file 
-
-[~, videofn, ext] = fileparts(FindFiles('*VT1.nvt'));
-cfg = [];
-cfg.fn = strcat(videofn, ext); 
-cfg.removeZeros = 0 ;
-pos_tsd = LoadPos(cfg);
-pupiltime = pos_tsd.tvec;   % it apprears to Nvt file is 2 frames longer than the number of frames from facemap
-pupiltime = pupiltime - pupiltime(1); 
-
-yyaxis left 
-plot(pupiltime(2:end-1), pupil{1}.com(:,2));         % pupil{1}.com(:,2)  is the horizontal eye position from facemap
-ylabel('Horiz. Eye Pos. (pixels)', 'FontSize', FontSize)
-xlabel('Time (sec)', 'FontSize', FontSize)
-set(gca, 'FontSize', FontSize)
-
-yyaxis right 
-plot(AHV_tsd.tvec, AHV_tsd.data)
-ylabel('AHV (deg./sec)')
-c = axis;
-axis([c(1) endtime c(3) c(4)]);
-%%
-linkaxes([plot7 plot8 plot9], 'x');
+SSN = HD_GetSSN;
+if exist(strcat(SSN, '-VT1_proc.mat'))
+    load(strcat(SSN, '-VT1_proc.mat'), 'pupil');         % load the output of facemap
+    % pupiltime = [1:length(pupil{1}.area)] ./ VT1fps;   % this is slightly off. Need to load timestamps from the Nvt file
+    
+    [~, videofn, ext] = fileparts(FindFiles('*VT1.nvt'));
+    cfg = [];
+    cfg.fn = strcat(videofn, ext);
+    cfg.removeZeros = 0 ;
+    pos_tsd = LoadPos(cfg);
+    pupiltime = pos_tsd.tvec;   % it apprears to Nvt file is 2 frames longer than the number of frames from facemap
+    pupiltime = pupiltime - pupiltime(1);
+    
+    yyaxis left
+    plot(pupiltime(2:end-1), pupil{1}.com(:,2));         % pupil{1}.com(:,2)  is the horizontal eye position from facemap
+    ylabel('Horiz. Eye Pos. (pixels)', 'FontSize', FontSize)
+    xlabel('Time (sec)', 'FontSize', FontSize)
+    set(gca, 'FontSize', FontSize)
+    
+    yyaxis right
+    plot(AHV_tsd.tvec, AHV_tsd.data)
+    ylabel('AHV (deg./sec)')
+    c = axis;
+    axis([c(1) endtime c(3) c(4)]);
+    %%
+    linkaxes([plot7 plot8 plot9], 'x');
+else
+end
