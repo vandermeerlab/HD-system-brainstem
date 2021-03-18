@@ -1,4 +1,4 @@
-function [temporalSaccades, nasalSaccades, tsdH, tsdV, diffH, diffV, filteredH, filteredV] = processPupilData2(cfg_in)
+function [temporalSaccades, nasalSaccades, tsdH, tsdV, diffH, diffV, filteredH, filteredV] = processPupilData(cfg_in)
 
 % JJS. 2021-03-13.
 % Basic working version that finds candidate saccade events and filters out camera jitter detected by vertical displacement
