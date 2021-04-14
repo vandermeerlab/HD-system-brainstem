@@ -28,6 +28,7 @@ for iSess = 1:length(fd)
         [~,~,~,~,statsAll] = regress(y,xR);
         idx = isnan(y); idx = idx';
         a = polyfit(x(~idx), y(~idx), 1);
+%         R = corrcoef(x(~idx)',y(~idx)');
         coeffsAll(cellCounter,1) = a(1); coeffsAll(cellCounter,2) = a(2); 
         rsqAll(cellCounter) = statsAll(1);
         pAll(cellCounter) = statsAll(3);

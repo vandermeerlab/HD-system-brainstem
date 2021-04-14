@@ -6,7 +6,7 @@ cfg.uint = '64';
 % cfg.fc = {spikefiles{iCell}};
 S = LoadSpikes(cfg);
 
-% New cheetah versions have timestamps
+% New cheetah versions have timestamps that are in Unix Epoch Time
 events_ts = LoadEvents([]);
 assert(strcmp(events_ts.label{1}, 'Starting Recording'))=1;
 for iC = 1:length(S.t)

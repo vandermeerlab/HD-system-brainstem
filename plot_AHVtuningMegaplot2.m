@@ -28,7 +28,7 @@ if subtractStartTime == 1 % New cheetah versions have timestamps
         S.t{iC} = S.t{iC} - events_ts.t{1}(1);  % subtract the very first time stamp to convert from Unix time to 'start at zero' time.
     end
 end
-% get AHV
+% get AHV Tuning Curve
 cfg_AHV = [];
 cfg_AHV.subsample_factor = 10;
 [AHV_tsd, tc_out] = AHV_tuning(S, cfg_AHV);
