@@ -1,19 +1,29 @@
-%% cd to data folder
+%% cd to data folder and load some data
 % miscellaney
 FontSize = 16;
 SSN = HD_GetSSN('SingleSession');
+
+please = [];
+%please.uint = '64';
+S = LoadSpikes(please);
+
 %% get AHV
 cfg_AHV = [];
 cfg_AHV.subsample_factor = 10;
-[AHV_tsd, S, tc_out] = AHV_tuning(cfg_AHV);
+[AHV_tsd, tc_out] = AHV_tuning(cfg_AHV, S);
 AHV_dt = median(diff(AHV_tsd.tvec));
+
+%% inspect
+cfg_mr = [];
+cfg_mr.lfp = AHV_tsd;
+MultiRaster(cfg_mr, S)
 
 %% plot tuning curves
 fc = FindFiles('*.t', 'CheckSubdirs', 0);
 numCells = size(tc_out.tc, 1);
 clf
 
-for iCell = 1:numCells; % first row is Tuning Curves
+for iCell = 1:numCells % first row is Tuning Curves
     [a, b, c] = fileparts(fc{iCell});
     subplot(3,numCells,iCell)
     set(gca, 'TickDir', 'out', 'FontSize', FontSize)

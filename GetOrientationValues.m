@@ -29,7 +29,7 @@ if isempty(cfg) == 1;
 end
 
 csc_tsd = LoadCSC(cfg);
-csc_tsd.tvec = csc_tsd.tvec - csc_tsd.tvec(1);
+csc_tsd.tvec = csc_tsd.tvec - csc_tsd.tvec(1); % MvdM: this probably shouldn't happen here because you need to know this information when loading spikes.
 
 baseline = csc_tsd.data(1);               % It is critical that the rig is oriented in the same position from day to day when the arduino is turned on.
 % Furthermore, the rig should be left to stand still for at least 30 sec or so to get a stable starting value to accurately subtract the baseline.
