@@ -33,7 +33,7 @@ for iSess = 1:length(fd)
         rsqAll(cellCounter) = statsAll(1);
         pAll(cellCounter) = statsAll(3);
         
-        % Corr for Positive AHV values
+        % Corr for Positive AHV values  i.e.  CCW turns 
         posIndex = tc_out.usr.binCenters > 0;
         [~,~,~,~,statsPos] = regress(y(posIndex),xR(posIndex,:));
         b = polyfit(x(posIndex & ~idx), y(posIndex & ~idx), 1);

@@ -2,6 +2,9 @@ function SpikePETHsaccades(S, saccade_input, varargin)
 
 % 2021. JJS. 
 
+% Inputs
+%   saccade_input:      ts of saccade times (either temporal, nasal, or both)
+
 process_varargin(varargin);
 
 s = inputname(2);

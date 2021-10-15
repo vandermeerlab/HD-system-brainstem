@@ -1,0 +1,5 @@
+[csc_tsd, orientation, samplingrate, dt] = GetOrientationValues(cfg); 
+
+[orientationtouse] = downsampleOrientationValues(orientation, downsamplefactor)
+
+[AHVtsd] = GetAHV_values(orientationtouse); 

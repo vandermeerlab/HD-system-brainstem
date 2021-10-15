@@ -13,7 +13,7 @@ function [X] = findAHVslopesFromRawSpikes(varargin)
 TextSize = 12; 
 LineWidth = 3;
 FontSize = 16;
-doPlot = 1;
+doPlot = 0;
 process_varargin(varargin); 
 
 cellCounter = 0;

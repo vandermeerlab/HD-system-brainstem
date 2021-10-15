@@ -3,8 +3,6 @@ function plot_AHVtuningMegaplot2(iCell, varargin)
 % For plotting most/all of the relevant data for a single cell for a headfixed brainstem recording session.
 % 2021-02-16. Added more elements, like platform orientation and eye position. Expanded from 3x6 subplot to 4x6.
 
-VT1fps = 50;                    % This is the sampling rate of video tracker 1.
-hist2Xmax = 0.1;
 process_varargin(varargin)
 % cd to data folder
 % miscellaney
@@ -17,15 +15,24 @@ subtractStartTime = 1;
 % Load Spikes
 cfg = [];
 cfg.uint = '64';
-% spikefiles = FindFiles('*.t');
-% cfg.fc = {spikefiles{iCell}};
+spikefiles = FindFiles('*.t');
+cfg.fc = {spikefiles{iCell}};
 S = LoadSpikes(cfg);
+% S = LoadSpikesJeff;
 
 if subtractStartTime == 1 % New cheetah versions have timestamps
     events_ts = LoadEvents([]);
-    assert(strcmp(events_ts.label{1}, 'Starting Recording'))=1;
+    wrapper = @(events_ts) strcmp(events_ts, 'Starting Recording');
+    A = cellfun(wrapper, events_ts.label); 
+    Startindex = find(A); % index which label says 'Start Recording' 
+    starttime = events_ts.t{Startindex};
+    wrapper2 = @(events_ts) strcmp(events_ts, 'Stopping Recording');
+    B = cellfun(wrapper2, events_ts.label);
+    EndIndex = find(B); 
+    endtime = events_ts.t{EndIndex};
+%     assert(strcmp(events_ts.label{1}, 'Starting Recording')==1)
     for iC = 1:length(S.t)
-        S.t{iC} = S.t{iC} - events_ts.t{1}(1);  % subtract the very first time stamp to convert from Unix time to 'start at zero' time.
+        S.t{iC} = S.t{iC} - starttime;  % subtract the very first time stamp to convert from Unix time to 'start at zero' time.
     end
 end
 % get AHV Tuning Curve
@@ -150,9 +157,9 @@ plot(AHV_tsd.tvec, AHV_tsd.data)
 ylabel('AHV (deg./sec)')
 
 events_ts = LoadEvents([]);
-endtime = events_ts.t{2}(end) - events_ts.t{1}(1);
+% endtime = events_ts.t{2}(end) - events_ts.t{1}(1);
 c = axis;
-axis([c(1) endtime c(3) c(4)]);
+% axis([c(1) endtime c(3) c(4)]);
 
 %% #8 MultiRaster
 plot8 = subplot(4,6,13:18);
@@ -173,7 +180,7 @@ set(gca, 'FontSize', FontSize)
 ylabel('AHV')
 set(gca, 'YTickLabel', [])
 c = axis;
-axis([c(1) endtime c(3) c(4)]);
+% axis([c(1) endtime c(3) c(4)]);
 
 %% #9 AHV and horizontal eye position
 plot9 = subplot(4,6,19:24);
@@ -182,16 +189,25 @@ if exist(strcat(SSN, '-VT1_proc.mat'))
     load(strcat(SSN, '-VT1_proc.mat'), 'pupil');         % load the output of facemap
     % pupiltime = [1:length(pupil{1}.area)] ./ VT1fps;   % this is slightly off. Need to load timestamps from the Nvt file
     
-    [~, videofn, ext] = fileparts(FindFiles('*VT1.nvt'));
-    cfg = [];
-    cfg.fn = strcat(videofn, ext);
-    cfg.removeZeros = 0 ;
-    pos_tsd = LoadPos(cfg);
-    pupiltime = pos_tsd.tvec;   % it apprears to Nvt file is 2 frames longer than the number of frames from facemap
-    pupiltime = pupiltime - pupiltime(1);
+    events_ts = LoadEvents([]);
+    assert(strcmp(events_ts.label{1}, 'Starting Recording'))=1;  % assert is not working. matlab thinks its a variable 
+%     starttime = events_ts.t{1}(1);
+    
+%     [~, videofn, ext] = fileparts(FindFiles('*VT1.nvt'));
+%     cfg = [];
+%     cfg.fn = strcat(videofn, ext);
+%     cfg.removeZeros = 0 ;
+%     pos_tsd = LoadPos(cfg);
+    %     pupiltime = pos_tsd.tvec;   % it apprears to Nvt file is 2 frames longer than the number of frames from facemap
+    %     pupiltime = pupiltime - pupiltime(1);
+    
+    [a, b, c] = fileparts(FindFile('*VT1.smi'));
+    fn = strcat(b,c);
+    tvec_raw = read_smi(fn);
+    tvec = tvec_raw - starttime;
     
     yyaxis left
-    plot(pupiltime(2:end-1), pupil{1}.com(:,2));         % pupil{1}.com(:,2)  is the horizontal eye position from facemap
+    plot(tvec, pupil{1}.com(:,2));         % pupil{1}.com(:,2)  is the horizontal eye position from facemap
     ylabel('Horiz. Eye Pos. (pixels)', 'FontSize', FontSize)
     xlabel('Time (sec)', 'FontSize', FontSize)
     set(gca, 'FontSize', FontSize)
@@ -200,7 +216,7 @@ if exist(strcat(SSN, '-VT1_proc.mat'))
     plot(AHV_tsd.tvec, AHV_tsd.data)
     ylabel('AHV (deg./sec)')
     c = axis;
-    axis([c(1) endtime c(3) c(4)]);
+    axis([c(1) endtime-starttime c(3) c(4)]);
     %%
     linkaxes([plot7 plot8 plot9], 'x');
 else

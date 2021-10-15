@@ -25,7 +25,7 @@ function [PETH, outputS, outputT, outputI] = spike_PETHhd(S,t,varargin)
 %--------------------------
 % parameters
 %--------------------------
-window = [-2 5];
+window = [-1 2];
 dt = 0.01;
 showSpikes = false;
 showHist = false;

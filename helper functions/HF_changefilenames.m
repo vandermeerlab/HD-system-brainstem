@@ -46,7 +46,14 @@ for iSess = startSess:endSess;
         java.io.File(File).renameTo(java.io.File(strcat(SSNstr, '-VT1.nvt')));
     end    
     
-    
+    %% Rename smi file 
+    Temp = dir('*.smi');
+    if exist(Temp.name, 'file')>=1 && ~strcmp(Temp.name,strcat(SSNstr, '-VT1.smi'));
+        RenamedSomething =1;
+        disp('Renaming smi file.');
+        File= Temp.name;
+        java.io.File(File).renameTo(java.io.File(strcat(SSNstr, '-VT1.smi')));
+    end       
     
     
 %     Temp = dir('DD*.mat');
@@ -84,7 +91,7 @@ for iSess = startSess:endSess;
     %     Refs = {CSC1, CSC2, CSC3, CSC4, CSC5, CSC6, CSC7, CSC8, CSC9, CSC10, CSC11, CSC12, CSC13, CSC14, CSC15, CSC16 ...
     %         CSC17, CSC18, CSC19, CSC20, CSC21, CSC22, CSC23, CSC24, CSC25, CSC26, CSC27, CSC28, CSC29, CSC30, CSC31, CSC32};
     
-    for number=1:35
+    for number=1:36
         numstr=num2str(number);
         %Format CSC numbers one through nine with a leading zero 01, 02, ...
         if number < 10
