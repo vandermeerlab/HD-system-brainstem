@@ -1,4 +1,4 @@
-function [FRxBinT, FRxBinN, FRxBinTsmooth, FRxBinNsmooth, FRxBinTnorm, FRxBinNnorm, TnormSmooth, NnormSmooth, outputIT, binCenters, cfg, cellID, cellname] = makeSaccadeHeatPlot(cfg_in, varargin)
+function [FRxBinT, FRxBinN, FRxBinTsmooth, FRxBinNsmooth, FRxBinTnorm, FRxBinNnorm, TnormSmooth, NnormSmooth, outputIT, binCenters, cfg, cellID, cellname] = makeSaccadeHeatPlot(cfg_in, temporalSaccades, nasalSaccades, varargin)
 % [] = makeSaccadeHeatPlot
 % JJS. 4/2021.
 
@@ -24,7 +24,6 @@ for iSess = 1:length(fd)
     [S] = LoadSpikesJeff;
     if exist(strcat(SSN, '-VT1_proc.mat'))
         %         [S] = LoadSpikesJeff;
-        [temporalSaccades, nasalSaccades, ~, ~, ~, ~, ~, ~, ~] = processPupilData2(cfg_in, 'doPlotEverything', 0, 'doPlotThresholds', 0);
         spikefiles = FindFiles('*.t');
         for iCell = 1:length(S.t)
             [a, b, c] = fileparts(spikefiles{iCell});
