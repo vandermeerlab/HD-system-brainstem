@@ -1,4 +1,4 @@
-function [M, Mfr] = saccade_peth_shuffled_saccade_times(myCell, t, varargin)
+function [M, Mfr, zT, zN] = saccade_peth_shuffled_saccade_times(myCell, t, varargin)
 % Generates a matrix of shuffled spike times by randomly permuting the saccade times. 
 % Calculates significant bins for saccade peth compared to shuffled distribution. Single cell.
 %
@@ -11,7 +11,7 @@ function [M, Mfr] = saccade_peth_shuffled_saccade_times(myCell, t, varargin)
 %   window = [-.2 .2]
 dt = 0.01; % seconds
 doPlot = 0;
-numShuff = 500;
+numShuff = 100;
 % window = [-0.2 0.2];
 % dt = 0.01;
 process_varargin(varargin);
@@ -47,8 +47,9 @@ for iShuff = 1:numShuff
 end
 
 
-
-
+[FRxBinT, FRxBinN, ~, ~, ~, ~, ~, ~, ~, binCenters, cfg, ~, ~] = makeSaccadeHeatPlot(cfg);
+zT = (FRxBinT(1,:) - mean(Mfr(1:end-1)))/std(Mfr(1:end-1)); % calculate the z-score. Ignore last column, which is zeros 
+zN = (FRxBinN(1,:) - mean(Mfr(1:end-1)))/std(Mfr(1:end-1));
 
 
 
