@@ -1,10 +1,10 @@
 function [M, Mfr] = saccade_peth_shuffled_saccade_times(myCell, t, varargin)
-% Calculate significant bins for saccade peth compared to shuffled distribution. Single cell.
-% spikePETH(S, t, varargin)
+% Generates a matrix of shuffled spike times by randomly permuting the saccade times. 
+% Calculates significant bins for saccade peth compared to shuffled distribution. Single cell.
 %
 % input:
-%        TS S
-%        Event times t
+%        myCell: a ts of spike times for a single neuron 
+%        t:      Event times (saccade times)  
 % output:
 %        z score for each time bin
 % parameters:
