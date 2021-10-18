@@ -38,7 +38,7 @@ end
 % get AHV Tuning Curve
 cfg_AHV = [];
 cfg_AHV.subsample_factor = 10;
-[AHV_tsd, tc_out] = AHV_tuning(S, cfg_AHV);
+[AHV_tsd, tc_out] = AHV_tuning(cfg_AHV, S);
 AHV_dt = median(diff(AHV_tsd.tvec));
 
 %% #2 plot scatterplot
