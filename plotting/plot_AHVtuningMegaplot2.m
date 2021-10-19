@@ -16,6 +16,7 @@ subtractStartTime = 1;
 cfg = [];
 cfg.uint = '64';
 spikefiles = FindFiles('*.t');
+cfg.fc = {spikefiles}; 
 cfg.fc = {spikefiles{iCell}};
 S = LoadSpikes(cfg);
 % S = LoadSpikesJeff;

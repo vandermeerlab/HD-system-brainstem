@@ -1,4 +1,4 @@
-function [M, Mfr, zT, zN] = saccade_peth_shuffled_saccade_times(myCell, t, varargin)
+function [M, Mfr] = saccade_peth_shuffled_saccade_times(myCell, t, varargin)
 % Generates a matrix of shuffled spike times by randomly permuting the saccade times. 
 % Calculates significant bins for saccade peth compared to shuffled distribution. Single cell.
 %
@@ -45,46 +45,4 @@ for iShuff = 1:numShuff
     end
     clear tShuff
 end
-
-
-[FRxBinT, FRxBinN, ~, ~, ~, ~, ~, ~, ~, binCenters, cfg, ~, ~] = makeSaccadeHeatPlot(cfg);
-zT = (FRxBinT(1,:) - mean(Mfr(1:end-1)))/std(Mfr(1:end-1)); % calculate the z-score. Ignore last column, which is zeros 
-zN = (FRxBinN(1,:) - mean(Mfr(1:end-1)))/std(Mfr(1:end-1));
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-% Bins = window(1):dt:window(2);
-% numBins = size(Bins,2);
-% % For a single shuffle, loop over saccades
-% h = waitbar(0, 'please wait');
-% for iRow = 1:numShuff
-%     waitbar(iRow/numShuff)
-%     tic
-%     for iT = 1:length(t)
-%         for iBin = 1:numBins-1
-%             X{iRow}(iT, iBin) = sum(shuffmatrix(iRow,:) > t(iT) + Bins(iBin) & shuffmatrix(iRow,:) < t(iT) + Bins(iBin+1)).*(1/dt);
-%         end        
-%     end
-%     meanX(iRow,:) = mean(X{iRow}); % 1 x nBins, average FR
-%     toc    
-% end
-
-    
-    
+% Z = (FRxBinT(1,:) - mean(Mfr(1:end-1)))/std(Mfr(1:end-1)); % calculate the z-score. Ignore last column, which is zeros

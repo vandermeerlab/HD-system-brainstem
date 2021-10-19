@@ -1,0 +1,105 @@
+[1mdiff --git a/makeSaccadeHeatPlot.m b/makeSaccadeHeatPlot.m[m
+[1mindex 562ae72..6210638 100644[m
+[1m--- a/makeSaccadeHeatPlot.m[m
+[1m+++ b/makeSaccadeHeatPlot.m[m
+[36m@@ -2,14 +2,15 @@[m [mfunction [FRxBinT, FRxBinN, FRxBinTsmooth, FRxBinNsmooth, FRxBinTnorm, FRxBinNno[m
+ % [] = makeSaccadeHeatPlot[m
+ % JJS. 4/2021.[m
+ [m
+[31m-% doPlot = 0;[m
+[31m-FRwindow = [-.2 .2];[m
+[31m-dt = 0.01;[m
+[31m-pethBins = linspace(FRwindow(1), FRwindow(2), diff(FRwindow)/dt+1);[m
+[32m+[m[32mdoPlot = 0;[m
+[32m+[m[32mcfg_def.FRwindow = [-.2 .2];[m
+[32m+[m[32mcfg_def.dt = 0.01;[m
+ cfg_def.threshH = 10;[m
+ cfg_def.threshL = -10;[m
+ cfg = ProcessConfig(cfg_def,cfg_in);[m
+ [m
+[32m+[m[32mpethBins = linspace(cfg.FRwindow(1), cfg.FRwindow(2), diff(cfg.FRwindow)/cfg.dt+1);[m
+[32m+[m
+ process_varargin(varargin);[m
+ cellCounterToUse = 0;[m
+ cellCounterIndex = 0;[m
+[36m@@ -27,36 +28,39 @@[m [mfor iSess = 1:length(fd)[m
+         spikefiles = FindFiles('*.t');[m
+         for iCell = 1:length(S.t)[m
+             [a, b, c] = fileparts(spikefiles{iCell});[m
+[31m-            cellID = b; [m
+[32m+[m[32m            cellID = b;[m
+             cellCounterToUse = cellCounterToUse + 1;   % this counts eye tracking neuron. Neurons from sessions that are skipped (above) are not recorded. This total will = total neurons with eye tracking.[m
+[31m-            cellCounterIndex = cellCounterIndex +1;    % this counts every neuron, whether or not it has eye tracking data associated with it. [m
+[31m-            cellID(cellCounterToUse) = cellCounterIndex; % this is the order of the eye tracking neurons, with respect to the total group of neurons. [m
+[31m-            cellname{cellCounterToUse} = S.label{iCell}; % this is the name of the eye tracking neurons (SSN-TT__.t, etc.) [m
+[32m+[m[32m            cellCounterIndex = cellCounterIndex +1;    % this counts every neuron, whether or not it has eye tracking data associated with it.[m
+[32m+[m[32m            cellID(cellCounterToUse) = cellCounterIndex; % this is the order of the eye tracking neurons, with respect to the total group of neurons.[m
+[32m+[m[32m            cellname{cellCounterToUse} = S.label{iCell}; % this is the name of the eye tracking neurons (SSN-TT__.t, etc.)[m
+             myCell = SelectTS([], S, iCell);[m
+             cfg_in = [];[m
+[31m-            cfg_in.window = FRwindow;[m
+[31m-            cfg_in.dt = dt;[m
+[31m-            figure[m
+[31m-            [outputS, outputT, outputGau, outputIT, cfg] = SpikePETHvdm(cfg_in, myCell, temporalSaccades);[m
+[31m-            subplot(2,1,1); title(cellID)[m
+[31m-            subplot(2,1,2); title('Temporal Saccades')[m
+[32m+[m[32m            cfg_in.window = cfg.FRwindow;[m
+[32m+[m[32m            cfg_in.dt = cfg.dt;[m
+[32m+[m[32m            if doPlot == 1[m
+[32m+[m[32m                figure(1)[m
+[32m+[m[32m                subplot(2,1,1); title(cellID)[m
+[32m+[m[32m                subplot(2,1,2); title('Temporal Saccades')[m
+[32m+[m[32m            end[m
+[32m+[m[32m            [outputS, outputT, outputGau, outputIT, cfg_out] = SpikePETHvdm(cfg_in, myCell, temporalSaccades, 'doPlot', doPlot);[m
+             assert(isequal(pethBins, outputIT))[m
+             mT = histcounts(outputS, outputIT);[m
+             FRxBinT(cellCounterToUse,:) = mT/cfg.dt/length(temporalSaccades);[m
+[31m-            clear outputS;[m
+[31m-            figure[m
+[31m-            [outputS, outputT, outputGau, outputIT, cfg] = SpikePETHvdm(cfg_in, myCell, nasalSaccades);[m
+[31m-            subplot(2,1,1); title(cellID)[m
+[31m-            subplot(2,1,2); title('Nasal Saccades')[m
+[32m+[m[32m            if doPlot == 1[m
+[32m+[m[32m                figure(2)[m
+[32m+[m[32m                subplot(2,1,1); title(cellID)[m
+[32m+[m[32m                subplot(2,1,2); title('Nasal Saccades')[m
+[32m+[m[32m            end[m
+[32m+[m[32m            [outputS, outputT, outputGau, outputIT, cfg_out] = SpikePETHvdm(cfg_in, myCell, nasalSaccades, 'doPlot', doPlot);[m
+             mN = histcounts(outputS, outputIT);[m
+             FRxBinN(cellCounterToUse,:) = mN/cfg.dt/length(nasalSaccades);[m
+         end[m
+     else[m
+         for iCell = 1:length(S.t)[m
+             cellCounterIndex = cellCounterIndex +1;[m
+[31m-%             cellCounterToUse = cellCounterToUse + 1;[m
+[31m-%             FRxBinT(cellCounterToUse,:) = nan(1,length(pethBins)-1);[m
+[31m-%             FRxBinN(cellCounterToUse,:) = nan(1,length(pethBins)-1);[m
+[32m+[m[32m            %             cellCounterToUse = cellCounterToUse + 1;[m
+[32m+[m[32m            %             FRxBinT(cellCounterToUse,:) = nan(1,length(pethBins)-1);[m
+[32m+[m[32m            %             FRxBinN(cellCounterToUse,:) = nan(1,length(pethBins)-1);[m
+         end[m
+         disp('no eye tracking file detected. Skipping Session.')[m
+     end[m
+[36m@@ -90,7 +94,7 @@[m [mFRxBinNnorm = FRxBinN./mN;       % normalized by FR[m
+ %     counter = counter + 1;[m
+ %     pairs(iPosition, :) = FRxBinT(counter,:);[m
+ % end[m
+[31m-% [m
+[32m+[m[32m%[m
+ % pairsNorm = nan(size(FRxBinT,1), size(FRxBinT,2));[m
+ % counter = 0;[m
+ % for iPosition = 2:2:2*(size(FRxBinN,1))   % nasal[m
+[36m@@ -102,10 +106,10 @@[m [mFRxBinNnorm = FRxBinN./mN;       % normalized by FR[m
+ %     counter = counter + 1;[m
+ %     pairsNorm(iPosition, :) = TnormSmooth(counter,:);[m
+ % end[m
+[31m-% [m
+[31m-% [m
+[32m+[m[32m%[m
+[32m+[m[32m%[m
+ % if doPlot == 1[m
+[31m-%     [m
+[32m+[m[32m%[m
+ % end[m
+ [m
+ [m
