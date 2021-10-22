@@ -1,5 +1,4 @@
 function [temporalSaccades, nasalSaccades, combinedSaccades, index_tP_final, index_nP_final, tsdH, tsdV, diffH, diffV] = processPupilData2(cfg_in, varargin)
-
 % JJS. 2021-03-13.
 % Remove jitter first then thresholds.
 % This is the in progress version.

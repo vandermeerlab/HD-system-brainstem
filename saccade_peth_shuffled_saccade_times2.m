@@ -21,12 +21,12 @@ numShuff = 100;
 process_varargin(varargin);
 
 [FRxBinT, FRxBinN, ~, ~, ~, ~, ~, ~, ~, binCenters, cfg_out, ~, ~] = makeSaccadeHeatPlot(cfg, temporalSaccades, nasalSaccades, 'doPlot', 0);
-h = waitbar(0, 'please wait');
+% h = waitbar(0, 'please wait');
 for iJ = 1:2  % 2 cases
     if iJ == 1; t = temporalSaccades; end                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
     if iJ == 2; t = nasalSaccades; end
     for iShuff = 1:numShuff
-        waitbar(iShuff/numShuff)
+%         waitbar(iShuff/numShuff)
 %         disp(iShuff)
         ISI = diff(horzcat([t(1), t]));
         tShuff = cumsum(ISI(randperm(length(ISI))));
