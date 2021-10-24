@@ -20,7 +20,7 @@ cfg_tc = [];
 cfg_tc.nBins = 100;
 cfg_tc.binEdges = {linspace(-200, 200, 101)};
 cfg_tc.occ_dt = median(diff(AHV_tsd.tvec));
-cfg_tc.minOcc = 10;
+cfg_tc.minOcc = 100;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
 tc_out = TuningCurves(cfg_tc, S, AHV_tsd);
 
 end
