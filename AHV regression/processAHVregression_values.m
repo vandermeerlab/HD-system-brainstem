@@ -14,7 +14,7 @@ function [Y] = processAHVregression_values(cfg_in, X)
 %                       coeffsNeg:  [n×1 double]     coeffs for negative part of tuning curve
 % fd = FindFiles('*keys.m');
 numCells = length(X. pAll);
-cfg_def.Bonferroni = 0;
+cfg_def.Bonferroni = 1;
 cfg_out = ProcessConfig2(cfg_def, cfg_in);
 
 if cfg_out.Bonferroni == 0
@@ -24,24 +24,58 @@ else
 end
 Y.indexP = X.pPos < threshold & X.pNeg < threshold;  % index of cells with significant p-values for both components
 
-%% Determine which cells are SYMMETRIC (and significant)
-Y.indexSamePos = X.bPos>=0 &  X.bNeg>=0;
-Y.indexSameNeg = X.bPos<=0 &  X.bNeg<=0;
-Y.symmetric = Y.indexSamePos | Y.indexSameNeg;
-Y.symmetricSig = Y.symmetric & Y.indexP;
-
 %% Determine which cells are A-SYMMETRIC (and significant)
-Y.index_Vshape = X.bPos>=0 &  X.bNeg<=0;    % Y.symmetric cells that have a 'V -shape' tuning cureve
-Y.index_circumflex = X.bPos<=0 &  X.bNeg>=0;  % Y.symmetric cells that have a 'hat shaped' tuning curve (circumflex on the keyboard)
-Y.Vshape_sig = Y.index_Vshape & Y.indexP;    % V -shaped cells that are significant
-Y.circumflex_sig = Y.index_circumflex & Y.indexP;   % circumflex shaped cells that are significant
-Y.sumVshape_sig = sum(Y.Vshape_sig); Y.perVshape_sig = Y.sumVshape_sig/numCells;
-Y.sumcircumflex_sig = sum(Y.circumflex_sig); Y.percircumflex_sig = Y.sumcircumflex_sig/numCells;
+Y.iPos = X.bPos>=0 &  X.bNeg>=0;          % Asymmetric RIGHT (/) index. Higher FR for CCW turns. Positive slope.
+Y.pos = sum(Y.iPos);                      % num Pos
+Y.percentage_Pos = Y.pos/numCells;        % percent positive   
+Y.iNeg = X.bPos<=0 &  X.bNeg<=0;          % Asymmetric LEFT (\) index. Higher FR for CW turns. Negative slope.
+Y.neg = sum(Y.iNeg);                      % num Neg
+Y.percentage_Neg = Y.neg/numCells;        % percent negative 
+Y.iA = Y.iPos | Y.iNeg;                   % RIGHT and LEFT asymmetric cells index. 
+Y.num_A = sum(Y.iA);                      % number asymmetric  
+Y.percent_A = Y.num_A/numCells;           % percent asymmetric 
+Y.A_sig = Y.iA & Y.indexP;                % asymmetric AND significant
+Y.sigPos = Y.iPos & Y.indexP;             % sig Pos index 
+Y.num_sigPos = sum(Y.sigPos);
+Y.percent_sigPos = Y.num_sigPos/numCells; 
+Y.sigNeg = Y.iNeg & Y.indexP;             % sig Neg index
+Y.num_sigNeg = sum(Y.sigNeg);
+Y.percent_sigNeg = Y.num_sigNeg/numCells;
+Y.total_sigA = sum(Y.A_sig);              % TOTAL 
+Y.percent_sigA = Y.total_sigA/numCells;   % PERCENTAGE
 
-Y.index_Vshape_sig = find(Y.Vshape_sig); 
-Y.fd_Vshape = X.neuronID(Y.index_Vshape_sig); 
-Y.index_circumflex_sig = find(Y.circumflex_sig);
-Y.fd_circumflex = X.neuronID(Y.index_circumflex_sig);
+%% Determine which cells are SYMMETRIC (and significant)
+Y.iPos = X.bPos>=0 &  X.bNeg>=0;          % Asymmetric RIGHT (/) index. Higher FR for CCW turns. Positive slope.
+Y.pos = sum(Y.iPos);                      % num Pos
+Y.percentage_Pos = Y.pos/numCells;        % percent positive   
+Y.iNeg = X.bPos<=0 &  X.bNeg<=0;          % Asymmetric LEFT (\) index. Higher FR for CW turns. Negative slope.
+Y.neg = sum(Y.iNeg);                      % num Neg
+Y.percentage_Neg = Y.neg/numCells;        % percent negative 
+Y.iA = Y.iPos | Y.iNeg;                   % RIGHT and LEFT asymmetric cells index. 
+Y.num_A = sum(Y.iA);                      % number asymmetric  
+Y.percent_A = Y.num_A/numCells;           % percent asymmetric 
+Y.A_sig = Y.iA & Y.indexP;                % asymmetric AND significant
+Y.sigPos = Y.iPos & Y.indexP;             % sig Pos index 
+Y.num_sigPos = sum(Y.sigPos);
+Y.percent_sigPos = Y.num_sigPos/numCells; 
+Y.sigNeg = Y.iNeg & Y.indexP;             % sig Neg index
+Y.num_sigNeg = sum(Y.sigNeg);
+Y.percent_sigNeg = Y.num_sigNeg/numCells;
+Y.total_sigA = sum(Y.A_sig);              % TOTAL 
+Y.percent_sigA = Y.total_sigA/numCells;   % PERCENTAGE
 
 
 end
+
+
+% Y.index_V = X.bPos>=0 &  X.bNeg<=0;    %  symmetric cells that have a 'V -shape' tuning cureve
+% Y.index_circumflex = X.bPos<=0 &  X.bNeg>=0;  %  symmetric cells that have a 'hat shaped' tuning curve (circumflex on the keyboard)
+% Y.Vshape_sig = Y.index_Vshape & Y.indexP;    % V -shaped cells that are significant
+% Y.circumflex_sig = Y.index_circumflex & Y.indexP;   % circumflex shaped cells that are significant
+% Y.sumVshape_sig = sum(Y.Vshape_sig); Y.perVshape_sig = Y.sumVshape_sig/numCells;
+% Y.sumcircumflex_sig = sum(Y.circumflex_sig); Y.percircumflex_sig = Y.sumcircumflex_sig/numCells;
+% 
+% Y.index_Vshape_sig = find(Y.Vshape_sig); 
+% Y.fd_Vshape = X.neuronID(Y.index_Vshape_sig); 
+% Y.index_circumflex_sig = find(Y.circumflex_sig);
+% Y.fd_circumflex = X.neuronID(Y.index_circumflex_sig);
