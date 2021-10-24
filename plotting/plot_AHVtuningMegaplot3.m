@@ -48,6 +48,7 @@ cfg_Q = [];
 cfg_Q.smooth = 'gauss';
 cfg_Q.gausswin_sd = 0.05;
 cfg_Q.dt = AHV_dt;
+cfg_Q.tvec_edges = AHV_tsd.tvec(1):AHV_dt:AHV_tsd.tvec(end);
 F = MakeQfromS(cfg_Q, S); % convert to FR
 % convert to FR
 F.data = F.data ./ cfg_Q.dt;
