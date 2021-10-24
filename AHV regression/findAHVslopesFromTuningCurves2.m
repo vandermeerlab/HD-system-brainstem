@@ -8,6 +8,9 @@ process_varargin(varargin);
 cellCounter = 0;
 
 fd = FindFiles('*keys.m');
+[sessionsDir, ~, ~] = cellfun(@fileparts, fd, 'UniformOutput', false);
+[~, sessions, ~] = cellfun(@fileparts, sessionsDir, 'UniformOutput', false);
+sessionID = {};
 for iSess = 1:length(fd)
     pushdir(fileparts(fd{iSess}));
     
@@ -23,6 +26,8 @@ for iSess = 1:length(fd)
     for iCell = 1:length(fc)
         %% Corr for Entire Tuning Curve
         cellCounter = cellCounter +1;
+%         sessionID{cellCounter} = sessions(iSess); % make a list of which session each neuron came from 
+        neuronID{cellCounter} = fc{iCell};        % has the path, including the filename, for each neuron in the analysis     
         x = tc_out.usr.binCenters; x = x';
         y = tc_out.tc(iCell,:);    y = y';
         x(:,2) = ones(length(x),1);
@@ -79,3 +84,5 @@ for iSess = 1:length(fd)
     end
     popdir;
 end
+X.sessionID = sessionID';
+X.neuronID = neuronID'; 
