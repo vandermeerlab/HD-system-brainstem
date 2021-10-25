@@ -1,4 +1,4 @@
-function [X] = findAHVslopesFromRawSpikes(varargin)
+function [Z] = findAHVslopesFromRawSpikes(varargin)
 
 % JJS. 3/2021. Calculate the slopes of AHV tuning curves using all spikes (i.e. not binned).
 
@@ -135,12 +135,12 @@ end
 % plot(AHV_tsd.data, AHV_F(iCell,:), '.', 'MarkerSize', .5);
 
 
-X.rsqAll = rsqAll; % R squared values for linear fit of all AHV bins
-X.pAll = pAll; % p value for linear fit of all AHV bins
-X.coeffsAll  = coeffsAll; % slope (1st column) and y-intercept (2nd column) for all AHV bins
-X.rsqPos = rsqPos; % R squared values for linear fit of positive AHV bins
-X.pPos = pPos; % p value for linear fit of positive AHV bins
-X.coeffsPos = coeffsPos; %  slope (1st column) and y-intercept (2nd column) for positive AHV bins
-X.rsqNeg = rsqNeg; % R squared values for linear fit of negative AHV bins
-X.pNeg = pNeg; % p value for linear fit of negative AHV bins
-X.coeffsNeg = coeffsNeg; %  slope (1st column) and y-intercept (2nd column) for negative AHV bins
+Z.rsqAll = rsqAll; % R squared values for linear fit of all AHV bins
+Z.pAll = pAll; % p value for linear fit of all AHV bins
+Z.coeffsAll  = coeffsAll; % slope (1st column) and y-intercept (2nd column) for all AHV bins
+Z.rsqPos = rsqPos; % R squared values for linear fit of positive AHV bins
+Z.pPos = pPos; % p value for linear fit of positive AHV bins
+Z.coeffsPos = coeffsPos; %  slope (1st column) and y-intercept (2nd column) for positive AHV bins
+Z.rsqNeg = rsqNeg; % R squared values for linear fit of negative AHV bins
+Z.pNeg = pNeg; % p value for linear fit of negative AHV bins
+Z.coeffsNeg = coeffsNeg; %  slope (1st column) and y-intercept (2nd column) for negative AHV bins
