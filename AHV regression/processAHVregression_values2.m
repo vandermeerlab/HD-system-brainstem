@@ -26,75 +26,43 @@ else
 end
 Y.indexP = X.pPos < threshold & X.pNeg < threshold;  % index of cells with significant p-values for both components
 
+Y.indexL = X.pNeg < threshold;   % LEFT side of the plot is significant. Could be \ / 
+Y.indexR = X.pPos < threshold;   % RIGHT side of the plot is significant. Could be \ or / 
+
 %% Determine which cells are A-SYMMETRIC (and significant)
-Y.iPos = X.bPos>=0 &  X.bNeg>=0;          % Asymmetric RIGHT (/) index. Higher FR for CCW turns. Positive slope.
-Y.pos = sum(Y.iPos);                      % num Pos
-Y.percentage_Pos = Y.pos/numCells;        % percent positive
-Y.iNeg = X.bPos<=0 &  X.bNeg<=0;          % Asymmetric LEFT (\) index. Higher FR for CW turns. Negative slope.
-Y.neg = sum(Y.iNeg);                      % num Neg
-Y.percentage_Neg = Y.neg/numCells;        % percent negative
-Y.iA = Y.iPos | Y.iNeg;                   % RIGHT and LEFT asymmetric cells index.
-Y.num_A = sum(Y.iA);                      % number asymmetric
-Y.percent_A = Y.num_A/numCells;           % percent asymmetric
-Y.A_sig = Y.iA & Y.indexP;                % asymmetric AND significant
-Y.A_unsig = Y.iA & ~Y.indexP;
-Y.sigPos = Y.iPos & Y.indexP;             % sig Pos index
-Y.num_sigPos = sum(Y.sigPos);
-Y.percent_sigPos = Y.num_sigPos/numCells;
-Y.sigNeg = Y.iNeg & Y.indexP;             % sig Neg index
-Y.num_sigNeg = sum(Y.sigNeg);
-Y.percent_sigNeg = Y.num_sigNeg/numCells;
-Y.total_sigA = sum(Y.A_sig);              % TOTAL
-Y.percent_sigA = Y.total_sigA/numCells;   % PERCENTAGE
-Y.Pos_unsig = Y.iPos & ~Y.indexP; 
-Y.Neg_unsig = Y.iNeg & ~Y.indexP;
-Y.A_unsig = Y.iA & ~Y.indexP;  
-Y.A_unsig = (Y.num_A - sum(Y.A_sig))/numCells;  % percentage Asymmetric NOT significant
 
-Y.fd_sigPos = X.neuronID(Y.sigPos);  % CCW
-Y.fd_sigNeg = X.neuronID(Y.sigNeg);  % CW
+% Right MESA.        -AHV side is positive slope. Right side is a flat (not sig). 
+RM =  X.bNeg > 0 & X.pNeg < threshold & X.pPos >= threshold; fRM = find(RM); 
+% Left MESA          +AHV side is negative slope. Left side is a flat (not sig). 
+LM = X.bPos < 0 & X.pPos < threshold & X.pNeg >= threshold; fLM = find(LM);
+% Uphill Slope.      +AHV side is psoitive slope. Right side is flat (not sig).  
+US = X.bPos > 0 & X.pPos < threshold & X.pNeg >= threshold;  fUS = find(US);
+% Downhill Slope.    -AHV side is negative sleop. Right side is flat (not sig). 
+DS = X.bNeg < 0 & X.pNeg < threshold & X.pPos >= threshold; fDS = find(DS);
+% Pos Line.          Both halves have positive slope. 
+PL = X.bNeg > 0 & X.bPos > 0 & X.pNeg < threshold & X.pPos < threshold; fPL = find(PL); 
+% Neg Line.          Both halves have negative slope.
+NL = X.bNeg < 0 & X.bPos < 0 & X.pNeg < threshold & X.pPos < threshold; fNL = find(NL);
+%% Determine which cells are SYMMETRUC (and significant) 
+% V - Shape.      
+V = X.bNeg < 0 & X.bPos > 0 & X.pNeg < threshold & X.pPos < threshold; fV = find(V);
+% Circumflex 
+C = X.bNeg > 0 & X.bPos < 0 & X.pNeg < threshold & X.pPos < threshold; fC = find(C); 
+%% Not significant 
+% Flat 
+F = X.pNeg >=   threshold & X.pPos >= threshold;   fF = find(F); 
 
-Y.fd_unsigPos = X.neuronID(Y.Pos_unsig);
-Y.fd_unsigNeg = X.neuronID(Y.Neg_unsig);
+sumSig = sum(RM) + sum(LM) + sum(US) + sum(DS) + sum(PL) + sum(NL) + sum(V) + sum(C);  percentSig = sumSig/numCells; 
+sumNonSig = sum(F); percentNonSig = sum(F)/numCells; 
 
-%% Determine which cells are SYMMETRIC (and significant)
-Y.iV = X.bPos>=0 &  X.bNeg<=0;            % V-shape index. Higher FR for any turns.
-Y.V = sum(Y.iV);                          % num V-shape
-Y.percentage_V = Y.V/numCells;            % percent V-shape
-Y.iC = X.bPos<=0 &  X.bNeg>=0;            % Circumflex (pointy-hat shape) index. Lower FR for any turns.
-Y.C = sum(Y.iC);                          % num Circumflex
-Y.percentage_C = Y.C/numCells;            % percent Circumflex
-Y.iS = Y.iV | Y.iC;                       % SYMMETRIC cells index
-Y.num_S = sum(Y.iS);                      % number SYMMETRIC
-Y.percent_S = Y.num_S/numCells;           % percent SYMMETRIC
-Y.S_sig = Y.iS & Y.indexP;                % symmetric AND significant
-Y.sigV = Y.iV & Y.indexP;                 % V-shape sig  index
-Y.num_sigV = sum(Y.sigV);                 % num V-shape sig
-Y.percent_sigV = Y.num_sigV/numCells;     % percent V-shape sig
-Y.sigC = Y.iC & Y.indexP;                 % sig Cicrumflex index
-Y.num_sigC = sum(Y.sigC);                 % num sig Circumflex
-Y.percent_sigC = Y.num_sigC/numCells;     % percent Circumflex sig
-Y.total_sigS = sum(Y.S_sig);              % TOTAL
-Y.percent_sigS = Y.total_sigS/numCells;   % PERCENTAGE
-
-Y.S_unsig = (Y.num_S - sum(Y.S_sig))/numCells;  % percentage Symmetric NOT significant
-
-Y.fd_sigV = X.neuronID(Y.sigV);
-Y.fd_sigC = X.neuronID(Y.sigC);
+CCW = sum(RM) + sum(US) + sum(PL); 
+CW = sum(LM) + sum(DS) + sum(NL); 
 
 
 if cfg_out.doPlot ==1
-    Poverall = [Y.percent_A Y.percent_S];               %  Overall ASYMMETRIC vs SYMMETRIC
-    Psig = [Y.percent_sigA Y.percent_sigS];             %  Significant ASYMMETRIC vs SYMMETRIC
-    Pa   = [Y.percent_sigPos Y.percent_sigNeg];         %  ASYMMETRIC positive vs. ASYMMETRIC negative
-    Ps   = [Y.percent_sigV Y.percent_sigC];             %  SYMMETRIC V-shape vs. SYMMETRIC circumflex
-    
-    Pall = [Y.A_unsig  Y.S_unsig  Y.percent_sigNeg  Y.percent_sigPos  Y.percent_sigV  Y.percent_sigC];
-    
-    Pall2 = [Y.A_unsig+Y.S_unsig  Y.percent_sigNeg  Y.percent_sigPos  Y.percent_sigV  Y.percent_sigC];
-    
+    Pall = [sumNonSig CW CCW sum(V) sum(C)];  
     labels = {'Not sig.', 'Asymmetric CW', 'Asymmetric CCW', 'Symmetric, V shape', 'Symmetric, Hat Shape'}; 
-    pie(Pall2, [1 1 1 1 1])
+    pie(Pall, [1 1 1 1 1])
     lg = legend(labels); 
 end
 
@@ -120,20 +88,3 @@ end
 
 
 
-
-
-
-
-
-
-% Y.index_V = X.bPos>=0 &  X.bNeg<=0;    %  symmetric cells that have a 'V -shape' tuning cureve
-% Y.index_circumflex = X.bPos<=0 &  X.bNeg>=0;  %  symmetric cells that have a 'hat shaped' tuning curve (circumflex on the keyboard)
-% Y.Vshape_sig = Y.index_Vshape & Y.indexP;    % V -shaped cells that are significant
-% Y.circumflex_sig = Y.index_circumflex & Y.indexP;   % circumflex shaped cells that are significant
-% Y.sumVshape_sig = sum(Y.Vshape_sig); Y.perVshape_sig = Y.sumVshape_sig/numCells;
-% Y.sumcircumflex_sig = sum(Y.circumflex_sig); Y.percircumflex_sig = Y.sumcircumflex_sig/numCells;
-%
-% Y.index_Vshape_sig = find(Y.Vshape_sig);
-% Y.fd_Vshape = X.neuronID(Y.index_Vshape_sig);
-% Y.index_circumflex_sig = find(Y.circumflex_sig);
-% Y.fd_circumflex = X.neuronID(Y.index_circumflex_sig);
