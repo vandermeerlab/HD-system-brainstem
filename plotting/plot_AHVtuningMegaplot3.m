@@ -18,7 +18,7 @@ cfg.uint = '64';
 spikefiles = FindFiles('*.t');
 % cfg.fc = {spikefiles}; 
 cfg.fc = {spikefiles{iCell}};
-S = LoadSpikes(cfg);
+Sold = LoadSpikes(cfg);
 % S = LoadSpikesJeff;
 
 if subtractStartTime == 1 % New cheetah versions have timestamps
@@ -32,8 +32,8 @@ if subtractStartTime == 1 % New cheetah versions have timestamps
     EndIndex = find(B); 
     endtime = events_ts.t{EndIndex};
 %     assert(strcmp(events_ts.label{1}, 'Starting Recording')==1)
-    for iC = 1:length(S.t)
-        S.t{iC} = S.t{iC} - starttime;  % subtract the very first time stamp to convert from Unix time to 'start at zero' time.
+    for iC = 1:length(Sold.t)
+        S.t{iC} = Sold.t{iC} - starttime;  % subtract the very first time stamp to convert from Unix time to 'start at zero' time.
     end
 end
 % get AHV Tuning Curve
