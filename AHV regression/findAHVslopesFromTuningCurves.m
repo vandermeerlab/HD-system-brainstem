@@ -2,7 +2,7 @@ function [X] = findAHVslopesFromTuningCurves(varargin)
 % JJS. 3/2021. Calculate the slopes of AHV tuning curves. 
 doPlot = 1;
 FontSize = 16;
-MarkerSize = 14;
+MarkerSize = 22;
 process_varargin(varargin);
 cellCounter = 0;
 
@@ -52,45 +52,47 @@ for iSess = 1:length(fd)
         if doPlot == 1
             clf
             [filepath, name, ext] = fileparts(fc{iCell});
-            subplot(1,2,1)
+%             subplot(1,2,1)
             hold on
             plot(x(posIndex,1), y(posIndex), '.', 'MarkerSize', MarkerSize);
             xlim([min(x(posIndex & ~idx)) max(x(posIndex & ~idx))]) 
-            h = lsline;
+            h1 = lsline;
+            set(h1, 'LineWidth', 3)
 %             p1 = polyfit(get(h,'xdata'),get(h,'ydata'),1);
             title(name)
             xlabel('AHV (deg/sec)', 'FontSize', FontSize)
             ylabel('Firing Rate (Hz)', 'FontSize', FontSize)
-            text(50, 65, strcat('rsq =', num2str(rsqPos(cellCounter))))
-            text(50, 45, strcat('p =', num2str(pPos(cellCounter))))         
+%             text(50, 65, strcat('rsq =', num2str(rsqPos(cellCounter))))
+%             text(50, 45, strcat('p =', num2str(pPos(cellCounter))))         
             
             z2 = plot(x(negIndex,1), y(negIndex), '.', 'MarkerSize', MarkerSize);
             xlim([min(x(negIndex & ~idx)) max(x(negIndex & ~idx))]) 
             h2  = refline(c(1), c(2));
             set(h2(1),'color', z2.Color)
+            set(h2, 'LineWidth', 3)
 %             h2 = lsline;
 %             p2 = polyfit(get(h2,'xdata'),get(h2,'ydata'),1);
             xlim auto
             title(name)
             xlabel('AHV (deg/sec)', 'FontSize', FontSize)
             ylabel('Firing Rate (Hz)', 'FontSize', FontSize)
-            text(-100, 65, strcat('rsq =', num2str(rsqNeg(cellCounter))))
-            text(-100, 45, strcat('p =', num2str(pNeg(cellCounter))))
+%             text(-100, 65, strcat('rsq =', num2str(rsqNeg(cellCounter))))
+%             text(-100, 45, strcat('p =', num2str(pNeg(cellCounter))))
             set(gca, 'FontSize', 16)
                         
-            subplot(1,2,2) 
-            plot(tc_out.usr.binCenters, tc_out.tc(iCell,:), '.', 'MarkerSize', MarkerSize);
-            d = axis; 
-            xlim([min(x(~idx)) max(x(~idx))]) 
-            h3 = lsline;
-            axis([d(1) d(2) d(3) d(4)])
-%             p3 = polyfit(get(h3,'xdata'),get(h3,'ydata'),1);
-            title(name)
-            xlabel('AHV (deg/sec)', 'FontSize', FontSize)
-            ylabel('Firing Rate (Hz)', 'FontSize', FontSize)
-            text(0, 65, strcat('rsq =', num2str(rsqAll(cellCounter))))
-            text(0, 45, strcat('p =', num2str(pAll(cellCounter))))
-            set(gca, 'FontSize', 16)
+%             subplot(1,2,2) 
+%             plot(tc_out.usr.binCenters, tc_out.tc(iCell,:), '.', 'MarkerSize', MarkerSize);
+%             d = axis; 
+%             xlim([min(x(~idx)) max(x(~idx))]) 
+%             h3 = lsline;
+%             axis([d(1) d(2) d(3) d(4)])
+% %             p3 = polyfit(get(h3,'xdata'),get(h3,'ydata'),1);
+%             title(name)
+%             xlabel('AHV (deg/sec)', 'FontSize', FontSize)
+%             ylabel('Firing Rate (Hz)', 'FontSize', FontSize)
+%             text(0, 65, strcat('rsq =', num2str(rsqAll(cellCounter))))
+%             text(0, 45, strcat('p =', num2str(pAll(cellCounter))))
+%             set(gca, 'FontSize', 16)
             pause
         end
     end
