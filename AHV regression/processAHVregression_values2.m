@@ -58,13 +58,15 @@ sumNonSig = sum(F); percentNonSig = sum(F)/numCells;
 CCW = sum(RM) + sum(US) + sum(PL); 
 CW = sum(LM) + sum(DS) + sum(NL); 
 
-
 if cfg_out.doPlot ==1
     Pall = [sumNonSig CW CCW sum(V) sum(C)];  
     labels = {'Not sig.', 'Asymmetric CW', 'Asymmetric CCW', 'Symmetric, V shape', 'Symmetric, Hat Shape'}; 
     pie(Pall, [1 1 1 1 1])
     lg = legend(labels); 
 end
+Y.RM = RM; Y.LM = LM; Y.US = US; Y.DS = DS; Y.PL = PL; Y.NL = NL; Y.V = V; Y.C = C; Y.F = F;
+
+Y.fd_unsigPos = X.neuronID(Y.Pos_unsig);
 
 
 

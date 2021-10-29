@@ -28,7 +28,7 @@ for iSess = 1:length(fd)
     % default number of bins here is 100
     cfg_AHV = [];
     cfg_AHV.subsample_factor = 10;
-    [AHV_tsd, tc_out] = AHV_tuning(S, cfg_AHV);
+    [AHV_tsd, tc_out] = AHV_tuning(cfg_AHV, S);
     numCells = size(tc_out.tc, 1);
     %     plot(tc_out.usr.binCenters, tc_out.tc(iCell,:), 'LineWidth', LineWidth);
     TC_all.tc = vertcat(TC_all.tc, tc_out.tc);
