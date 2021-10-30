@@ -1,4 +1,4 @@
-function [] = plotSaccadesAndAHVsinglePlot3(savedestination, varargin)
+function [] = plotSaccadesAndAHVsinglePlot3(savedestination, fd, varargin)
 
 % 4/2021. JJS.
 % Make a single plot that has saccade peths (both directions) and AHV tuning curve for a single neuron. Save all plots as images into a folder.
@@ -15,16 +15,16 @@ function [] = plotSaccadesAndAHVsinglePlot3(savedestination, varargin)
 %   savedestination: where the image files will be save to
 
 occthresh = 0.5; % threshold number of seconds occupancy for including in tuning curve
-formatSpec = '%.2f';
 LineWidth = 5;
 doSave = 1;
 doPause = 1;
-FontSize = 12;
 figType = 'eps';
 process_varargin(varargin);
 % formatSpec = '%.2f';
 
-fd = FindFiles('*keys.m');
+if isempty(fd)
+    fd = FindFiles('*keys.m');
+end
 for iSess = 1:length(fd)
     pushdir(fileparts(fd{iSess}));
     SSN = HD_GetSSN;
