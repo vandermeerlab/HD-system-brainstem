@@ -64,9 +64,21 @@ if cfg_out.doPlot ==1
     pie(Pall, [1 1 1 1 1])
     lg = legend(labels); 
 end
-Y.RM = RM; Y.LM = LM; Y.US = US; Y.DS = DS; Y.PL = PL; Y.NL = NL; Y.V = V; Y.C = C; Y.F = F;
+Y.RM = RM; Y.LM = LM; Y.US = US; Y.US = DS; Y.US = PL; Y.US = NL; Y.US = V; Y.C = C; Y.F = F;
 
-Y.fd_unsigPos = X.neuronID(Y.Pos_unsig);
+% This list provides the cell IDs for members of each group. 
+Y.tt_RM = X.neuronID(RM); [a, ~, ~] = fileparts(Y.tt_RM); Y.fd_RM = a;
+Y.tt_LM = X.neuronID(LM); [a, ~, ~] = fileparts(Y.tt_LM); Y.fd_LM = a; 
+Y.tt_US = X.neuronID(US); [a, ~, ~] = fileparts(Y.tt_US); Y.fd_US = a; 
+Y.tt_DS = X.neuronID(DS); [a, ~, ~] = fileparts(Y.tt_DS); Y.fd_DS = a; 
+Y.tt_PL = X.neuronID(PL); [a, ~, ~] = fileparts(Y.tt_PL); Y.fd_PL = a; 
+Y.tt_NL = X.neuronID(NL); [a, ~, ~] = fileparts(Y.tt_NL); Y.fd_NL = a; 
+Y.tt_V = X.neuronID(V); [a, ~, ~] = fileparts(Y.tt_V); Y.fd_V = a; 
+Y.tt_C = X.neuronID(C); [a, ~, ~] = fileparts(Y.tt_C); Y.fd_C = a; 
+Y.tt_F = X.neuronID(F); [a, ~, ~] = fileparts(Y.tt_F); Y.fd_F = a; 
+
+Y.A = RM | US | PL | LM | DS | NL; 
+
 
 
 
