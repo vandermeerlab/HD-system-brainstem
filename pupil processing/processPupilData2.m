@@ -2,11 +2,7 @@ function [temporalSaccades, nasalSaccades, combinedSaccades, index_tP_final, ind
 % JJS. 2021-03-13.
 % Remove jitter first then thresholds.
 % This is the in progress version.
-
-doPlotThresholds = 1;
-doPlotEverything = 0;
-process_varargin(varargin);
-
+ 
 SSN = HD_GetSSN;
 FontSize = 20;
 cfg_def = [];
@@ -16,6 +12,8 @@ cfg_def.threshL = -10;
 
 cfg_def.scalingfactor = 1;  % for shrinking the pupil trace so its the same height as diffH
 cfg_def.artifactThresh = 4;  % units of pixels sq.
+cfg_def.doPlotThresholds = 1;
+cfg_def.doPlotEverything = 0;
 cfg = ProcessConfig(cfg_def,cfg_in);
 
 %% Get AHV trace for later plotting
@@ -196,7 +194,7 @@ disp(strcat('Num temporal saccades = ', num2str(length(index_tP_final))));
 disp(strcat('Num nasal saccades = ', num2str(length(index_nP_final))));
 disp(strcat('Total num saccades = ', num2str(length(index_nP_final)+length(index_tP_final))));
 %% Plot the data in a subplot
-if doPlotEverything == 1
+if cfg.doPlotEverything == 1
     figure
     ax = subplot(3,1,1);
     plot(tsdH.tvec, tsdH.data./cfg.scalingfactor)
@@ -216,7 +214,7 @@ if doPlotEverything == 1
     linkaxes([ax ay az], 'xy')
 end
 
-if doPlotThresholds == 1
+if cfg.doPlotThresholds == 1
     clf
     hold on
     plot(diffH.tvec, diffH.data)

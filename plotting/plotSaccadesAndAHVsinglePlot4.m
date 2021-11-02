@@ -1,4 +1,4 @@
-function [] = plotSaccadesAndAHVsinglePlot4(savedestination, fd, fc, varargin)
+function [] = plotSaccadesAndAHVsinglePlot4(savedestination, fd, varargin)
 
 % 4/2021. JJS.
 % Make a single plot that has saccade peths (both directions) and AHV tuning curve for a single neuron. Save all plots as images into a folder.
@@ -22,7 +22,7 @@ occthresh = 0.5; % threshold number of seconds occupancy for including in tuning
 LineWidth = 5;
 doSave = 1;
 doPause = 1;
-figType = 'eps';
+figType = 'matlab';
 process_varargin(varargin);
 % formatSpec = '%.2f';
 
@@ -35,7 +35,7 @@ for iSess = 1:length(fd)
     disp(SSN)
     
     if exist(strcat(SSN, '-VT1_proc.mat'))
-        [FRxBinT, FRxBinN, FRxBinTsmooth, FRxBinNsmooth, FRxBinTnorm, FRxBinNnorm, TnormSmooth, NnormSmooth, outputIT, binCenters, cfg, cellID, cellname] = makeSaccadeHeatPlot;
+        [FRxBinT, FRxBinN, FRxBinTsmooth, FRxBinNsmooth, FRxBinTnorm, FRxBinNnorm, TnormSmooth, NnormSmooth, outputIT, binCenters, cfg, cellID, cellname] = makeSaccadeHeatPlot([]);
         temporaldata = FRxBinTsmooth;
         nasaldata = FRxBinNsmooth;
         
@@ -46,7 +46,7 @@ for iSess = 1:length(fd)
         % get AHV Tuning Curve
         cfg_AHV = [];
         cfg_AHV.subsample_factor = 10;
-        [AHV_tsd, tc_out] = AHV_tuning(S, cfg_AHV);
+        [AHV_tsd, tc_out] = AHV_tuning(cfg_AHV, S);
         AHV_dt = median(diff(AHV_tsd.tvec));
         
         cfg_Q = [];
@@ -61,6 +61,10 @@ for iSess = 1:length(fd)
         F_idx = nearest_idx3(AHV_tsd.tvec, F.tvec);
         AHV_F = F.data(:,F_idx);
         
+%         if ~isempty(fc) 
+%             spikefiles = FindFiles('*.t'); 
+%             temp = strcmp(spikefiles, fc);
+%             match = find(temp); 
         for iPlot = 1:length(S.t)
             clf
             t = tiledlayout(1,1);
@@ -110,16 +114,15 @@ for iSess = 1:length(fd)
             end
             if doSave == 1
                 baseFileName = S.label{iPlot};
-                fname = fullfile(savedestination, strcat(baseFileName, '.eps'));
+                fname = fullfile(savedestination, strcat(baseFileName, '.fig'));
                 if strcmp(figType, 'matlab') == 1
-                    saveas(gcf, fname)
+                    cd(savedestination)
                     disp('saving')
+                    saveas(gcf, fname)                
                 elseif strcmp(figType, 'eps') ==1
-                    currentfolder = pwd;
                     cd(savedestination)
                     print(gcf, '-depsc', strcat(baseFileName, '.eps'));
                     disp('printing')
-                    cd(pwd);
                 end
             end
         end

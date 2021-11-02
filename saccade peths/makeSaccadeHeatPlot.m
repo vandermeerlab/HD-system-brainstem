@@ -27,10 +27,10 @@ for iSess = 1:length(fd)
         if exist(strcat(SSN, '-VT1_proc.mat'))
             %         [S] = LoadSpikesJeff;
             spikefiles = FindFiles('*.t');
-            [temporalSaccades, nasalSaccades, combinedSaccades, index_tP_final, index_nP_final, tsdH, tsdV, diffH, diffV] = processPupilData2([]);
+            [temporalSaccades, nasalSaccades, combinedSaccades, index_tP_final, index_nP_final, tsdH, tsdV, diffH, diffV] = processPupilData2(cfg);
             for iCell = 1:length(S.t)
                 [a, b, c] = fileparts(spikefiles{iCell});
-                cellID = b;
+                celltitle = b;
                 cellCounterToUse = cellCounterToUse + 1;   % this counts eye tracking neuron. Neurons from sessions that are skipped (above) are not recorded. This total will = total neurons with eye tracking.
                 cellCounterIndex = cellCounterIndex +1;    % this counts every neuron, whether or not it has eye tracking data associated with it.
                 cellID(cellCounterToUse) = cellCounterIndex; % this is the order of the eye tracking neurons, with respect to the total group of neurons.
@@ -41,7 +41,7 @@ for iSess = 1:length(fd)
                 cfg_in.dt = cfg.dt;
                 if doPlot == 1
                     figure(1)
-                    subplot(2,1,1); title(cellID)
+                    subplot(2,1,1); title(celltitle)
                     subplot(2,1,2); title('Temporal Saccades')
                 end
                 [outputS, outputT, outputGau, outputIT, cfg_out] = SpikePETHvdm(cfg_in, myCell, temporalSaccades, 'doPlot', doPlot);
@@ -50,7 +50,7 @@ for iSess = 1:length(fd)
                 FRxBinT(cellCounterToUse,:) = mT/cfg.dt/length(temporalSaccades);
                 if doPlot == 1
                     figure(2)
-                    subplot(2,1,1); title(cellID)
+                    subplot(2,1,1); title(celltitle)
                     subplot(2,1,2); title('Nasal Saccades')
                 end
                 [outputS, outputT, outputGau, outputIT, cfg_out] = SpikePETHvdm(cfg_in, myCell, nasalSaccades, 'doPlot', doPlot);

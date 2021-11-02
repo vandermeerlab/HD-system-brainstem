@@ -17,13 +17,13 @@ for iPlot = 1:numCells
 %     ax1 = axes(t);
     hold on
     ax1 = axes;
-    a = plot(ax1, binCenters, temporaldata(iPlot,:), 'Color', [0    0.4470    0.7410]);
-    b = plot(ax1, binCenters, nasaldata(iPlot,:), 'Color', [0.8500    0.3250    0.0980]);
+    a = plot(binCenters, temporaldata(iPlot,:), 'Color', [0    0.4470    0.7410]);
+    b = plot(binCenters, nasaldata(iPlot,:), 'Color', [0.8500    0.3250    0.0980]);
 %     ax1.XColor = [0.8500    0.3250    0.0980];
 %     ax1.YColor = [0.8500    0.3250    0.0980];
     
     ax2 = axes;
-    c = plot(ax2, TC_all.bins(1,:),smoothdata(TC_all.tc(iPlot,:)), 'Color', [.5 .5 .5]);
+    c = plot(TC_all.bins(1,:),smoothdata(TC_all.tc(iPlot,:)), 'Color', [.5 .5 .5]);
 %     ax2.XAxisLocation = 'top';
 %     ax2.YAxisLocation = 'right';
 %     ax2.Color = 'none';

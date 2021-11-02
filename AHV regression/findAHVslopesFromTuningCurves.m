@@ -27,8 +27,9 @@ for iSess = 1:length(fd)
         xR(:,2) = ones(length(x),1);
         [~,~,~,~,statsAll] = regress(y,xR);
         idx = isnan(y); idx = idx';
-        a = polyfit(x(~idx), y(~idx), 1);
-%         R = corrcoef(x(~idx)',y(~idx)');
+        a = polyfit(x(~idx), y(~idx), 1);        temp1 = corrcoef(x(~idx)',y(~idx)');
+        Rall(cellCounter) = temp1(1,2); 
+
         coeffsAll(cellCounter,1) = a(1); coeffsAll(cellCounter,2) = a(2); 
         rsqAll(cellCounter) = statsAll(1);
         pAll(cellCounter) = statsAll(3);
@@ -37,6 +38,8 @@ for iSess = 1:length(fd)
         posIndex = tc_out.usr.binCenters > 0;
         [~,~,~,~,statsPos] = regress(y(posIndex),xR(posIndex,:));
         b = polyfit(x(posIndex & ~idx), y(posIndex & ~idx), 1);
+        temp2 = corrcoef(x(posIndex & ~idx)',y(posIndex & ~idx)');
+        Rpos(cellCounter) = temp2(1,2); 
         coeffsPos(cellCounter,1) = b(1); coeffsPos(cellCounter,2) = b(2); 
         rsqPos(cellCounter) = statsPos(1);
         pPos(cellCounter) = statsPos(3);
@@ -45,6 +48,8 @@ for iSess = 1:length(fd)
         negIndex = tc_out.usr.binCenters < 0;
         [~,~,~,~,statsNeg] = regress(y(negIndex),xR(negIndex,:));
         c = polyfit(x(negIndex & ~idx), y(negIndex & ~idx), 1);
+        temp3 = corrcoef(x(negIndex & ~idx)',y(negIndex & ~idx)');
+        Rneg(cellCounter) = temp3(1,2); 
         coeffsNeg(cellCounter,1) = c(1); coeffsPos(cellCounter,2) = c(2);
         rsqNeg(cellCounter) = statsNeg(1);
         pNeg(cellCounter) = statsNeg(3);
@@ -107,3 +112,4 @@ X.coeffsPos = coeffsPos; %  slope (1st column) and y-intercept (2nd column) for 
 X.rsqNeg = rsqNeg; % R squared values for linear fit of negative AHV bins
 X.pNeg = pNeg; % p value for linear fit of negative AHV bins
 X.coeffsNeg = coeffsNeg; %  slope (1st column) and y-intercept (2nd column) for negative AHV bins
+X.Rall = Rall; X.Rpos = Rpos; X.Rneg = Rneg; % corrcoef values. Pearsons correlation.  

@@ -17,9 +17,10 @@ function [Y] = processAHVregression_values2(cfg_in, X)
 numCells = length(X. pAll);
 cfg_def.Bonferroni = 0;
 cfg_def.doPlot = 1;
-cfg_out = ProcessConfig2(cfg_def, cfg_in);
+cfg_def.pearson = .5;  % requirement for pearsons correlation to be a certain value. Such as > .5. For no requirement, set to 0. Note use of abs() below. 
+cfg = ProcessConfig2(cfg_def, cfg_in);
 
-if cfg_out.Bonferroni == 0
+if cfg.Bonferroni == 0
     threshold = .05;
 else
     threshold = .05/numCells;
@@ -32,39 +33,46 @@ Y.indexR = X.pPos < threshold;   % RIGHT side of the plot is significant. Could 
 %% Determine which cells are A-SYMMETRIC (and significant)
 
 % Right MESA.        -AHV side is positive slope. Right side is a flat (not sig). 
-RM =  X.bNeg > 0 & X.pNeg < threshold & X.pPos >= threshold; fRM = find(RM); 
+RM =  X.bNeg > 0 & X.pNeg < threshold & X.pPos >= threshold & abs(X.Rneg) >= cfg.pearson; fRM = find(RM); 
 % Left MESA          +AHV side is negative slope. Left side is a flat (not sig). 
-LM = X.bPos < 0 & X.pPos < threshold & X.pNeg >= threshold; fLM = find(LM);
+LM = X.bPos < 0 & X.pPos < threshold & X.pNeg >= threshold & abs(X.Rpos) >= cfg.pearson; fLM = find(LM);
 % Uphill Slope.      +AHV side is psoitive slope. Right side is flat (not sig).  
-US = X.bPos > 0 & X.pPos < threshold & X.pNeg >= threshold;  fUS = find(US);
+US = X.bPos > 0 & X.pPos < threshold & X.pNeg >= threshold & abs(X.Rpos) >= cfg.pearson;  fUS = find(US);
 % Downhill Slope.    -AHV side is negative sleop. Right side is flat (not sig). 
-DS = X.bNeg < 0 & X.pNeg < threshold & X.pPos >= threshold; fDS = find(DS);
+DS = X.bNeg < 0 & X.pNeg < threshold & X.pPos >= threshold & abs(X.Rneg) >= cfg.pearson; fDS = find(DS);
 % Pos Line.          Both halves have positive slope. 
-PL = X.bNeg > 0 & X.bPos > 0 & X.pNeg < threshold & X.pPos < threshold; fPL = find(PL); 
+PL = X.bNeg > 0 & X.bPos > 0 & X.pNeg < threshold & X.pPos < threshold & abs(X.Rall) >= cfg.pearson; fPL = find(PL);  % maybe change this to X.pAll < threshold 
 % Neg Line.          Both halves have negative slope.
-NL = X.bNeg < 0 & X.bPos < 0 & X.pNeg < threshold & X.pPos < threshold; fNL = find(NL);
+NL = X.bNeg < 0 & X.bPos < 0 & X.pNeg < threshold & X.pPos < threshold & abs(X.Rall) >= cfg.pearson; fNL = find(NL);  % maybe change this to X.pAll < threshold 
 %% Determine which cells are SYMMETRUC (and significant) 
 % V - Shape.      
-V = X.bNeg < 0 & X.bPos > 0 & X.pNeg < threshold & X.pPos < threshold; fV = find(V);
+V = X.bNeg < 0 & X.bPos > 0 & X.pNeg < threshold & X.pPos < threshold & abs(X.Rneg) > cfg.pearson & abs(X.Rpos) > cfg.pearson; fV = find(V);
 % Circumflex 
-C = X.bNeg > 0 & X.bPos < 0 & X.pNeg < threshold & X.pPos < threshold; fC = find(C); 
+C = X.bNeg > 0 & X.bPos < 0 & X.pNeg < threshold & X.pPos < threshold & abs(X.Rneg) > cfg.pearson & abs(X.Rpos) > cfg.pearson; fC = find(C); 
 %% Not significant 
-% Flat 
+% Flat. A particular kind of not significant.  
 F = X.pNeg >=   threshold & X.pPos >= threshold;   fF = find(F); 
+% N.S. by process of exclusion. 
+Y.ns =  ~RM & ~LM & ~US & ~DS & ~PL & ~NL & ~V & ~C;   
+Y.S  =  RM | LM | US | DS | PL | NL | V | C;
 
-sumSig = sum(RM) + sum(LM) + sum(US) + sum(DS) + sum(PL) + sum(NL) + sum(V) + sum(C);  percentSig = sumSig/numCells; 
-sumNonSig = sum(F); percentNonSig = sum(F)/numCells; 
+sumSig = sum(RM) + sum(LM) + sum(US) + sum(DS) + sum(PL) + sum(NL) + sum(V) + sum(C);  Y.percentSig = sumSig/numCells; 
+% sumNonSig = sum(F); Y.percentNonSig = sum(F)/numCells; 
+sumNonSig = sum(Y.ns); Y.percentNonSig = sumNonSig/numCells; 
+
+assert(sumSig + sumNonSig == numCells); 
 
 CCW = sum(RM) + sum(US) + sum(PL); 
 CW = sum(LM) + sum(DS) + sum(NL); 
 
-if cfg_out.doPlot ==1
+if cfg.doPlot ==1
     Pall = [sumNonSig CW CCW sum(V) sum(C)];  
     labels = {'Not sig.', 'Asymmetric CW', 'Asymmetric CCW', 'Symmetric, V shape', 'Symmetric, Hat Shape'}; 
     pie(Pall, [1 1 1 1 1])
     lg = legend(labels); 
 end
-Y.RM = RM; Y.LM = LM; Y.US = US; Y.US = DS; Y.US = PL; Y.US = NL; Y.US = V; Y.C = C; Y.F = F;
+Y.RM = RM; Y.LM = LM; Y.US = US; Y.DS = DS; Y.PL = PL; Y.NL = NL; Y.V = V; Y.C = C; Y.F = F;
+Y.fRM = fRM; Y.fLM = fLM; Y.fUS = fUS; Y.fDS = fDS; Y.fPL = fPL; Y.fNL = fNL; Y.fV = fV; Y.fC = fC; Y.fF = fF;
 
 % This list provides the cell IDs for members of each group. 
 Y.tt_RM = X.neuronID(RM); [a, ~, ~] = fileparts(Y.tt_RM); Y.fd_RM = a;

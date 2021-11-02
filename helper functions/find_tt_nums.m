@@ -9,12 +9,16 @@ for iSess = 1:length(fd)
     ind = strfind(b, 'TT');
     for iCell = 1:length(ind);
         cellcounter = cellcounter + 1;
-        tt_place(iCell) = b{iCell}(ind{iCell}+3);
+        if iscell(b)
+            tt_place(cellcounter) = str2num(b{iCell}(ind{iCell}+3));
+        else
+            tt_place(cellcounter) = str2num(b(ind+3));
+        end
     end
     popdir;
 end
 
-arrayfun(@(s) set(s,'EdgeColor','none'), findobj(gcf,'type','surface'))
+
 
 
 
