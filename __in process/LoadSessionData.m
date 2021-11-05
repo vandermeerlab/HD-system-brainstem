@@ -16,15 +16,13 @@ function sd = LoadSessionData(fd, varargin)
 %           sd.wheel -
 %           sd.ExpKeys - structure with the elements loaded from LoadExpKeys. Should include start time [1x1], stop time [1x1], laser ON ts, Laser OFF ts, any manual entries, such as for DARK recording, optokinetic stim.
 %           sd.cfg - contains config parameters that were used to generate the variables above
-
+tic
 Keys = true; %1 = load keys.m, 0 = don't
-AHV = true;
-VT1 = true;  %1 = load VT1, 0 = don't
-VT2 = true;  %1 = load VT2, 0 = don't        % VT2 doesn't exist yet. But it would be a camera above the recording platform with an LED to measure orientation.
-Spikes = true;  %1 = load spikes, 0 = don't
-% HF  = true;  %1 = load *DD.mat, 0 = don't.  .mat file doesn't exist yet.
-Use__Ts = false; % load ._t cells
 Events = true; % load events file
+Spikes = true;  %1 = load spikes, 0 = don't
+Use__Ts = false; % load ._t cells
+AHV = true;
+EYE = true; 
 process_varargin(varargin);
 
 if ~isempty(fd)
@@ -96,36 +94,43 @@ end
 %-------------------------
 if AHV
     cfg = [];
-    cfg.CheckPlot = 0;  % if CheckPlot == 1, will display the orientation plot. 
-    cfg.rangetouse = 360;  % this is the angular range for the platform, a critical value. Should be 360 for all sessions, except two, where it was set lower. *Note: hardcode thse here. 
-    cfg.subsample_factor = 10;
-    [csc_tsd, hd_tsd, samplingrate, dt] = GetOrientationValues(cfg); %#ok<ASGLU>
-    orientationtouse = downsampleOrientationValues(hd_tsd, cfg.subsample_factor);
-    window = 0.1;
-    postsmoothing = .05;
-    tic
-    AHV = dxdt(orientationtouse.tvec, orientationtouse.data, 'window', window, 'postsmoothing', postsmoothing);
-    toc
+    cfg.CheckPlot = 0;  % if CheckPlot == 1, will display the orientation plot.
+    cfg.rangetouse = 360;  % this is the angular range for the platform, a critical value. Should be 360 for all sessions, except two, where it was set lower. *Note: hardcode thse here.
+    [csc_tsd, orientation, samplingrate, dt] = GetOrientationValues(cfg); %#ok<ASGLU>
+    subsample_factor = 10;
+    orientationtousedata = downsample(orientation.data, subsample_factor);
+    orientationtouserange = downsample(orientation.tvec, subsample_factor);
+    
+    window = 0.1; postsmoothing = .05;
+    tic; AHV = dxdt(orientationtouserange, orientationtousedata, 'window', window, 'postsmoothing', postsmoothing); toc;
     AHV = -AHV; % THIS STEP IS NECESSARY BECAUSE dxdt GIVES VALUES THAT ARE CORRECT, BUT WITH A SIGN FLIP.
-    AHV_tsd = tsd(orientationtouse.tvec, AHV);
+    sd.AHV = tsd(orientationtouserange, AHV);
+    CheckPlot = 1;
+    if CheckPlot ==1
+        clf;
+        plot(sd.AHV.tvec, sd.AHV.data);
+        ylabel('AHV (deg/sec)')
+        xlabel('Times (sec)')
+    end
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+%-------------------------
+% EYE MOVEMENTS
+%-------------------------
+if EYE
+    cfg = [];
+    cfg.threshAdj  = 4;
+    cfg.threshH = 10;      % pixel threshold for CW rotation and Nasal Saccades.
+    cfg.threshL = -10;     % pixel threshold for CCW rotation and Temporal Saccades.
+    
+    cfg.scalingfactor = 1;  % for shrinking the pupil trace so its the same height as diffH
+    cfg.artifactThresh = 4;  % units of pixels sq.
+    cfg.doPlotThresholds = 0;  % plot the eye velocity trace with thresholds and identified saccades
+    cfg.doPlotEverything = 0;
+    [sd.temporalSaccades, sd.nasalSaccades, ~, ~, ~, ~, ~, ~, ~] = processPupilData2(cfg);
+end
 
 
 if dirpushed
     popdir;
 end
+toc

@@ -13,7 +13,7 @@ cfg_def.threshL = -10;
 cfg_def.scalingfactor = 1;  % for shrinking the pupil trace so its the same height as diffH
 cfg_def.artifactThresh = 4;  % units of pixels sq.
 cfg_def.doPlotThresholds = 1;
-cfg_def.doPlotEverything = 0;
+cfg_def.doPlotEverything = 1;
 cfg = ProcessConfig(cfg_def,cfg_in);
 
 %% Get timestamps for the pupil trace
@@ -210,7 +210,7 @@ if cfg.doPlotEverything == 1
 end
 
 if cfg.doPlotThresholds == 1
-    clf
+    figure;
     hold on
     plot(diffH.tvec, diffH.data)
     plot(diffV.tvec, diffV.data, 'm')
