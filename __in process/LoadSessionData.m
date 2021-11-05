@@ -18,8 +18,9 @@ function sd = LoadSessionData(fd, varargin)
 %           sd.cfg - contains config parameters that were used to generate the variables above
 
 Keys = true; %1 = load keys.m, 0 = don't
+AHV = true;
 VT1 = true;  %1 = load VT1, 0 = don't
-VT2 = true;  %1 = load VT2, 0 = don't
+VT2 = true;  %1 = load VT2, 0 = don't        % VT2 doesn't exist yet. But it would be a camera above the recording platform with an LED to measure orientation.
 Spikes = true;  %1 = load spikes, 0 = don't
 % HF  = true;  %1 = load *DD.mat, 0 = don't.  .mat file doesn't exist yet.
 Use__Ts = false; % load ._t cells
@@ -52,7 +53,7 @@ end
 % EVENTS
 %-------------------------
 if Events
-    events_fn = fullfile(fd, [SSN '-Events.Nev']);  
+    events_fn = fullfile(fd, [SSN '-Events.Nev']);
     assert(exist(events_fn, 'file')==2, 'Cannot find events file %s.', events_fn);
     events_ts = LoadEvents([]);
     sd.Events = events_ts;
@@ -63,7 +64,7 @@ end
 if Spikes ==1
     cfg = [];
     cfg.uint = '64';
-    if Use__Ts == 1 
+    if Use__Ts == 1
         cfg.fc = cat(1, fc, FindFiles('*._t', 'CheckSubdirs',0));
     else
         cfg.fc = FindFiles('*.t', 'CheckSubdirs', 0);
@@ -72,7 +73,7 @@ if Spikes ==1
     S = LoadSpikes(cfg);
     % New cheetah versions have timestamps that are in Unix Epoch Time
     index = strfind(sd.Events.label, 'Starting Recording');
-    if index{1} == 1                                 % Start Recording should be in the first or second .label position. 
+    if index{1} == 1                                 % Start Recording should be in the first or second .label position.
         for iC = 1:length(S.t)
             S.t{iC} = S.t{iC} - events_ts.t{1}(1);  % subtract the very first time stamp to convert from Unix time to 'start at zero' time.
         end
@@ -90,7 +91,24 @@ if Spikes ==1
     end
     sd.fn = sd.fn';
 end
-
+%-------------------------
+% ANGULAR HEAD VELOCITY
+%-------------------------
+if AHV
+    cfg = [];
+    cfg.CheckPlot = 0;  % if CheckPlot == 1, will display the orientation plot. 
+    cfg.rangetouse = 360;  % this is the angular range for the platform, a critical value. Should be 360 for all sessions, except two, where it was set lower. *Note: hardcode thse here. 
+    cfg.subsample_factor = 10;
+    [csc_tsd, hd_tsd, samplingrate, dt] = GetOrientationValues(cfg); %#ok<ASGLU>
+    orientationtouse = downsampleOrientationValues(hd_tsd, cfg.subsample_factor);
+    window = 0.1;
+    postsmoothing = .05;
+    tic
+    AHV = dxdt(orientationtouse.tvec, orientationtouse.data, 'window', window, 'postsmoothing', postsmoothing);
+    toc
+    AHV = -AHV; % THIS STEP IS NECESSARY BECAUSE dxdt GIVES VALUES THAT ARE CORRECT, BUT WITH A SIGN FLIP.
+    AHV_tsd = tsd(orientationtouse.tvec, AHV);
+end
 
 
 
