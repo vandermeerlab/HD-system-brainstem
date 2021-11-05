@@ -16,11 +16,6 @@ cfg_def.doPlotThresholds = 1;
 cfg_def.doPlotEverything = 0;
 cfg = ProcessConfig(cfg_def,cfg_in);
 
-%% Get AHV trace for later plotting
-[~, orientation, ~, ~] = GetOrientationValues([]);
-[orientationtouse] = downsampleOrientationValues(orientation, 10);
-[AHVtsd] = GetAHV_values(orientationtouse);
-
 %% Get timestamps for the pupil trace
 % [~, videofn, ext] = fileparts(FindFiles('*VT1.nvt'));
 % cfg_video = [];
@@ -30,7 +25,7 @@ cfg = ProcessConfig(cfg_def,cfg_in);
 % pos_tsd = LoadPos(cfg_video);
 % pupiltime = pos_tsd.tvec;   % it apprears that the Nvt file is 2 frames longer than the number of frames from facemap
 events_ts = LoadEvents([]);
-assert(strcmp(events_ts.label{1}, 'Starting Recording'))=1;
+assert(strcmp(events_ts.label{1}, 'Starting Recording')==1);
 starttime = events_ts.t{1}(1);
 
 % [~, videofn, ext] = fileparts(FindFiles('*VT1.smi'));
@@ -46,7 +41,7 @@ starttime = events_ts.t{1}(1);
 % pupiltime_raw = D*10^-6;    % convert from microseconds to seconds
 % pupiltime = pupiltime_raw - starttime;
 
-[a, b, c] = fileparts(FindFile('*VT1.smi')); 
+[~, b, c] = fileparts(FindFile('*VT1.smi')); 
 fn = strcat(b,c);
 tvec_raw = read_smi(fn);
 tvec = tvec_raw - starttime;
@@ -116,7 +111,7 @@ adjacent_tP = diff_tP ==1;       % which values of index_tP are adjacent (one ti
 new_adj_tP = adjacent_tP;
 indices = find(adjacent_tP);
 for iAdj = indices(1:end)
-    [r, c] = max(sac_amps_tP(iAdj-1: iAdj));
+    [~, c] = max(sac_amps_tP(iAdj-1: iAdj));
     if c ==1
         new_adj_tP(iAdj-1) = 0;
         new_adj_tP(iAdj) = 1;
@@ -140,7 +135,7 @@ adjacent_nP = diff_nP ==1;       % which values of index_tP are adjacent (one ti
 new_adj_nP = adjacent_nP;
 indices = find(adjacent_nP);
 for iAdj = indices(1:end)
-    [r, c] = min(sac_amps_nP(iAdj-1: iAdj));
+    [~, c] = min(sac_amps_nP(iAdj-1: iAdj));
     if c ==1
         new_adj_nP(iAdj-1) = 0;    % ignore the first, keep the second
         new_adj_nP(iAdj) = 1;
@@ -164,7 +159,7 @@ oppPeaksdata = diffH.data(sortedB);            % pupil positions for the sorted 
 new_oppPeaks = oppPeaks;
 idx = find(oppPeaks);
 for iAdj = idx(1:end)
-    [r, c] = min(abs(oppPeaksdata(iAdj-1: iAdj)));
+    [~, c] = min(abs(oppPeaksdata(iAdj-1: iAdj)));
     if c ==1
         new_oppPeaks(iAdj-1) = 1;
         new_oppPeaks(iAdj) = 0;
