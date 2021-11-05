@@ -1,4 +1,4 @@
-function [csc_tsd, orientation, samplingrate, dt] = GetOrientationValues(cfg, varargin)
+function [csc_tsd, orientation, samplingrate, dt] = GetOrientationValues(cfg_in)
 %2019-12-20. JJS.
 %   Pulls out the raw trace from the encoder and converts the signal into orientation in degrees.
 %   Current configuration of the arduino is for it to process 180 deg rotation total (90 deg clockwise, 90 deg counterclockwise).
@@ -18,10 +18,10 @@ function [csc_tsd, orientation, samplingrate, dt] = GetOrientationValues(cfg, va
 
 %2020-03-04.  Updated to be compatible with Mvdm lab codeset.
 
-rangetouse = 360;  % this was previously set to 180, which is incorrect. The full range of the platform is 180 degrees in either direction, which is 360 degrees total.
-CheckPlot = 0;
+cfg_def.rangetouse = 360;  % this was previously set to 180, which is incorrect. The full range of the platform is 180 degrees in either direction, which is 360 degrees total.
+cfg_def.CheckPlot = 0;
 
-dateswitch = datetime('2020-10-06');               % On this date I swtiched from using CSC21 to CSC33 for the platform encoder. 
+dateswitch = datetime('2020-10-06');               % On this date I swtiched from using CSC21 to CSC33 for the platform encoder.
 SSN = HD_GetSSN;
 sessiondate = SSN(6:15);
 sessiondate = datetime(sessiondate);
@@ -32,15 +32,12 @@ else
     CSCtoUse = 33;
 end
 
-extract_varargin;
+cfg = ProcessConfig2(cfg_def, cfg_in);
 
-if isempty(cfg) == 1
-    cfg = [];
-    cfg.fc = {FindFile(strcat('*CSC', num2str(CSCtoUse), '.ncs'))};
-    cfg.VoltageConvFactor = 10^6;
-end
-
-csc_tsd = LoadCSC(cfg);
+cfg_csc = [];
+cfg_csc.fc = {FindFile(strcat('*CSC', num2str(CSCtoUse), '.ncs'))};
+cfg_csc.VoltageConvFactor = 10^6;
+csc_tsd = LoadCSC(cfg_csc);
 csc_tsd.tvec = csc_tsd.tvec - csc_tsd.tvec(1); % MvdM: this probably shouldn't happen here because you need to know this information when loading spikes.
 
 baseline = csc_tsd.data(1);               % It is critical that the rig is oriented in the same position from day to day when the arduino is turned on.
@@ -53,21 +50,22 @@ Lrange = abs(maxL-baseline);
 rangediff = Lrange/Rrange;
 
 Fullrange = abs(maxL - maxR);           % ***Figure out what this value is and make sure it is the same from session to session. Add a warning.
-disp(strcat('Fullrange = ', num2str(Fullrange)))
-disp(strcat('Lrange = ', num2str(Lrange)))
-disp(strcat('Rrange = ', num2str(Rrange)))
-sprintf('Percentage difference equals: %d', rangediff)
+format bank
+disp(strcat('Fullrange = ', num2str(Fullrange)));
+disp(strcat('Lrange = ', num2str(Lrange)));
+disp(strcat('Rrange = ', num2str(Rrange)));
+disp(strcat('Percentage difference equals__ ', num2str(100*(1-rangediff)), '%'));
 
 if Rrange ~= Lrange; warning('Left and Right ranges do not coincide.'); end
 
 subtractedvoltage = tsd(csc_tsd.tvec, csc_tsd.data - baseline);
-divisionconstant = Fullrange/rangetouse;  % this is the constant value to normalize by to get a max of 180 degrees rotation in either direction.
+divisionconstant = Fullrange/cfg.rangetouse;  % this is the constant value to normalize by to get a max of 180 degrees rotation in either direction.
 orientation = tsd(csc_tsd.tvec, subtractedvoltage.data./divisionconstant);
 orientation.data = -orientation.data;  % THIS STEP IS CRITICAL. CW turns are defined as negative changes in angle (as with the unit circle). We need a sign change of the voltage values to make the raw voltage correspond to head direction (i.e. 'orientation').
 dt = median(diff(orientation.tvec));
 samplingrate = 1/dt;
 
-if CheckPlot == 1;
+if cfg.CheckPlot == 1
     figure
     subplot(2,1,1);
     plot(csc_tsd.tvec, csc_tsd.data);
