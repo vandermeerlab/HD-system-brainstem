@@ -119,7 +119,7 @@ end
 if EYE
     cfg = [];
     cfg.threshAdj  = 4;
-    cfg.threshH = 10;      % pixel threshold for CW rotation and Nasal Saccades.
+    cfg.threshH = 10;      % pixel threshold for CW rotation and Nasal Saccades. CHECK THIS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     cfg.threshL = -10;     % pixel threshold for CCW rotation and Temporal Saccades.
     
     cfg.scalingfactor = 1;  % for shrinking the pupil trace so its the same height as diffH
