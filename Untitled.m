@@ -18,6 +18,12 @@ arrayfun(@(s) set(s,'EdgeColor','none'), findobj(gcf,'type','surface'))
 
 
 
-
+fd = FindFiles('*keys.m');
+for iSess = 1:length(fd)
+    pushdir(fileparts(fd{iSess}))
+    SSN = HD_GetSSN; disp(SSN);
+    [temporalSaccades(iSess), nasalSaccades(iSess), combinedSaccades(iSess), index_tP_final, index_nP_final, tsdH, tsdV, diffH, diffV] = processPupilData2([]);
+    popdir;
+end
 
 
