@@ -30,7 +30,7 @@ cfg = ProcessConfig(cfg_def,cfg_in);
 index = strfind(sd.Events.label, 'Starting Recording');
 if index{1} == 1                                 % Start Recording should be in the first or second .label position.
     starttime = sd.Events.t{1}(1);  % subtract the very first time stamp to convert from Unix time to 'start at zero' time.
-elseif index{2} == 2
+elseif index{2} == 1
     starttime = sd.Events.t{2}(1);
 else
     error('could not find start time for this session') 
@@ -214,7 +214,7 @@ if cfg.doPlotEverything == 1
     xlabel('Time (sec)')
     
     %     linkaxes([ax ay], 'xy')
-    linkaxes([ax ay az], 'xy')
+    linkaxes([ax ay], 'xy')
 end
 
 if cfg.doPlotThresholds == 1
