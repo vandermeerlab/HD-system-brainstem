@@ -1,8 +1,8 @@
-function [temporalSaccades, nasalSaccades, combinedSaccades, index_tP_final, index_nP_final, tsdH, tsdV, diffH, diffV] = processPupilData2(cfg_in, varargin)
+function [temporalSaccades, nasalSaccades, combinedSaccades, index_tP_final, index_nP_final, tsdH, tsdV, diffH, diffV] = processPupilData2(cfg_in, sd, varargin)
 % JJS. 2021-03-13.
 % Remove jitter first then thresholds.
 % This is the in progress version.
- 
+
 SSN = HD_GetSSN;
 FontSize = 20;
 cfg_def = [];
@@ -24,9 +24,17 @@ cfg = ProcessConfig(cfg_def,cfg_in);
 %
 % pos_tsd = LoadPos(cfg_video);
 % pupiltime = pos_tsd.tvec;   % it apprears that the Nvt file is 2 frames longer than the number of frames from facemap
-events_ts = LoadEvents([]);
-assert(strcmp(events_ts.label{1}, 'Starting Recording')==1);
-starttime = events_ts.t{1}(1);
+% events_ts = LoadEvents([]);
+% sd = LoadSessionData([], 'EYE', false);
+% assert(strcmp(events_ts.label{1}, 'Starting Recording')==1);
+index = strfind(sd.Events.label, 'Starting Recording');
+if index{1} == 1                                 % Start Recording should be in the first or second .label position.
+    starttime = sd.Events.t{1}(1);  % subtract the very first time stamp to convert from Unix time to 'start at zero' time.
+elseif index{2} == 2
+    starttime = sd.Events.t{2}(1);
+else
+    error('could not find start time for this session') 
+end
 
 % [~, videofn, ext] = fileparts(FindFiles('*VT1.smi'));
 % filename = strcat(videofn, ext);
@@ -41,7 +49,7 @@ starttime = events_ts.t{1}(1);
 % pupiltime_raw = D*10^-6;    % convert from microseconds to seconds
 % pupiltime = pupiltime_raw - starttime;
 
-[~, b, c] = fileparts(FindFile('*VT1.smi')); 
+[~, b, c] = fileparts(FindFile('*VT1.smi'));
 fn = strcat(b,c);
 tvec_raw = read_smi(fn);
 tvec = tvec_raw - starttime;
