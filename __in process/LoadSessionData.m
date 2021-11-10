@@ -17,6 +17,7 @@ function sd = LoadSessionData(fd, varargin)
 %           sd.ExpKeys - structure with the elements loaded from LoadExpKeys. Should include start time [1x1], stop time [1x1], laser ON ts, Laser OFF ts, any manual entries, such as for DARK recording, optokinetic stim.
 %           sd.cfg - contains config parameters that were used to generate the variables above
 tic
+CheckOrientation = 0; 
 CheckAHV = 0;
 Keys = true; %1 = load keys.m, 0 = don't
 Events = true; % load events file
@@ -42,7 +43,9 @@ sd.SSN = SSN;
 % -----------------------
 if Keys ==1
     keysfn = [strrep(SSN, '-', '_') '_keys'];
-    assert(exist(keysfn, 'file')==2, 'Cannot find keys file %s.', keysfn);
+    if exist(keysfn, 'file')~= 2
+        warning('Cannot find keys file %s.', keysfn);
+    end
     events_ts = LoadEvents([]);
     sd.ExpKeys = events_ts;
     sd.ExpKeys.SSN = SSN;
@@ -53,7 +56,9 @@ end
 %-------------------------
 if Events
     events_fn = fullfile(fd, [SSN '-Events.Nev']);
-    assert(exist(events_fn, 'file')==2, 'Cannot find events file %s.', events_fn);
+    if exist(events_fn, 'file') ~= 2 
+        warning('Cannot find events file %s.', events_fn);
+    end
     events_ts = LoadEvents([]);
     sd.Events = events_ts;
 end
@@ -102,15 +107,21 @@ if AHV
     orientationtousedata = downsample(orientation.data, subsample_factor);
     orientationtouserange = downsample(orientation.tvec, subsample_factor);
     
+    if CheckOrientation ==1
+        figure; 
+        plot(orientationtouserange, orientationtousedata);
+        xlabel('Time (sec)')
+        ylabel('Heading Direction (deg)')
+    end
     window = 0.1; postsmoothing = .05;
     tic; AHV = dxdt(orientationtouserange, orientationtousedata, 'window', window, 'postsmoothing', postsmoothing); toc;
     AHV = -AHV; % THIS STEP IS NECESSARY BECAUSE dxdt GIVES VALUES THAT ARE CORRECT, BUT WITH A SIGN FLIP.
     sd.AHV = tsd(orientationtouserange, AHV);
     if CheckAHV ==1
-        clf;
+        figure;
         plot(sd.AHV.tvec, sd.AHV.data);
         ylabel('AHV (deg/sec)')
-        xlabel('Times (sec)')
+        xlabel('Time (sec)')
     end
 end
 %-------------------------
