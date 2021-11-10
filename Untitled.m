@@ -13,16 +13,20 @@ for iSess = 1:length(fd)
     end
     popdir;
 end
-
 arrayfun(@(s) set(s,'EdgeColor','none'), findobj(gcf,'type','surface'))
 
 
-
 fd = FindFiles('*keys.m');
+temporalSaccades = nan(1,length(fd));
+nasalSaccades = nan(1,length(fd));
 for iSess = 1:length(fd)
     pushdir(fileparts(fd{iSess}))
     SSN = HD_GetSSN; disp(SSN);
+    if exist(strcat(SSN, '-VT1.nvt')) == 2;
     [temporalSaccades(iSess), nasalSaccades(iSess), combinedSaccades(iSess), index_tP_final, index_nP_final, tsdH, tsdV, diffH, diffV] = processPupilData2([]);
+    else
+        disp('skipping')
+    end
     popdir;
 end
 

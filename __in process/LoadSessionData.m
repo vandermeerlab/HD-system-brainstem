@@ -11,12 +11,13 @@ function sd = LoadSessionData(fd, varargin)
 %  Outputs:
 %           sd.S - the init structure with all initialized variables
 %           sd.AHV - tsd with AHV values (deg./sec) by time.
-%           sd.temporal - temporal saccade times
+%           sd.temporal - temporal saccadegit a times
 %           sd.nasal - nasal saccade times
 %           sd.wheel -
 %           sd.ExpKeys - structure with the elements loaded from LoadExpKeys. Should include start time [1x1], stop time [1x1], laser ON ts, Laser OFF ts, any manual entries, such as for DARK recording, optokinetic stim.
 %           sd.cfg - contains config parameters that were used to generate the variables above
 tic
+CheckAHV = 0;
 Keys = true; %1 = load keys.m, 0 = don't
 Events = true; % load events file
 Spikes = true;  %1 = load spikes, 0 = don't
@@ -105,8 +106,7 @@ if AHV
     tic; AHV = dxdt(orientationtouserange, orientationtousedata, 'window', window, 'postsmoothing', postsmoothing); toc;
     AHV = -AHV; % THIS STEP IS NECESSARY BECAUSE dxdt GIVES VALUES THAT ARE CORRECT, BUT WITH A SIGN FLIP.
     sd.AHV = tsd(orientationtouserange, AHV);
-    CheckPlot = 1;
-    if CheckPlot ==1
+    if CheckAHV ==1
         clf;
         plot(sd.AHV.tvec, sd.AHV.data);
         ylabel('AHV (deg/sec)')
