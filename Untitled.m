@@ -22,6 +22,7 @@ nasalSaccades = nan(1,length(fd));
 for iSess = 1:length(fd)
     pushdir(fileparts(fd{iSess}))
     SSN = HD_GetSSN; disp(SSN);
+    sd = LoadSessionData([], 'EYE', false);
     if exist(strcat(SSN, '-VT1.nvt')) == 2;
     [temporalSaccades(iSess), nasalSaccades(iSess), combinedSaccades(iSess), index_tP_final, index_nP_final, tsdH, tsdV, diffH, diffV] = processPupilData2([]);
     else
