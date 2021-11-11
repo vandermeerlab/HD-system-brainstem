@@ -135,9 +135,9 @@ if EYE
     
     cfg.scalingfactor = 1;  % for shrinking the pupil trace so its the same height as diffH
     cfg.artifactThresh = 4;  % units of pixels sq.
-    cfg.doPlotThresholds = 0;  % plot the eye velocity trace with thresholds and identified saccades
-    cfg.doPlotEverything = 0;
-    [sd.temporalSaccades, sd.nasalSaccades, ~, ~, ~, ~, ~, ~, ~] = processPupilData2(cfg);
+    cfg.doPlotThresholds = 1;  % plot the eye velocity trace with thresholds and identified saccades
+    cfg.doPlotEverything = 1;
+    [sd.temporalSaccades, sd.nasalSaccades, ~, ~, ~, ~, ~, ~, ~] = processPupilData2(cfg, sd);
 end
 
 
