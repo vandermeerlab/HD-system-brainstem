@@ -173,7 +173,9 @@ nP_wnan = B(nPsize);
 index_nP_final = nP_wnan(~isnan(nP_wnan));
 
 temporalSaccades = diffH.tvec(index_tP_final);
+temporalAmplitudes = diffH.datat(index_tP_final); 
 nasalSaccades = diffH.tvec(index_nP_final);
+nasalAmplitudes = diffH.data(index_nP_final); 
 combinedSaccades = sort(horzcat(temporalSaccades, nasalSaccades));
 
 disp(strcat('Num opposite peaks = ', num2str(sum(oppPeaks))));

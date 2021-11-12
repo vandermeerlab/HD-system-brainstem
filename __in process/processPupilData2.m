@@ -1,4 +1,4 @@
-function [temporalSaccades, nasalSaccades, combinedSaccades, index_tP_final, index_nP_final, tsdH, tsdV, diffH, diffV] = processPupilData2(cfg_in, varargin)
+function [temporalSaccades, nasalSaccades, combinedSaccades, index_tP_final, index_nP_final, tsdH, tsdV, diffH, diffV, temporalAmplitudes, nasalAmplitudes] = processPupilData2(cfg_in, varargin)
 % JJS. 2021-03-13.
 % Remove jitter first then thresholds.
 % This is the in progress version.
@@ -201,7 +201,9 @@ nP_wnan = B(nPsize);
 index_nP_final = nP_wnan(~isnan(nP_wnan));
 
 temporalSaccades = diffH.tvec(index_tP_final);
+temporalAmplitudes = diffH.datat(index_tP_final); 
 nasalSaccades = diffH.tvec(index_nP_final);
+nasalAmplitudes = diffH.data(index_nP_final); 
 combinedSaccades = sort(horzcat(temporalSaccades, nasalSaccades));
 
 disp(strcat('Num opposite peaks = ', num2str(sum(oppPeaks))));
