@@ -1,7 +1,7 @@
-function [temporalSaccades, nasalSaccades, combinedSaccades, index_tP_final, index_nP_final, tsdH, tsdV, diffH, diffV] = processPupilData2(cfg_in, varargin)
-% JJS. 2021-03-13.
-% Remove jitter first then thresholds.
-% This is the in progress version.
+function [temporalSaccades, nasalSaccades, combinedSaccades, tsdH, tsdV, diffH, diffV, XT, YT, XN, YN, cfg] = detectSaccadesManualCheck(cfg_in)
+% 2021-11. JJS.
+% This function calculates saccades times from the eye position trace, similar to processPupilData2.m. Here, the threshold to use is manually adjusted,
+%      and the trace is scrolled through to check/add/remove indivudal saccades that automatic method may have missed.
 
 % INPUTS: 
 %           cfg_in: define variables such as the number of pixels 
@@ -9,12 +9,13 @@ function [temporalSaccades, nasalSaccades, combinedSaccades, index_tP_final, ind
 %           temporalSaccades:   timestamps for temporal saccades
 %           nasalSaccades:      timestamps for nasal saccades
 %           combinedSaccades:   both timestamps combined, sorted
-%           index_tP_final:     indices for temporal saccades, in terms of the pupil position CSC
-%           index_nP_final:     indices for nasal saccades, in terms of the pupil position CSC
 %           tsdH:               tsd of horizontal pupil position
 %           tsdV:               tsd of vertical pupil position
 %           diffH:              tsd of horizontal pupil velocity  (*figure out units here) 
 %           diffV:              tsd of vertical pupil velocity 
+%           XT, YT:             x and y values for manually added TEMPORAL saccades 
+%           XN, YN:             x and y values for manually added NASAL saccades 
+%           cfg:                record of parameters used for analysis, like thresholds 
 
 SSN = HD_GetSSN;
 FontSize = 20;
@@ -24,10 +25,10 @@ cfg_def.threshT = 10;  % positive displacement in image pixel space. TEMPORAL sa
 cfg_def.threshN = -10; % negative displacement in image pixel space. NASAL saccades.
 
 cfg_def.scalingfactor = 1;  % for shrinking the pupil trace so its the same height as diffH
-cfg_def.artifactThresh = 4;  % units of pixels 
+cfg_def.artifactThresh = 4;  % units of pixels
 cfg_def.doPlotThresholds = 1;
 cfg_def.doPlotEverything = 1;
-cfg = ProcessConfig2(cfg_def,cfg_in);  % not sure if there is a function difference btwn ver2 and ver1 
+cfg = ProcessConfig2(cfg_def,cfg_in);  % not sure if there is a function difference btwn ver2 and ver1
 
 %% Get timestamps for the pupil trace
 % [~, videofn, ext] = fileparts(FindFiles('*VT1.nvt'));
@@ -37,31 +38,17 @@ cfg = ProcessConfig2(cfg_def,cfg_in);  % not sure if there is a function differe
 %
 % pos_tsd = LoadPos(cfg_video);
 % pupiltime = pos_tsd.tvec;   % it apprears that the Nvt file is 2 frames longer than the number of frames from facemap
+%% Load Events and get the session start time
 events_ts = LoadEvents([]);
-% sd = LoadSessionData([], 'EYE', false);
-% assert(strcmp(events_ts.label{1}, 'Starting Recording')==1);
 index = strfind(events_ts.label, 'Starting Recording');
 if index{1} == 1                                 % Start Recording should be in the first or second .label position.
     starttime = events_ts.t{1}(1);  % subtract the very first time stamp to convert from Unix time to 'start at zero' time.
 elseif index{2} == 1
-    starttime = events_ts.t{2}(1); % for session with laser events, the start recording time moves to position 2. 
+    starttime = events_ts.t{2}(1); % for session with laser events, the start recording time moves to position 2.
 else
-    error('could not find start time for this session') 
+    error('could not find start time for this session')
 end
-
-% [~, videofn, ext] = fileparts(FindFiles('*VT1.smi'));
-% filename = strcat(videofn, ext);
-% A = readtable(filename, 'FileType', 'text');   % grab the data from the .smi file, which contains the .mp4 timestamps
-% B = table2array(A(:,6));                       %
-% C = regexp(B,'[\d*\.]*\d*','match');
-% D = [];
-% for iCell = 1:length(C)
-%     D(iCell,1) = str2double(cell2mat(C{iCell}));
-% end
-% E = D(1:end - 2);  % the last two values from the table are empty (not data) and turn into NANs. Discard those entries.
-% pupiltime_raw = D*10^-6;    % convert from microseconds to seconds
-% pupiltime = pupiltime_raw - starttime;
-
+%% Get timestamps from the .smi file
 [~, b, c] = fileparts(FindFile('*VT1.smi'));
 fn = strcat(b,c);
 tvec_raw = read_smi(fn);
@@ -81,26 +68,11 @@ tsdH = tsd(tvec, pupilH - meanH);   % tsd of horizontal pupil position
 tsdV = tsd(tvec, pupilV - meanV);   % tsd of vertical pupil position
 
 diffH = tsd(tvec(2:end)', diff(tsdH.data)');     % Should this be (1:end-1) or (2:end)?
-diffV = tsd(tvec(2:end)', diff(tsdV.data)');     % tsd of vertical pupil velocity 
+diffV = tsd(tvec(2:end)', diff(tsdV.data)');     % tsd of vertical pupil velocity
+diffH.cfg.hdr{1}.Fs = 1 / median(diff(diffH.tvec));   % append the sampling rate
 
 tstart = diffH.tvec(1);
 tend = diffH.tvec(end);
-%% Filtering
-% The horizontal trace
-cfg_filter = [];
-cfg_filter.type = 'butter';
-cfg_filter.band = 'highpass';
-cfg_filter.f = 1;
-diffH.cfg.hdr{1}.Fs = 1 / median(diff(diffH.tvec));   % append the sampling rate
-filteredH = FilterLFP(cfg_filter, diffH);
-
-% The vertical trace
-cfg_filter = [];
-cfg_filter.type = 'butter';
-cfg_filter.band = 'highpass';
-cfg_filter.f = 1;
-diffV.cfg.hdr{1}.Fs = 1 / median(diff(diffV.tvec));   % append the sampling rate
-filteredV = FilterLFP(cfg_filter, diffV);
 
 %% Remove Artifacts from Camera Movement (vertical displacement)
 % There shouldn't be much displacement in the vertical direction. Visual inspection showed that times with high power btwn 10-14 Hz were indicative of camera jitter that were not in fact saccades.
@@ -118,7 +90,7 @@ filtered1 = Filter0(MyFilt,eeg1); %filters eeg1 between low_freq and high_freq
 filt_hilb1 = hilbert(filtered1); %calculates the Hilbert transform of eeg1
 amp1 = abs(filt_hilb1);%calculates the instantaneous amplitude of eeg1 filtered between low_freq and high_freq
 amp1=amp1-mean(amp1); %removes mean of the signal because the DC component of a signal does not change the correlation
-artifactIndex = amp1 > cfg.artifactThresh;  % find timepoints where power is high (suspect times for movement artifact) 
+artifactIndex = amp1 > cfg.artifactThresh;  % find timepoints where power is high (suspect times for movement artifact)
 suspectPoints = find(artifactIndex);
 
 %% Thresholding the TEMPORAL saccades (positive AHV segments)
@@ -209,43 +181,78 @@ disp(strcat('Adjacent opposite points removed  = ', num2str(length(indexes))));
 disp(strcat('Num temporal saccades = ', num2str(length(index_tP_final))));
 disp(strcat('Num nasal saccades = ', num2str(length(index_nP_final))));
 disp(strcat('Total num saccades = ', num2str(length(index_nP_final)+length(index_tP_final))));
-%% Plot the data in a subplot
-if cfg.doPlotEverything == 1
-    figure
-    ax = subplot(3,1,1);
-    plot(tsdH.tvec, tsdH.data./cfg.scalingfactor)
-    ylabel('pupil pos.')
-    title(SSN)
-    
-    ay = subplot(3,1,2);
-    plot(diffH.tvec, diffH.data)
-    ylabel('diff pupil pos')
-    
-    az = subplot(3,1,3);
-    plot(filteredH.tvec, filteredH.data)
-    ylabel('filtered diff pupil pos')
-    xlabel('Time (sec)')
-    
-    %     linkaxes([ax ay], 'xy')
-    linkaxes([ax ay], 'xy')
+
+%% Plot the data and manually inspect
+clf;
+hold on
+plot(diffH.tvec, diffH.data)
+plot(diffV.tvec, diffV.data, 'm')
+hold on
+xlabel('Time (sec)', 'FontSize', FontSize)
+ylabel('diff pupil pos', 'FontSize', FontSize)
+title(SSN)
+line([tstart tend], [cfg.threshT cfg.threshT], 'Color', 'k')
+line([tstart tend], [cfg.threshN cfg.threshN], 'Color', 'k')
+plot(diffH.tvec(index_tP_final), diffH.data(index_tP_final), 'r.', 'MarkerSize', 25)
+plot(diffH.tvec(index_nP_final), diffH.data(index_nP_final), 'g.', 'MarkerSize', 25)
+set(gca, 'FontSize', FontSize)
+
+disp('find extra TEMPORAL saccades') 
+count = 0;
+XT= [];
+YT = [];
+while(1)
+    fprintf(1, '\n');
+    m = input('Do you want to continue, y/n?','s');
+    if m == 'n'
+        break
+    end
+    count = count + 1;
+    fprintf(1, '\n');
+    disp('Zoom into region of interest. Press return to continue')
+    zoom on; 
+    pause() % you can zoom with your mouse and when your image is okay, you press any key
+    zoom off; % to escape the zoom mode
+    fprintf(1, '\n');
+    disp('Select point(s) for missing TEMPORAL saccade. Press return when finished.') 
+    [x,y] =ginput;
+    plot(x, y, 'k.', 'MarkerSize', 25)
+    XT(end+1:end+length(x)) = x; 
+    YT(end+1:end+length(y)) = y; 
+    disp('point selected')
+    clear m 
 end
 
-if cfg.doPlotThresholds == 1
-    figure;
-    hold on
-    plot(diffH.tvec, diffH.data)
-    plot(diffV.tvec, diffV.data, 'm')
-    hold on
-    xlabel('Time (sec)', 'FontSize', FontSize)
-    ylabel('diff pupil pos', 'FontSize', FontSize)
-    title(SSN)
-    line([tstart tend], [cfg.threshT cfg.threshT], 'Color', 'k')
-    line([tstart tend], [cfg.threshN cfg.threshN], 'Color', 'k')
-    plot(diffH.tvec(index_tP_final), diffH.data(index_tP_final), 'r.', 'MarkerSize', 25)
-    plot(diffH.tvec(index_nP_final), diffH.data(index_nP_final), 'g.', 'MarkerSize', 25)
-    set(gca, 'FontSize', FontSize)
-    
+disp('find extra NASAL saccades') 
+count = 0;
+XN= [];
+YN = [];
+while(1)
+    fprintf(1, '\n');
+    m = input('Do you want to continue, y/n?','s');
+    if m == 'n'
+        break
+    end
+    count = count + 1;
+    fprintf(1, '\n');
+    disp('Zoom into region of interest. Press return to continue')
+    zoom on; 
+    pause() % you can zoom with your mouse and when your image is okay, you press any key
+    zoom off; % to escape the zoom mode
+    fprintf(1, '\n');
+    disp('Select point(s) for missing TEMPORAL saccade. Press return when finished.') 
+    [x,y] =ginput;
+    plot(x, y, 'k.', 'MarkerSize', 25)
+    XN(end+1:end+length(x)) = x; 
+    YN(end+1:end+length(y)) = y; 
+    disp('point selected')
+    clear m 
 end
+
+temporalSaccades = sort(cat(1, temporalSaccades, XT)); 
+nasalSaccades = sort(cat(1, nasalSaccades, XN)); 
+combinedSaccades = sort(cat(1, temporalSaccades, nasalSaccades)); 
+
 
 
 
