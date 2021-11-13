@@ -19,6 +19,7 @@ function [temporalSaccades, nasalSaccades, combinedSaccades, index_tP_final, ind
 SSN = HD_GetSSN;
 FontSize = 20;
 cfg_def = [];
+cfg_def.LineWidth = 3; 
 cfg_def.threshAdj  = 4;  % how many timesteps around a saccade that are disqualified from being considered as subsequent saccades. Saccades usually have a rebound that can hit the other threshold.
 cfg_def.threshT = 10;  % positive displacement in image pixel space. TEMPORAL saccades.
 cfg_def.threshN = -10; % negative displacement in image pixel space. NASAL saccades.
@@ -26,7 +27,6 @@ cfg_def.threshN = -10; % negative displacement in image pixel space. NASAL sacca
 cfg_def.scalingfactor = 1;  % for shrinking the pupil trace so its the same height as diffH
 cfg_def.artifactThresh = 4;  % units of pixels 
 cfg_def.doPlotThresholds = 1;
-cfg_def.doPlotEverything = 1;
 cfg = ProcessConfig2(cfg_def,cfg_in);  % not sure if there is a function difference btwn ver2 and ver1 
 
 %% Get timestamps for the pupil trace
@@ -85,46 +85,63 @@ diffV = tsd(tvec(2:end)', diff(tsdV.data)');     % tsd of vertical pupil velocit
 
 tstart = diffH.tvec(1);
 tend = diffH.tvec(end);
-%% Filtering
-% The horizontal trace
-cfg_filter = [];
-cfg_filter.type = 'butter';
-cfg_filter.band = 'highpass';
-cfg_filter.f = 1;
-diffH.cfg.hdr{1}.Fs = 1 / median(diff(diffH.tvec));   % append the sampling rate
-filteredH = FilterLFP(cfg_filter, diffH);
 
-% The vertical trace
-cfg_filter = [];
-cfg_filter.type = 'butter';
-cfg_filter.band = 'highpass';
-cfg_filter.f = 1;
-diffV.cfg.hdr{1}.Fs = 1 / median(diff(diffV.tvec));   % append the sampling rate
-filteredV = FilterLFP(cfg_filter, diffV);
-
-%% Remove Artifacts from Camera Movement (vertical displacement)
+%% Remove Artifacts from Camera Movement 
+% VERTICAL eye velocity 
 % There shouldn't be much displacement in the vertical direction. Visual inspection showed that times with high power btwn 10-14 Hz were indicative of camera jitter that were not in fact saccades.
 cfg.low_freq = 10;
-cfg.high_freq = 14;
+cfg.high_freq = 15;
 eeg1= diffV.data;
-samp_freq = diffH.cfg.hdr{1}.Fs;
+samp_freq =  1 / median(diff(diffV.tvec));
 order = round(samp_freq); %determines the order of the filter used
 if mod(order,2)~= 0
     order = order-1;
 end
 Nyquist=floor(samp_freq/2);%determines nyquist frequency
 MyFilt=fir1(order,[cfg.low_freq cfg.high_freq]/Nyquist); %creates filter
-filtered1 = Filter0(MyFilt,eeg1); %filters eeg1 between low_freq and high_freq
-filt_hilb1 = hilbert(filtered1); %calculates the Hilbert transform of eeg1
+filtered1 = Filter0(MyFilt,eeg1); %filters eeg1 between low_freq and high_freq 
+%% This is an addition on 2021/11/12. hilbert.m gives all NaN values if thery are ANY NaNs in the input.  
+F = fillmissing(filtered1,'constant', 0); 
+filt_hilb1 = hilbert(F); %calculates the Hilbert transform of eeg1. Note *** Hilbert transform cannot accept NaNs. Use interp to fill these in. 
 amp1 = abs(filt_hilb1);%calculates the instantaneous amplitude of eeg1 filtered between low_freq and high_freq
 amp1=amp1-mean(amp1); %removes mean of the signal because the DC component of a signal does not change the correlation
+amp1tsd  = tsd(diffV.tvec, amp1); 
 artifactIndex = amp1 > cfg.artifactThresh;  % find timepoints where power is high (suspect times for movement artifact) 
 suspectPoints = find(artifactIndex);
+formatSpec = 'number of VERTICAL points with suspect filtered power is is %4.0d points'; 
+fprintf(formatSpec, length(suspectPoints)); 
+
+%% Remove Artifacts from Camera Movement 
+% HORIZONTAL eye velocity 
+cfg.low_freq = 10;
+cfg.high_freq = 15;
+eeg2= diffH.data;
+samp_freq =  1 / median(diff(diffV.tvec));
+order = round(samp_freq); %determines the order of the filter used
+if mod(order,2)~= 0
+    order = order-1;
+end
+Nyquist=floor(samp_freq/2);%determines nyquist frequency
+MyFilt=fir1(order,[cfg.low_freq cfg.high_freq]/Nyquist); %creates filter
+filtered2 = Filter0(MyFilt,eeg2); %filters eeg1 between low_freq and high_freq 
+%% This is an addition on 2021/11/12. hilbert.m gives all NaN values if thery are ANY NaNs in the input.  
+F2 = fillmissing(filtered2,'constant', 0); 
+filt_hilb2 = hilbert(F2); %calculates the Hilbert transform of eeg1. Note *** Hilbert transform cannot accept NaNs. Use interp to fill these in. 
+amp2 = abs(filt_hilb2);%calculates the instantaneous amplitude of eeg1 filtered between low_freq and high_freq
+amp2=amp2-mean(amp2); %removes mean of the signal because the DC component of a signal does not change the correlation
+amp2tsd  = tsd(diffH.tvec, amp2); 
+artifactIndex2 = amp2 > cfg.artifactThresh;  % find timepoints where power is high (suspect times for movement artifact) 
+suspectPoints2 = find(artifactIndex2);
+formatSpec = 'number of HORIZONTAL points with suspect filtered power is is %4.0d points'; 
+fprintf(formatSpec, length(suspectPoints2)); 
 
 %% Thresholding the TEMPORAL saccades (positive AHV segments)
 tP = diffH.data > cfg.threshT;  % data points above threshold
 [~, index_tP] = find(tP);  % tvec indices for data points above threshold
 [val_discard_tP, ~] = intersect(index_tP, suspectPoints);
+formatSpec = 'number of potential saccades removed due to filtering is %4.0d points'; 
+fprintf(formatSpec, length(val_discard_tP)); 
+
 index_tP_temp = setdiff(index_tP, val_discard_tP);
 sac_amps_tP = diffH.data(index_tP_temp);
 diff_tP = horzcat([NaN diff(index_tP_temp)]);  % spacing for thresholded data
@@ -140,6 +157,7 @@ for iAdj = indices(1:end)
         new_adj_tP(iAdj-1) = 1;
         new_adj_tP(iAdj) = 0;
     else
+        fprintf(1, '\n');
         warning('cant find the max for saccade start')
     end
 end
@@ -164,6 +182,7 @@ for iAdj = indices(1:end)
         new_adj_nP(iAdj-1) = 1;
         new_adj_nP(iAdj) = 0;
     else
+        fprintf(1, '\n');
         warning('cant find the max for saccade start')
     end
 end
@@ -188,6 +207,7 @@ for iAdj = idx(1:end)
         new_oppPeaks(iAdj-1) = 0;
         new_oppPeaks(iAdj) = 1;
     else
+        fprintf(1, '\n');
         warning('cant find the max for saccade start')
     end
 end
@@ -201,53 +221,55 @@ nP_wnan = B(nPsize);
 index_nP_final = nP_wnan(~isnan(nP_wnan));
 
 temporalSaccades = diffH.tvec(index_tP_final);
-temporalAmplitudes = diffH.datat(index_tP_final); 
+temporalAmplitudes = diffH.data(index_tP_final); 
 nasalSaccades = diffH.tvec(index_nP_final);
 nasalAmplitudes = diffH.data(index_nP_final); 
 combinedSaccades = sort(horzcat(temporalSaccades, nasalSaccades));
 
+fprintf(1, '\n');
 disp(strcat('Num opposite peaks = ', num2str(sum(oppPeaks))));
 disp(strcat('Adjacent opposite points removed  = ', num2str(length(indexes))));
 disp(strcat('Num temporal saccades = ', num2str(length(index_tP_final))));
 disp(strcat('Num nasal saccades = ', num2str(length(index_nP_final))));
 disp(strcat('Total num saccades = ', num2str(length(index_nP_final)+length(index_tP_final))));
-%% Plot the data in a subplot
-if cfg.doPlotEverything == 1
-    figure
-    ax = subplot(3,1,1);
-    plot(tsdH.tvec, tsdH.data./cfg.scalingfactor)
-    ylabel('pupil pos.')
-    title(SSN)
-    
-    ay = subplot(3,1,2);
-    plot(diffH.tvec, diffH.data)
-    ylabel('diff pupil pos')
-    
-    az = subplot(3,1,3);
-    plot(filteredH.tvec, filteredH.data)
-    ylabel('filtered diff pupil pos')
-    xlabel('Time (sec)')
-    
-    %     linkaxes([ax ay], 'xy')
-    linkaxes([ax ay], 'xy')
-end
 
 if cfg.doPlotThresholds == 1
-    figure;
+    clf;
     hold on
     plot(diffH.tvec, diffH.data)
     plot(diffV.tvec, diffV.data, 'm')
-    hold on
+    plot(tsdH.tvec, tsdH.data, 'Color', [.301 .745 .933], 'LineStyle', '--')
+%     plot(tsdH.tvec, tsdH.data, 'Color', 'k', 'LineStyle', '--')
+    plot(amp1tsd.tvec, amp1tsd.data, 'k', 'LineWidth', cfg.LineWidth)
+    plot(amp2tsd.tvec, amp2tsd.data, 'Color', [.85 .325 .098], 'LineWidth', cfg.LineWidth)
     xlabel('Time (sec)', 'FontSize', FontSize)
     ylabel('diff pupil pos', 'FontSize', FontSize)
     title(SSN)
-    line([tstart tend], [cfg.threshT cfg.threshT], 'Color', 'k')
-    line([tstart tend], [cfg.threshN cfg.threshN], 'Color', 'k')
+    line([tstart tend], [cfg_def.threshT cfg_def.threshT], 'Color', 'r')
+    line([tstart tend], [cfg_def.threshN cfg_def.threshN], 'Color', 'g')
+    line([tstart tend], [cfg.artifactThresh cfg.artifactThresh], 'Color', 'k', 'LineStyle', '--')
+    line([tstart tend], [-cfg.artifactThresh -cfg.artifactThresh], 'Color', 'k', 'LineStyle', '--')
     plot(diffH.tvec(index_tP_final), diffH.data(index_tP_final), 'r.', 'MarkerSize', 25)
     plot(diffH.tvec(index_nP_final), diffH.data(index_nP_final), 'g.', 'MarkerSize', 25)
     set(gca, 'FontSize', FontSize)
-    
+    legend('horiz eye vel.', 'vertical eye vel.', 'horizontal eye position', 'filtered vert. vel. 10-15 Hz', 'filtered horiz. vel. 10-15 Hz')
 end
 
 
+% %% Filtering
+% % The horizontal trace
+% cfg_filter = [];
+% cfg_filter.type = 'butter';
+% cfg_filter.band = 'highpass';
+% cfg_filter.f = 1;
+% diffH.cfg.hdr{1}.Fs = 1 / median(diff(diffH.tvec));   % append the sampling rate
+% filteredH = FilterLFP(cfg_filter, diffH);
+% 
+% % The vertical trace
+% cfg_filter = [];
+% cfg_filter.type = 'butter';
+% cfg_filter.band = 'highpass';
+% cfg_filter.f = 1;
+% diffV.cfg.hdr{1}.Fs = 1 / median(diff(diffV.tvec));   % append the sampling rate
+% filteredV = FilterLFP(cfg_filter, diffV);
 
