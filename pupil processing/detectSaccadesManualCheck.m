@@ -1,25 +1,28 @@
-function [temporalSaccades, nasalSaccades, combinedSaccades, tsdH, tsdV, diffH, diffV, XT, YT, XN, YN, cfg] = detectSaccadesManualCheck(cfg_in)
+function [m] = detectSaccadesManualCheck(cfg_in)
 % 2021-11. JJS.
-% This function calculates saccades times from the eye position trace, similar to processPupilData2.m. Here, the threshold to use is manually adjusted,
+% This function calculates saccades times from the eye position trace, similar to processPupilData2.feedback. Here, the threshold to use is manually adjusted,
 %      and the trace is scrolled through to check/add/remove indivudal saccades that automatic method may have missed.
 
-% INPUTS: 
-%           cfg_in: define variables such as the number of pixels 
+% INPUTS:
+%           cfg_in: define variables such as the number of pixels
 % OUTPUTS:
-%           temporalSaccades:   timestamps for temporal saccades
-%           nasalSaccades:      timestamps for nasal saccades
-%           combinedSaccades:   both timestamps combined, sorted
-%           tsdH:               tsd of horizontal pupil position
-%           tsdV:               tsd of vertical pupil position
-%           diffH:              tsd of horizontal pupil velocity  (*figure out units here) 
-%           diffV:              tsd of vertical pupil velocity 
-%           XT, YT:             x and y values for manually added TEMPORAL saccades 
-%           XN, YN:             x and y values for manually added NASAL saccades 
-%           cfg:                record of parameters used for analysis, like thresholds 
+%           m.temporalSaccades:   timestamps for temporal saccades
+%           m.nasalSaccades:      timestamps for nasal saccades
+%           m.combinedSaccades:   both timestamps combined, sorted
+%           m.tsdH:               tsd of horizontal pupil position
+%           m.tsdV:               tsd of vertical pupil position
+%           m.diffH:              tsd of horizontal pupil velocity  (*figure out units here)
+%           m.diffV:              tsd of vertical pupil velocity
+%           m.XT, YT:             x and y values for manually added TEMPORAL saccades
+%           m.XN, YN:             x and y values for manually added NASAL saccades
+%           m.temporalAmplitdues: amplitude of temporal saccades
+%           m.nasalAmplitudes:    amplitude of nasal saccades
+%           m.cfg:                record of parameters used for analysis, like thresholds
 
 SSN = HD_GetSSN;
 FontSize = 20;
 cfg_def = [];
+cfg_def.doSave = 1;
 cfg_def.threshAdj  = 4;  % how many timesteps around a saccade that are disqualified from being considered as subsequent saccades. Saccades usually have a rebound that can hit the other threshold.
 cfg_def.threshT = 10;  % positive displacement in image pixel space. TEMPORAL saccades.
 cfg_def.threshN = -10; % negative displacement in image pixel space. NASAL saccades.
@@ -28,6 +31,7 @@ cfg_def.scalingfactor = 1;  % for shrinking the pupil trace so its the same heig
 cfg_def.artifactThresh = 4;  % units of pixels
 cfg_def.doPlotThresholds = 1;
 cfg_def.doPlotEverything = 1;
+cfg_def.LineWidth = 3; 
 cfg = ProcessConfig2(cfg_def,cfg_in);  % not sure if there is a function difference btwn ver2 and ver1
 
 %% Get timestamps for the pupil trace
@@ -38,6 +42,10 @@ cfg = ProcessConfig2(cfg_def,cfg_in);  % not sure if there is a function differe
 %
 % pos_tsd = LoadPos(cfg_video);
 % pupiltime = pos_tsd.tvec;   % it apprears that the Nvt file is 2 frames longer than the number of frames from facemap
+%% Calculate AHV
+cfg_AHV = [];
+[AHV_tsd] = Get_AHV(cfg_AHV);
+
 %% Load Events and get the session start time
 events_ts = LoadEvents([]);
 index = strfind(events_ts.label, 'Starting Recording');
@@ -77,7 +85,7 @@ tend = diffH.tvec(end);
 %% Remove Artifacts from Camera Movement (vertical displacement)
 % There shouldn't be much displacement in the vertical direction. Visual inspection showed that times with high power btwn 10-14 Hz were indicative of camera jitter that were not in fact saccades.
 cfg.low_freq = 10;
-cfg.high_freq = 14;
+cfg.high_freq = 15;
 eeg1= diffV.data;
 samp_freq = diffH.cfg.hdr{1}.Fs;
 order = round(samp_freq); %determines the order of the filter used
@@ -89,9 +97,30 @@ MyFilt=fir1(order,[cfg.low_freq cfg.high_freq]/Nyquist); %creates filter
 filtered1 = Filter0(MyFilt,eeg1); %filters eeg1 between low_freq and high_freq
 filt_hilb1 = hilbert(filtered1); %calculates the Hilbert transform of eeg1
 amp1 = abs(filt_hilb1);%calculates the instantaneous amplitude of eeg1 filtered between low_freq and high_freq
+amp1tsd  = tsd(diffV.tvec, amp1);
 amp1=amp1-mean(amp1); %removes mean of the signal because the DC component of a signal does not change the correlation
 artifactIndex = amp1 > cfg.artifactThresh;  % find timepoints where power is high (suspect times for movement artifact)
 suspectPoints = find(artifactIndex);
+
+%% Remove Artifacts from Camera Movement 
+% HORIZONTAL eye velocity 
+cfg.low_freq = 10;
+cfg.high_freq = 15;
+eeg2= diffH.data;
+samp_freq =  1 / median(diff(diffV.tvec));
+order = round(samp_freq); %determines the order of the filter used
+if mod(order,2)~= 0
+    order = order-1;
+end
+Nyquist=floor(samp_freq/2);%determines nyquist frequency
+MyFilt=fir1(order,[cfg.low_freq cfg.high_freq]/Nyquist); %creates filter
+filtered2 = Filter0(MyFilt,eeg2); %filters eeg1 between low_freq and high_freq 
+%% This is an addition on 2021/11/12. hilbert.m gives all NaN values if thery are ANY NaNs in the input.  
+F2 = fillmissing(filtered2,'constant', 0); 
+filt_hilb2 = hilbert(F2); %calculates the Hilbert transform of eeg1. Note *** Hilbert transform cannot accept NaNs. Use interp to fill these in. 
+amp2 = abs(filt_hilb2);%calculates the instantaneous amplitude of eeg1 filtered between low_freq and high_freq
+amp2=amp2-mean(amp2); %removes mean of the signal because the DC component of a signal does not change the correlation
+amp2tsd  = tsd(diffH.tvec, amp2); 
 
 %% Thresholding the TEMPORAL saccades (positive AHV segments)
 tP = diffH.data > cfg.threshT;  % data points above threshold
@@ -173,10 +202,9 @@ nP_wnan = B(nPsize);
 index_nP_final = nP_wnan(~isnan(nP_wnan));
 
 temporalSaccades = diffH.tvec(index_tP_final);
-temporalAmplitudes = diffH.datat(index_tP_final); 
+temporalAmplitudes = diffH.data(index_tP_final);
 nasalSaccades = diffH.tvec(index_nP_final);
-nasalAmplitudes = diffH.data(index_nP_final); 
-combinedSaccades = sort(horzcat(temporalSaccades, nasalSaccades));
+nasalAmplitudes = diffH.data(index_nP_final);
 
 disp(strcat('Num opposite peaks = ', num2str(sum(oppPeaks))));
 disp(strcat('Adjacent opposite points removed  = ', num2str(length(indexes))));
@@ -189,72 +217,101 @@ clf;
 hold on
 plot(diffH.tvec, diffH.data)
 plot(diffV.tvec, diffV.data, 'm')
-hold on
+plot(tsdH.tvec, tsdH.data, 'Color', [.301 .745 .933], 'LineStyle', '--')
+%     plot(tsdH.tvec, tsdH.data, 'Color', 'k', 'LineStyle', '--')
+plot(amp1tsd.tvec, amp1tsd.data, 'k', 'LineWidth', cfg.LineWidth)
+plot(amp2tsd.tvec, amp2tsd.data, 'Color', [.85 .325 .098], 'LineWidth', cfg.LineWidth)
 xlabel('Time (sec)', 'FontSize', FontSize)
 ylabel('diff pupil pos', 'FontSize', FontSize)
 title(SSN)
-line([tstart tend], [cfg.threshT cfg.threshT], 'Color', 'k')
-line([tstart tend], [cfg.threshN cfg.threshN], 'Color', 'k')
+line([tstart tend], [cfg_def.threshT cfg_def.threshT], 'Color', 'r')
+line([tstart tend], [cfg_def.threshN cfg_def.threshN], 'Color', 'g')
+line([tstart tend], [cfg.artifactThresh cfg.artifactThresh], 'Color', 'k', 'LineStyle', '--')
+line([tstart tend], [-cfg.artifactThresh -cfg.artifactThresh], 'Color', 'k', 'LineStyle', '--')
 plot(diffH.tvec(index_tP_final), diffH.data(index_tP_final), 'r.', 'MarkerSize', 25)
 plot(diffH.tvec(index_nP_final), diffH.data(index_nP_final), 'g.', 'MarkerSize', 25)
 set(gca, 'FontSize', FontSize)
+% legend('horiz eye vel.', 'vertical eye vel.', 'horizontal eye position', 'filtered vert. vel. 10-15 Hz', 'filtered horiz. vel. 10-15 Hz', '', '', '')
+yyaxis right
+plot(AHV_tsd.tvec, AHV_tsd.data, 'Color', [.75 .75 0])  
+yyaxis left
 
-disp('find extra TEMPORAL saccades') 
+fprintf(1, '\n');
+fprintf(1, '\n');
+disp('find extra TEMPORAL saccades')
 count = 0;
 XT= [];
 YT = [];
 while(1)
     fprintf(1, '\n');
-    m = input('Do you want to continue, y/n?','s');
-    if m == 'n'
+    feedback = input('Do you want to continue, y/n?','s');
+    if feedback == 'n'
         break
     end
     count = count + 1;
     fprintf(1, '\n');
     disp('Zoom into region of interest. Press return to continue')
-    zoom on; 
+    zoom on;
     pause() % you can zoom with your mouse and when your image is okay, you press any key
     zoom off; % to escape the zoom mode
     fprintf(1, '\n');
-    disp('Select point(s) for missing TEMPORAL saccade. Press return when finished.') 
+    disp('Select point(s) for missing TEMPORAL saccade. Press return when finished.')
     [x,y] =ginput;
     plot(x, y, 'k.', 'MarkerSize', 25)
-    XT(end+1:end+length(x)) = x; 
-    YT(end+1:end+length(y)) = y; 
+    XT(end+1:end+length(x)) = x;
+    YT(end+1:end+length(y)) = y;
     disp('point selected')
-    clear m 
+    clear feedback
 end
 
-disp('find extra NASAL saccades') 
+fprintf(1, '\n');
+fprintf(1, '\n');
+disp('find extra NASAL saccades')
 count = 0;
 XN= [];
 YN = [];
 while(1)
     fprintf(1, '\n');
-    m = input('Do you want to continue, y/n?','s');
-    if m == 'n'
+    feedback = input('Do you want to continue, y/n?','s');
+    if feedback == 'n'
         break
     end
     count = count + 1;
     fprintf(1, '\n');
     disp('Zoom into region of interest. Press return to continue')
-    zoom on; 
+    zoom on;
     pause() % you can zoom with your mouse and when your image is okay, you press any key
     zoom off; % to escape the zoom mode
     fprintf(1, '\n');
-    disp('Select point(s) for missing TEMPORAL saccade. Press return when finished.') 
+    disp('Select point(s) for missing TEMPORAL saccade. Press return when finished.')
     [x,y] =ginput;
     plot(x, y, 'k.', 'MarkerSize', 25)
-    XN(end+1:end+length(x)) = x; 
-    YN(end+1:end+length(y)) = y; 
+    XN(end+1:end+length(x)) = x;
+    YN(end+1:end+length(y)) = y;
     disp('point selected')
-    clear m 
+    clear feedback
 end
 
-temporalSaccades = sort(cat(1, temporalSaccades, XT)); 
-nasalSaccades = sort(cat(1, nasalSaccades, XN)); 
-combinedSaccades = sort(cat(1, temporalSaccades, nasalSaccades)); 
+temporalSaccades = sort(cat(2, temporalSaccades, XT));
+nasalSaccades = sort(cat(2, nasalSaccades, XN));
+combinedSaccades = sort(cat(2, temporalSaccades, nasalSaccades));
 
+m.temporalSaccades = temporalSaccades;
+m.nasalSaccades = nasalSaccades;
+m.combinedSaccades = combinedSaccades;
+m.temporalAmplitudes = temporalAmplitudes;
+m.nasalAmplitudes = nasalAmplitudes;
+m.tsdH = tsdH;
+m.tsdV = tsdV;
+m.diffH = diffH;
+m.diffV = diffV;
+m.XT = XT;
+m.YT = YT;
+m.XN = XN;
+m.YN = YN;
+m.cfg = cfg;
 
-
-
+if cfg.doSave == 1
+    save(strcat(SSN, '-saccades.m'), m)
+    disp('Saccade data saved')
+end
