@@ -1,4 +1,4 @@
-function [m] = detectSaccadesManualCheck2(cfg_in)
+function [m] = detectSaccadesManualCheck3(cfg_in)
 % 2021-11. JJS.
 % This function calculates saccades times from the eye position trace, similar to processPupilData2.feedback. Here, the threshold to use is manually adjusted,
 %      and the trace is scrolled through to check/add/remove indivudal saccades that automatic method may have missed.
@@ -24,7 +24,6 @@ function [m] = detectSaccadesManualCheck2(cfg_in)
 SSN = HD_GetSSN;
 FontSize = 20;
 cfg_def = [];
-cfg_def.doSave = 1;
 cfg_def.threshAdj  = 4;  % how many timesteps around a saccade that are disqualified from being considered as subsequent saccades. Saccades usually have a rebound that can hit the other threshold.
 cfg_def.threshT = 10;  % positive displacement in image pixel space. TEMPORAL saccades.
 cfg_def.threshN = -10; % negative displacement in image pixel space. NASAL saccades.
@@ -236,6 +235,8 @@ set(gca, 'FontSize', FontSize)
 % legend('horiz eye vel.', 'vertical eye vel.', 'horizontal eye position', 'filtered vert. vel. 10-15 Hz', 'filtered horiz. vel. 10-15 Hz', '', '', '')
 yyaxis right
 plot(AHV_tsd.tvec, AHV_tsd.data, 'Color', [.75 .75 0])
+% c = axis;
+% line([c(1) c(2)], [0 0], 'Color', [.75 .75 0], 'LineStyle', '--', 'LineWidth', 3)        % plotting another line makes it glitchy with the 
 ylabel('horizontal pupil position', 'FontSize', FontSize)
 yyaxis left
 
@@ -284,21 +285,41 @@ end
 RemovalIndex = Button == 114;   % Need to remove saccades for this index that are closest to the chose XY,YS values.
 XS_Remove = XS(RemovalIndex);
 YS_Remove = YS(RemovalIndex);
-% XS_Remove = cat(1, XS(removalIndex), YS(removalIndex));
 
-if sum(RemovalIndex) ~= 0
-    [minValueT,closestIndexT] = min(abs(XS_Remove-temporalSaccades));
-    [minValueN,closestIndexN] = min(abs(XS_Remove-nasalSaccades));
-    [M, I] = min([minValueT minValueN]);
-    if I == 1
-        temporalSaccades(closestIndexT) = NaN;
-        temporalAmplitudes(closestIndexT) = NaN;
-    elseif I == 2
-        nasalSaccades(closestIndexN) = NaN;
-        nasalAmplitudes(closestIndexN) = NaN;
+Removeflag = 1;
+if ~isempty(YS_Remove)
+    Ytemporal_Remove = YS_Remove > 0;
+    Ynasal_Remove = YS_Remove < 0;
+    
+    assert(sum(Ytemporal_Remove) + sum(Ynasal_Remove) == length(YS_Remove))
+else
+    Removeflag = 0;          % no saccades to REMOVE
+end
+%% Remove values
+iCount = 0;
+if Removeflag == 1
+    if sum(Ytemporal_Remove) > 0
+        for iC = 1:length(Ytemporal_Remove)
+            iCount = iCount + 1;
+            [minValueT,closestIndexT] = min(abs(XS_Remove(iC)-temporalSaccades));
+            XS_Remove_updated(iCount) = temporalSaccades(closestIndexT);
+            YS_Remove_updated(iCount) = temporalAmplitudes(closestIndexT);
+            temporalSaccades(closestIndexT) = NaN;
+            temporalAmplitudes(closestIndexT) = NaN;
+        end
+    end
+    if sum(Ynasal_Remove) > 0
+        for iC = 1:length(Ynasal_Remove)
+            iCount = iCount + 1;
+            [minValueN,closestIndexN] = min(abs(XS_Remove(iC)-nasalSaccades));
+            XS_Remove_updated(iCount) = nasalSaccades(closestIndexN);
+            YS_Remove_updated(iCount) = nasalAmplitudes(closestIndexN);
+            nasalSaccades(closestIndexN) = NaN;
+            nasalAmplitudes(closestIndexN) = NaN;
+        end
     end
 end
-
+%% Add Values
 XS_Add = XS(~RemovalIndex);  % x coordinates for points that were ADDED
 YS_Add = YS(~RemovalIndex);
 
@@ -311,20 +332,24 @@ else
     Addflag = 0;             % no saccades to ADD
 end
 if Addflag == 1
-    temporalSaccades = sort(cat(2, temporalSaccades, XS(Ytemporal_Add)));
-    nasalSaccades = sort(cat(2, nasalSaccades, XS(Ynasal_Add)));
-    temporalAmplitudes = sort(cat(2, temporalAmplitudes, YS(Ytemporal_Add)));
-    nasalAmplitudes = sort(cat(2, nasalSaccades, YS(Ynasal_Add)));
+    [temporalSaccades_sorted, sortT] = sort(cat(2, temporalSaccades, XS_Add(Ytemporal_Add)));
+    [nasalSaccades_sorted, sortN] = sort(cat(2, nasalSaccades, XS_Add(Ynasal_Add)));
+    
+    temporalAmplitudes_temp = cat(2, temporalAmplitudes, YS_Add(Ytemporal_Add));
+    nasalAmplitudes_temp = cat(2, nasalAmplitudes, YS_Add(Ynasal_Add));
+    
+    temporalAmplitudes_sorted =  temporalAmplitudes_temp(sortT);
+    nasalAmplitudes_sorted =  nasalAmplitudes_temp(sortN);
 end
-
-combinedSaccades = sort(cat(2, temporalSaccades, nasalSaccades));
-m.temporalSaccades = temporalSaccades;                                  % this includes NaNs 
+%% Put data into structure
+combinedSaccades = sort(cat(2, temporalSaccades_sorted, nasalSaccades_sorted));
+m.temporalSaccades = temporalSaccades_sorted;                                  % this includes NaNs
 m.num_temporalSaccades = length(~isnan(temporalSaccades));
-m.nasalSaccades = nasalSaccades;                                        % this includes NaNs 
-m.num_nasalSaccades = length(~isnan(nasalSaccades));
+m.nasalSaccades = nasalSaccades_sorted;                                        % this includes NaNs
+m.num_nasalSaccades = length(~isnan(nasalSaccades_sorted));
 m.combinedSaccades = combinedSaccades;
-m.temporalAmplitudes = temporalAmplitudes;
-m.nasalAmplitudes = nasalAmplitudes;
+m.temporalAmplitudes = temporalAmplitudes_sorted;
+m.nasalAmplitudes = nasalAmplitudes_sorted;
 m.tsdH = tsdH;
 m.tsdV = tsdV;
 m.diffH = diffH;
@@ -336,41 +361,58 @@ m.YS_Add = YS_Add;
 m.cfg = cfg;
 m.Button = Button;     % ASCII codes for button presses / mouse clicks to select saccades
 
-if cfg.doSave == 1
-    save(strcat(SSN, '-saccades.m'), '-struct', 'm')
-    disp('Saccade data saved')
+%% Plot the data and manually inspect
+clf;
+hold on
+plot(diffH.tvec, diffH.data)
+plot(diffV.tvec, diffV.data, 'm')
+plot(tsdH.tvec, tsdH.data, 'Color', [.301 .745 .933], 'LineStyle', '--')
+%     plot(tsdH.tvec, tsdH.data, 'Color', 'k', 'LineStyle', '--')
+plot(amp1tsd.tvec, amp1tsd.data, 'k', 'LineWidth', cfg.LineWidth)
+plot(amp2tsd.tvec, amp2tsd.data, 'Color', [.85 .325 .098], 'LineWidth', cfg.LineWidth)
+xlabel('Time (sec)', 'FontSize', FontSize)
+ylabel('diff pupil pos', 'FontSize', FontSize)
+title(SSN)
+line([tstart tend], [cfg_def.threshT cfg_def.threshT], 'Color', 'r')
+line([tstart tend], [cfg_def.threshN cfg_def.threshN], 'Color', 'g')
+line([tstart tend], [cfg.artifactThresh cfg.artifactThresh], 'Color', 'k', 'LineStyle', '--')
+line([tstart tend], [-cfg.artifactThresh -cfg.artifactThresh], 'Color', 'k', 'LineStyle', '--')
+plot(temporalSaccades_sorted, temporalAmplitudes_sorted, 'r.', 'MarkerSize', 25)
+plot(nasalSaccades_sorted, nasalAmplitudes_sorted, 'g.', 'MarkerSize', 25)
+% Plot the points that were added
+plot(XS_Add(Ytemporal_Add), YS_Add(Ytemporal_Add), 'ro', 'MarkerSize', 35, 'LineWidth', 5)   % orange cross
+plot(XS_Add(Ynasal_Add), YS_Add(Ynasal_Add), 'go', 'MarkerSize', 35, 'LineWidth', 5)    % forest green cross
+% plot the points that were removed
+if Removeflag == 1
+    plot(XS_Remove_updated, YS_Remove_updated, 'ko', 'MarkerSize', 35, 'LineWidth', 5)   % black open circles
 end
+set(gca, 'FontSize', FontSize)
+% legend('horiz eye vel.', 'vertical eye vel.', 'horizontal eye position', 'filtered vert. vel. 10-15 Hz', 'filtered horiz. vel. 10-15 Hz', '', '', '')
+yyaxis right
+plot(AHV_tsd.tvec, AHV_tsd.data, 'Color', [.75 .75 0])
+ylabel('horizontal pupil position', 'FontSize', FontSize)
+yyaxis left
+%% Save data
+save(strcat(SSN, '-saccades.mat'), 'm')
+disp('Data saved as new -saccade.m file')
 
 
 
-% XS_Remove = XS(removalIndex); % x coordinates for points that were REMOVED
-% YS_Remove = YS(removalIndex);
-
-
-% Removeflag = 1;
-% if ~isempty(YS_Remove)
-%     Ytemporal_Remove = YS_Remove > 0;
-%     Ynasal_Remove = YS_Remove < 0;
-%
-%     assert(sum(Ytemporal_Remove) + sum(Ynasal_Remove) == length(YS_Remove))
-% else
-%     Removeflag = 0;          % no saccades to REMOVE
+% if exist(strcat(SSN, '-saccades.m')) == 2
+%     f = input('-saccades.m already exists. Do you want to overwrite the existing file? [y/n]', 's');
+%     if strcmp(f, 'y')
+%         overwrite = 1;
+%     elseif strcmp(f, 'n')
+%         overwrite = 0;
+%         g = input('Do you want to append new annotation to existing saccade file? [y/n]', 's');
+%         if strcmp(g, 'y')
+%             append = 1;
+%         elseif strcmp(g, 'n')
+%             append = 0;
+%         else
+%             error('non suitable response')
+%         end
+%     else
+%         error('non suitable response')
+%     end
 % end
-%
-% if Removeflag == 1
-%     temporalSaccades(Ytemporal_Remove) = NaN;
-%     nasalSaccades(Ynasal_Remove) = NaN;
-%     temporalAmplitudes = temporalAmplitudes(Ytemporal_Remove);
-%     nasalAmplitudes = nasalAmplitudes(Ynasal_Remove);
-% end
-%
-
-
-% if mod(length(Button),2) == 0
-%     halfway = length(Button)/2;
-%     Button = Button(1:halfway); % for some reason each value is repeated with ginput.m. Instead of a n x 2 list (1 column for X, 1 column for Y), it gives a 2n x 1 list.
-% else
-%     error('Odd number of button press values. Expecting an Even number.')
-% end
-
-
