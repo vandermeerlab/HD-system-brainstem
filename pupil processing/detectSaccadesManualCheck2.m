@@ -5,6 +5,8 @@ function [m] = detectSaccadesManualCheck2(cfg_in)
 % This version accepts all potential saccades in the first pass, and sorts them (temporal vs. nasal) afterward, according to sign (+ = temp., - = nasal).
 % *** Need to also add a way to remove saccades that are incorrect
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% THIS VERSION IS OUT OF DATE 
+
 % INPUTS:
 %           cfg_in: define variables such as the number of pixels
 % OUTPUTS:

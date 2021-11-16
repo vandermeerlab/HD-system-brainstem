@@ -236,7 +236,7 @@ set(gca, 'FontSize', FontSize)
 yyaxis right
 plot(AHV_tsd.tvec, AHV_tsd.data, 'Color', [.75 .75 0])
 % c = axis;
-% line([c(1) c(2)], [0 0], 'Color', [.75 .75 0], 'LineStyle', '--', 'LineWidth', 3)        % plotting another line makes it glitchy with the 
+% line([c(1) c(2)], [0 0], 'Color', [.75 .75 0], 'LineStyle', '--', 'LineWidth', 3)        % plotting another line makes it glitchy with the
 ylabel('horizontal pupil position', 'FontSize', FontSize)
 yyaxis left
 
@@ -341,25 +341,6 @@ if Addflag == 1
     temporalAmplitudes_sorted =  temporalAmplitudes_temp(sortT);
     nasalAmplitudes_sorted =  nasalAmplitudes_temp(sortN);
 end
-%% Put data into structure
-combinedSaccades = sort(cat(2, temporalSaccades_sorted, nasalSaccades_sorted));
-m.temporalSaccades = temporalSaccades_sorted;                                  % this includes NaNs
-m.num_temporalSaccades = length(~isnan(temporalSaccades));
-m.nasalSaccades = nasalSaccades_sorted;                                        % this includes NaNs
-m.num_nasalSaccades = length(~isnan(nasalSaccades_sorted));
-m.combinedSaccades = combinedSaccades;
-m.temporalAmplitudes = temporalAmplitudes_sorted;
-m.nasalAmplitudes = nasalAmplitudes_sorted;
-m.tsdH = tsdH;
-m.tsdV = tsdV;
-m.diffH = diffH;
-m.diffV = diffV;
-m.XS_Remove = XS_Remove;   % x coordinates for saccades that were REMOVED
-m.YS_Remove = YS_Remove;
-m.XS_Add = XS_Add;         % x coordinates for saccades that were ADDED
-m.YS_Add = YS_Add;
-m.cfg = cfg;
-m.Button = Button;     % ASCII codes for button presses / mouse clicks to select saccades
 
 %% Plot the data and manually inspect
 clf;
@@ -392,27 +373,37 @@ yyaxis right
 plot(AHV_tsd.tvec, AHV_tsd.data, 'Color', [.75 .75 0])
 ylabel('horizontal pupil position', 'FontSize', FontSize)
 yyaxis left
-%% Save data
-save(strcat(SSN, '-saccades.mat'), 'm')
-disp('Data saved as new -saccade.m file')
+
+temporalSaccades = temporalSaccades_sorted;
+nasalSaccades = nasalSaccades_sorted; 
+temporalAmplitudes = temporalAmplitudes_sorted;
+nasalAmplitudes = nasalAmplitudes_sorted; 
+num_temporalSaccades = length(~isnan(temporalSaccades));
+num_nasalSaccades = length(~isnan(nasalSaccades_sorted));
+
+%% Put data into structure
+% m.temporalSaccades = temporalSaccades_sorted;                                  
+% m.nasalSaccades = nasalSaccades_sorted;                                      
+% m.combinedSaccades = combinedSaccades;
+% m.temporalAmplitudes = temporalAmplitudes_sorted;
+% m.nasalAmplitudes = nasalAmplitudes_sorted;
+% m.tsdH = tsdH;
+% m.tsdV = tsdV;
+% m.diffH = diffH;
+% m.diffV = diffV;
+% m.XS_Remove = XS_Remove;   % x coordinates for saccades that were REMOVED
+% m.YS_Remove = YS_Remove;
+% m.XS_Add = XS_Add;         % x coordinates for saccades that were ADDED
+% m.YS_Add = YS_Add;
+% m.cfg = cfg;
+% m.tstart = tstart;
+% m.tend = tend;
+% m.tvec = tvec; 
+% m.Button = Button;     % ASCII codes for button presses / mouse clicks to select saccades
+%% Save data: overwrite
+
+disp('Saving data as new -saccade.m file')
+save(strcat(SSN, '-saccades.mat'), 'temporalSaccades', 'num_temporalSaccades', 'nasalSaccades', 'num_nasalSaccades', 'temporalAmplitudes', 'nasalAmplitudes', 'tsdH', 'tsdV', 'diffH', 'diffV', 'XS_Remove', 'YS_Remove', 'XS_Add', 'YS_Add', 'cfg', 'tstart', 'tend', 'tvec', 'Button', 'amp1tsd', 'amp2tsd', 'index_tP_final', 'index_nP_final', 'AHV_tsd');
+savefig(strcat(SSN, '-saccades.fig'))
 
 
-
-% if exist(strcat(SSN, '-saccades.m')) == 2
-%     f = input('-saccades.m already exists. Do you want to overwrite the existing file? [y/n]', 's');
-%     if strcmp(f, 'y')
-%         overwrite = 1;
-%     elseif strcmp(f, 'n')
-%         overwrite = 0;
-%         g = input('Do you want to append new annotation to existing saccade file? [y/n]', 's');
-%         if strcmp(g, 'y')
-%             append = 1;
-%         elseif strcmp(g, 'n')
-%             append = 0;
-%         else
-%             error('non suitable response')
-%         end
-%     else
-%         error('non suitable response')
-%     end
-% end
