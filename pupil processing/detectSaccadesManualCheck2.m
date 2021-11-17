@@ -5,7 +5,7 @@ function [m] = detectSaccadesManualCheck2(cfg_in)
 % This version accepts all potential saccades in the first pass, and sorts them (temporal vs. nasal) afterward, according to sign (+ = temp., - = nasal).
 % *** Need to also add a way to remove saccades that are incorrect
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% THIS VERSION IS OUT OF DATE 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% THIS VERSION IS OUT OF DATE
 
 % INPUTS:
 %           cfg_in: define variables such as the number of pixels
@@ -97,6 +97,10 @@ if mod(order,2)~= 0
     order = order-1;
 end
 Nyquist=floor(samp_freq/2);%determines nyquist frequency
+if Nyquist == 15
+    disp('Frame Rate is 30 Hz')
+    cfg.high_freq = 14; % this is a hacky. A few sessions were run with a frame rate of 30Hz. Matlab won't let me filter at or above 15 Hz for these sessions.
+end
 MyFilt=fir1(order,[cfg.low_freq cfg.high_freq]/Nyquist); %creates filter
 filtered1 = Filter0(MyFilt,eeg1); %filters eeg1 between low_freq and high_freq
 filt_hilb1 = hilbert(filtered1); %calculates the Hilbert transform of eeg1
@@ -117,6 +121,10 @@ if mod(order,2)~= 0
     order = order-1;
 end
 Nyquist=floor(samp_freq/2);%determines nyquist frequency
+if Nyquist == 15
+    disp('Frame Rate is 30 Hz')
+    cfg.high_freq = 14; % this is a hacky. A few sessions were run with a frame rate of 30Hz. Matlab won't let me filter at or above 15 Hz for these sessions.
+end
 MyFilt=fir1(order,[cfg.low_freq cfg.high_freq]/Nyquist); %creates filter
 filtered2 = Filter0(MyFilt,eeg2); %filters eeg1 between low_freq and high_freq
 %% This is an addition on 2021/11/12. hilbert.m gives all NaN values if thery are ANY NaNs in the input.
@@ -320,9 +328,9 @@ if Addflag == 1
 end
 
 combinedSaccades = sort(cat(2, temporalSaccades, nasalSaccades));
-m.temporalSaccades = temporalSaccades;                                  % this includes NaNs 
+m.temporalSaccades = temporalSaccades;                                  % this includes NaNs
 m.num_temporalSaccades = length(~isnan(temporalSaccades));
-m.nasalSaccades = nasalSaccades;                                        % this includes NaNs 
+m.nasalSaccades = nasalSaccades;                                        % this includes NaNs
 m.num_nasalSaccades = length(~isnan(nasalSaccades));
 m.combinedSaccades = combinedSaccades;
 m.temporalAmplitudes = temporalAmplitudes;
