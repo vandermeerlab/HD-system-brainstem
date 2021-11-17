@@ -1,4 +1,4 @@
-function [m] = detectSaccadesManualCheck3(cfg_in)
+function detectSaccadesManualCheck3(cfg_in)
 % 2021-11. JJS.
 % This function calculates saccades times from the eye position trace, similar to processPupilData2.feedback. Here, the threshold to use is manually adjusted,
 %      and the trace is scrolled through to check/add/remove indivudal saccades that automatic method may have missed.
@@ -94,6 +94,10 @@ if mod(order,2)~= 0
     order = order-1;
 end
 Nyquist=floor(samp_freq/2);%determines nyquist frequency
+if Nyquist == 15
+    disp('Frame Rate is 30 Hz')
+    cfg.high_freq = 14; % this is a hacky. A few sessions were run with a frame rate of 30Hz. Matlab won't let me filter at or above 15 Hz for these sessions.
+end
 MyFilt=fir1(order,[cfg.low_freq cfg.high_freq]/Nyquist); %creates filter
 filtered1 = Filter0(MyFilt,eeg1); %filters eeg1 between low_freq and high_freq
 filt_hilb1 = hilbert(filtered1); %calculates the Hilbert transform of eeg1
@@ -114,6 +118,10 @@ if mod(order,2)~= 0
     order = order-1;
 end
 Nyquist=floor(samp_freq/2);%determines nyquist frequency
+if Nyquist == 15
+    disp('Frame Rate is 30 Hz')
+    cfg.high_freq = 14; % this is a hacky. A few sessions were run with a frame rate of 30Hz. Matlab won't let me filter at or above 15 Hz for these sessions.
+end
 MyFilt=fir1(order,[cfg.low_freq cfg.high_freq]/Nyquist); %creates filter
 filtered2 = Filter0(MyFilt,eeg2); %filters eeg1 between low_freq and high_freq
 %% This is an addition on 2021/11/12. hilbert.m gives all NaN values if thery are ANY NaNs in the input.
@@ -340,8 +348,10 @@ if Addflag == 1
     
     temporalAmplitudes_sorted =  temporalAmplitudes_temp(sortT);
     nasalAmplitudes_sorted =  nasalAmplitudes_temp(sortN);
+else
+    temporalSaccades_sorted = temporalSaccades; temporalAmplitudes_sorted = temporalAmplitudes;
+    nasalSaccades_sorted = nasalSaccades; nasalAmplitudes_sorted = nasalAmplitudes;
 end
-
 %% Plot the data and manually inspect
 clf;
 hold on
@@ -361,8 +371,10 @@ line([tstart tend], [-cfg.artifactThresh -cfg.artifactThresh], 'Color', 'k', 'Li
 plot(temporalSaccades_sorted, temporalAmplitudes_sorted, 'r.', 'MarkerSize', 25)
 plot(nasalSaccades_sorted, nasalAmplitudes_sorted, 'g.', 'MarkerSize', 25)
 % Plot the points that were added
-plot(XS_Add(Ytemporal_Add), YS_Add(Ytemporal_Add), 'ro', 'MarkerSize', 35, 'LineWidth', 5)   % orange cross
-plot(XS_Add(Ynasal_Add), YS_Add(Ynasal_Add), 'go', 'MarkerSize', 35, 'LineWidth', 5)    % forest green cross
+if Addflag == 1
+    plot(XS_Add(Ytemporal_Add), YS_Add(Ytemporal_Add), 'ro', 'MarkerSize', 35, 'LineWidth', 5)   % orange cross
+    plot(XS_Add(Ynasal_Add), YS_Add(Ynasal_Add), 'go', 'MarkerSize', 35, 'LineWidth', 5)    % forest green cross
+end
 % plot the points that were removed
 if Removeflag == 1
     plot(XS_Remove_updated, YS_Remove_updated, 'ko', 'MarkerSize', 35, 'LineWidth', 5)   % black open circles
@@ -375,15 +387,15 @@ ylabel('horizontal pupil position', 'FontSize', FontSize)
 yyaxis left
 
 temporalSaccades = temporalSaccades_sorted;
-nasalSaccades = nasalSaccades_sorted; 
+nasalSaccades = nasalSaccades_sorted;
 temporalAmplitudes = temporalAmplitudes_sorted;
-nasalAmplitudes = nasalAmplitudes_sorted; 
+nasalAmplitudes = nasalAmplitudes_sorted;
 num_temporalSaccades = length(~isnan(temporalSaccades));
 num_nasalSaccades = length(~isnan(nasalSaccades_sorted));
 
 %% Put data into structure
-% m.temporalSaccades = temporalSaccades_sorted;                                  
-% m.nasalSaccades = nasalSaccades_sorted;                                      
+% m.temporalSaccades = temporalSaccades_sorted;
+% m.nasalSaccades = nasalSaccades_sorted;
 % m.combinedSaccades = combinedSaccades;
 % m.temporalAmplitudes = temporalAmplitudes_sorted;
 % m.nasalAmplitudes = nasalAmplitudes_sorted;
@@ -398,7 +410,7 @@ num_nasalSaccades = length(~isnan(nasalSaccades_sorted));
 % m.cfg = cfg;
 % m.tstart = tstart;
 % m.tend = tend;
-% m.tvec = tvec; 
+% m.tvec = tvec;
 % m.Button = Button;     % ASCII codes for button presses / mouse clicks to select saccades
 %% Save data: overwrite
 
