@@ -22,8 +22,23 @@ cfg_master.gausswin = gausswin(1./cfg_master.dt, 20); cfg_master.gausswin = cfg_
 %% load data
 AHV_tsd = Get_AHV([]);
 S = LoadSpikesJeff; nCells = length(S.t);
-[temporalSaccades, nasalSaccades, ~, ~, ~, pupilX_tsd, pupilY_tsd] = processPupilData2([]);
 
+try load(FindFile('*saccades-edited.mat'))
+    keep = find(~isnan(temporalSaccades));
+    if length(keep) < length(temporalSaccades)
+        warning('NaNs found in temporalSaccades!');
+    end
+    temporalSaccades = temporalSaccades(keep); temporalAmplitudes = temporalAmplitudes(keep);
+    
+    keep = find(~isnan(nasalSaccades));
+    if length(keep) < length(nasalSaccades)
+        warning('NaNs found in nasalSaccades!');
+    end
+    nasalSaccades = nasalSaccades(keep); nasalAmplitudes = nasalAmplitudes(keep);
+catch
+    disp('WARNING: No edited saccades file available, computing automated version...')
+    [temporalSaccades, nasalSaccades, ~, ~, ~, tsdH, tsdV] = processPupilData2([]);
+end
 %%
 p = table; % contains regressors
 
@@ -36,6 +51,8 @@ sd.m.ahv.modelspec = 'spk ~ 1 + time + ahv';
 %sd.m.both.modelspec = 'spk ~ 1 + time + ns + ts + ahv';
 sd.m.pca_sacc.modelspec = 'spk ~ 1 + time + ts_pca1 + ns_pca1 + ts_pca2 + ns_pca2 + ts_pca3 + ns_pca3 + pupilX';
 sd.m.pca_sacc_both.modelspec = 'spk ~ 1 + time + ts_pca1 + ns_pca1 + ts_pca2 + ns_pca2 + ts_pca3 + ns_pca3 + pupilX + ahv';
+%sd.m.pca_sacc.modelspec = 'spk ~ 1 + time + pupilX + ts_pca1*ts_ampl + ns_pca1*ns_ampl + ts_pca2*ts_ampl + ns_pca2*ns_ampl + ts_pca3*ts_ampl + ns_pca3*ns_ampl';
+%sd.m.pca_sacc_both.modelspec = 'spk ~ 1 + time + pupilX + ahv + ts_pca1*ts_ampl + ns_pca1*ns_ampl + ts_pca2*ts_ampl + ns_pca2*ns_ampl + ts_pca3*ts_ampl + ns_pca3*ns_ampl';
 
 % init error vars
 mn = fieldnames(sd.m);
@@ -53,7 +70,7 @@ p.time = sd.TVECc'; % elapsed time predictor
 p.ahv = interp1(AHV_tsd.tvec, AHV_tsd.data, sd.TVECc)'; % AHV predictor
 this_ahv = tsd(sd.TVECc, p.ahv'); % used for making TCs within cell loop later
 
-p.pupilX = interp1(pupilX_tsd.tvec, pupilX_tsd.data, sd.TVECc)'; % pupil X-position predictor
+p.pupilX = interp1(tsdH.tvec, tsdH.data, sd.TVECc)'; % pupil X-position predictor
 this_pupilX = tsd(sd.TVECc, p.pupilX');
 
 % saccade predictors
@@ -82,6 +99,15 @@ pca3_kernel = interp1(binCenters, score(:, 3), binCenters(1):cfg_master.dt:binCe
 pca3_kernel = pca3_kernel .* gausswin(length(pca3_kernel), 3)';
 p.ts_pca3 = conv2(ts_binarized, pca3_kernel, 'same')';
 p.ns_pca3 = conv2(ns_binarized, pca3_kernel, 'same')';
+
+% saccade ampl
+ns_idx = find(ns_binarized); ts_idx = find(ts_binarized);
+ns_ampl = ns_binarized; ns_ampl(ns_idx) = nasalAmplitudes;
+ts_ampl = ts_binarized; ts_ampl(ts_idx) = temporalAmplitudes;
+
+ampl_kernel = ones(size(pca1_kernel)); % NOTE: this can end up overlapping with adjacent saccades quite fast...
+p.ns_ampl = conv2(ns_ampl, ampl_kernel, 'same')';
+p.ts_ampl = conv2(ts_ampl, ampl_kernel, 'same')';
 
 %% loop over cells
 cellCount = 0; 
