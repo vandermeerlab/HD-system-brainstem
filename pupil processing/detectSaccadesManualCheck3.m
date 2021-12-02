@@ -393,6 +393,8 @@ nasalAmplitudes = nasalAmplitudes_sorted;
 num_temporalSaccades = length(~isnan(temporalSaccades));
 num_nasalSaccades = length(~isnan(nasalSaccades_sorted));
 
+disp('Inspect the output. Press any key to continue') 
+pause
 %% Put data into structure
 % m.temporalSaccades = temporalSaccades_sorted;
 % m.nasalSaccades = nasalSaccades_sorted;

@@ -3,8 +3,8 @@ function [temporalSaccades, nasalSaccades, combinedSaccades, index_tP_final, ind
 % Remove jitter first then thresholds.
 % This is the in progress version.
 
-% INPUTS: 
-%           cfg_in: define variables such as the number of pixels 
+% INPUTS:
+%           cfg_in: define variables such as the number of pixels
 % OUTPUTS:
 %           temporalSaccades:   timestamps for temporal saccades
 %           nasalSaccades:      timestamps for nasal saccades
@@ -13,21 +13,21 @@ function [temporalSaccades, nasalSaccades, combinedSaccades, index_tP_final, ind
 %           index_nP_final:     indices for nasal saccades, in terms of the pupil position CSC
 %           tsdH:               tsd of horizontal pupil position
 %           tsdV:               tsd of vertical pupil position
-%           diffH:              tsd of horizontal pupil velocity  (*figure out units here) 
-%           diffV:              tsd of vertical pupil velocity 
-
+%           diffH:              tsd of horizontal pupil velocity  (*figure out units here)
+%           diffV:              tsd of vertical pupil velocity
+doSave = 1;
 SSN = HD_GetSSN;
 FontSize = 20;
 cfg_def = [];
-cfg_def.LineWidth = 3; 
+cfg_def.LineWidth = 3;
 cfg_def.threshAdj  = 4;  % how many timesteps around a saccade that are disqualified from being considered as subsequent saccades. Saccades usually have a rebound that can hit the other threshold.
 cfg_def.threshT = 10;  % positive displacement in image pixel space. TEMPORAL saccades.
 cfg_def.threshN = -10; % negative displacement in image pixel space. NASAL saccades.
 
 cfg_def.scalingfactor = 1;  % for shrinking the pupil trace so its the same height as diffH
-cfg_def.artifactThresh = 4;  % units of pixels 
+cfg_def.artifactThresh = 4;  % units of pixels
 cfg_def.doPlotThresholds = 1;
-cfg = ProcessConfig2(cfg_def,cfg_in);  % not sure if there is a function difference btwn ver2 and ver1 
+cfg = ProcessConfig2(cfg_def,cfg_in);  % not sure if there is a function difference btwn ver2 and ver1
 
 %% Get timestamps for the pupil trace
 % [~, videofn, ext] = fileparts(FindFiles('*VT1.nvt'));
@@ -44,9 +44,9 @@ index = strfind(events_ts.label, 'Starting Recording');
 if index{1} == 1                                 % Start Recording should be in the first or second .label position.
     starttime = events_ts.t{1}(1);  % subtract the very first time stamp to convert from Unix time to 'start at zero' time.
 elseif index{2} == 1
-    starttime = events_ts.t{2}(1); % for session with laser events, the start recording time moves to position 2. 
+    starttime = events_ts.t{2}(1); % for session with laser events, the start recording time moves to position 2.
 else
-    error('could not find start time for this session') 
+    error('could not find start time for this session')
 end
 
 % [~, videofn, ext] = fileparts(FindFiles('*VT1.smi'));
@@ -81,13 +81,13 @@ tsdH = tsd(tvec, pupilH - meanH);   % tsd of horizontal pupil position
 tsdV = tsd(tvec, pupilV - meanV);   % tsd of vertical pupil position
 
 diffH = tsd(tvec(2:end)', diff(tsdH.data)');     % Should this be (1:end-1) or (2:end)?
-diffV = tsd(tvec(2:end)', diff(tsdV.data)');     % tsd of vertical pupil velocity 
+diffV = tsd(tvec(2:end)', diff(tsdV.data)');     % tsd of vertical pupil velocity
 
 tstart = diffH.tvec(1);
 tend = diffH.tvec(end);
 
-%% Remove Artifacts from Camera Movement 
-% VERTICAL eye velocity 
+%% Remove Artifacts from Camera Movement
+% VERTICAL eye velocity
 % There shouldn't be much displacement in the vertical direction. Visual inspection showed that times with high power btwn 10-14 Hz were indicative of camera jitter that were not in fact saccades.
 cfg.low_freq = 10;
 cfg.high_freq = 15;
@@ -98,21 +98,31 @@ if mod(order,2)~= 0
     order = order-1;
 end
 Nyquist=floor(samp_freq/2);%determines nyquist frequency
+if Nyquist == 15
+    disp('Frame Rate is 30 Hz')
+    cfg.high_freq = 14; % this is a hacky. A few sessions were run with a frame rate of 30Hz. Matlab won't let me filter at or above 15 Hz for these sessions.
+end
+%% Interp NaNs if any exist (otherwise filtering won't work)
+eeg1new = eeg1;
+nanx = isnan(eeg1);
+t = 1:numel(eeg1);
+eeg1new(nanx) = interp1(t(~nanx), eeg1(~nanx), t(nanx));
+
 MyFilt=fir1(order,[cfg.low_freq cfg.high_freq]/Nyquist); %creates filter
-filtered1 = Filter0(MyFilt,eeg1); %filters eeg1 between low_freq and high_freq 
-%% This is an addition on 2021/11/12. hilbert.m gives all NaN values if thery are ANY NaNs in the input.  
-F = fillmissing(filtered1,'constant', 0); 
-filt_hilb1 = hilbert(F); %calculates the Hilbert transform of eeg1. Note *** Hilbert transform cannot accept NaNs. Use interp to fill these in. 
+filtered1 = Filter0(MyFilt,eeg1new); %filters eeg1 between low_freq and high_freq
+%% This is an addition on 2021/11/12. hilbert.m gives all NaN values if thery are ANY NaNs in the input.
+F = fillmissing(filtered1,'constant', 0);
+filt_hilb1 = hilbert(F); %calculates the Hilbert transform of eeg1. Note *** Hilbert transform cannot accept NaNs. Use interp to fill these in.
 amp1 = abs(filt_hilb1);%calculates the instantaneous amplitude of eeg1 filtered between low_freq and high_freq
 amp1=amp1-mean(amp1); %removes mean of the signal because the DC component of a signal does not change the correlation
-amp1tsd  = tsd(diffV.tvec, amp1); 
-artifactIndex = amp1 > cfg.artifactThresh;  % find timepoints where power is high (suspect times for movement artifact) 
+amp1tsd  = tsd(diffV.tvec, amp1);
+artifactIndex = amp1 > cfg.artifactThresh;  % find timepoints where power is high (suspect times for movement artifact)
 suspectPoints = find(artifactIndex);
-formatSpec = 'number of VERTICAL points with suspect filtered power is is %4.0d points'; 
-fprintf(formatSpec, length(suspectPoints)); 
+formatSpec = 'number of VERTICAL points with suspect filtered power is is %4.0d points';
+fprintf(formatSpec, length(suspectPoints));
 
-%% Remove Artifacts from Camera Movement 
-% HORIZONTAL eye velocity 
+%% Remove Artifacts from Camera Movement
+% HORIZONTAL eye velocity
 cfg.low_freq = 10;
 cfg.high_freq = 15;
 eeg2= diffH.data;
@@ -122,25 +132,34 @@ if mod(order,2)~= 0
     order = order-1;
 end
 Nyquist=floor(samp_freq/2);%determines nyquist frequency
+if Nyquist == 15
+    disp('Frame Rate is 30 Hz')
+    cfg.high_freq = 14; % this is a hacky. A few sessions were run with a frame rate of 30Hz. Matlab won't let me filter at or above 15 Hz for these sessions.
+end
+%% Interp NaNs if any exist (otherwise filtering won't work)
+eeg2new = eeg2;
+nanx = isnan(eeg2);
+t = 1:numel(eeg2);
+eeg2new(nanx) = interp1(t(~nanx), eeg2(~nanx), t(nanx));
 MyFilt=fir1(order,[cfg.low_freq cfg.high_freq]/Nyquist); %creates filter
-filtered2 = Filter0(MyFilt,eeg2); %filters eeg1 between low_freq and high_freq 
-%% This is an addition on 2021/11/12. hilbert.m gives all NaN values if thery are ANY NaNs in the input.  
-F2 = fillmissing(filtered2,'constant', 0); 
-filt_hilb2 = hilbert(F2); %calculates the Hilbert transform of eeg1. Note *** Hilbert transform cannot accept NaNs. Use interp to fill these in. 
+filtered2 = Filter0(MyFilt,eeg2new); %filters eeg1 between low_freq and high_freq
+%% This is an addition on 2021/11/12. hilbert.m gives all NaN values if thery are ANY NaNs in the input.
+F2 = fillmissing(filtered2,'constant', 0);
+filt_hilb2 = hilbert(F2); %calculates the Hilbert transform of eeg1. Note *** Hilbert transform cannot accept NaNs. Use interp to fill these in.
 amp2 = abs(filt_hilb2);%calculates the instantaneous amplitude of eeg1 filtered between low_freq and high_freq
 amp2=amp2-mean(amp2); %removes mean of the signal because the DC component of a signal does not change the correlation
-amp2tsd  = tsd(diffH.tvec, amp2); 
-artifactIndex2 = amp2 > cfg.artifactThresh;  % find timepoints where power is high (suspect times for movement artifact) 
+amp2tsd  = tsd(diffH.tvec, amp2);
+artifactIndex2 = amp2 > cfg.artifactThresh;  % find timepoints where power is high (suspect times for movement artifact)
 suspectPoints2 = find(artifactIndex2);
-formatSpec = 'number of HORIZONTAL points with suspect filtered power is is %4.0d points'; 
-fprintf(formatSpec, length(suspectPoints2)); 
+formatSpec = 'number of HORIZONTAL points with suspect filtered power is is %4.0d points';
+fprintf(formatSpec, length(suspectPoints2));
 
 %% Thresholding the TEMPORAL saccades (positive AHV segments)
 tP = diffH.data > cfg.threshT;  % data points above threshold
 [~, index_tP] = find(tP);  % tvec indices for data points above threshold
 [val_discard_tP, ~] = intersect(index_tP, suspectPoints);
-formatSpec = 'number of potential saccades removed due to filtering is %4.0d points'; 
-fprintf(formatSpec, length(val_discard_tP)); 
+formatSpec = 'number of potential saccades removed due to filtering is %4.0d points';
+fprintf(formatSpec, length(val_discard_tP));
 
 index_tP_temp = setdiff(index_tP, val_discard_tP);
 sac_amps_tP = diffH.data(index_tP_temp);
@@ -221,9 +240,9 @@ nP_wnan = B(nPsize);
 index_nP_final = nP_wnan(~isnan(nP_wnan));
 
 temporalSaccades = diffH.tvec(index_tP_final);
-temporalAmplitudes = diffH.data(index_tP_final); 
+temporalAmplitudes = diffH.data(index_tP_final);
 nasalSaccades = diffH.tvec(index_nP_final);
-nasalAmplitudes = diffH.data(index_nP_final); 
+nasalAmplitudes = diffH.data(index_nP_final);
 combinedSaccades = sort(horzcat(temporalSaccades, nasalSaccades));
 
 fprintf(1, '\n');
@@ -239,7 +258,7 @@ if cfg.doPlotThresholds == 1
     plot(diffH.tvec, diffH.data)
     plot(diffV.tvec, diffV.data, 'm')
     plot(tsdH.tvec, tsdH.data, 'Color', [.301 .745 .933], 'LineStyle', '--')
-%     plot(tsdH.tvec, tsdH.data, 'Color', 'k', 'LineStyle', '--')
+    %     plot(tsdH.tvec, tsdH.data, 'Color', 'k', 'LineStyle', '--')
     plot(amp1tsd.tvec, amp1tsd.data, 'k', 'LineWidth', cfg.LineWidth)
     plot(amp2tsd.tvec, amp2tsd.data, 'Color', [.85 .325 .098], 'LineWidth', cfg.LineWidth)
     xlabel('Time (sec)', 'FontSize', FontSize)
@@ -255,6 +274,26 @@ if cfg.doPlotThresholds == 1
     legend('horiz eye vel.', 'vertical eye vel.', 'horizontal eye position', 'filtered vert. vel. 10-15 Hz', 'filtered horiz. vel. 10-15 Hz')
 end
 
+if doSave == 1
+    %% Save data
+    disp('Saving data as new -saccade.mat file')
+    save(strcat(SSN, '-saccades.mat'), 'temporalSaccades', 'nasalSaccades', 'combinedSaccades', 'index_tP_final', 'index_nP_final', 'tsdH', 'tsdV', 'diffH', 'diffH')
+    if cfg.doPlotThresholds == 1
+        savefig(strcat(SSN, '-saccades.fig'))
+    end
+end
+
+%           temporalSaccades:   timestamps for temporal saccades
+%           nasalSaccades:      timestamps for nasal saccades
+%           combinedSaccades:   both timestamps combined, sorted
+%           index_tP_final:     indices for temporal saccades, in terms of the pupil position CSC
+%           index_nP_final:     indices for nasal saccades, in terms of the pupil position CSC
+%           tsdH:               tsd of horizontal pupil position
+%           tsdV:               tsd of vertical pupil position
+%           diffH:              tsd of horizontal pupil velocity  (*figure out units here)
+%           diffV:
+
+
 
 % %% Filtering
 % % The horizontal trace
@@ -264,7 +303,7 @@ end
 % cfg_filter.f = 1;
 % diffH.cfg.hdr{1}.Fs = 1 / median(diff(diffH.tvec));   % append the sampling rate
 % filteredH = FilterLFP(cfg_filter, diffH);
-% 
+%
 % % The vertical trace
 % cfg_filter = [];
 % cfg_filter.type = 'butter';
