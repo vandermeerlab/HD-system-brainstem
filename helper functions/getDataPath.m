@@ -61,6 +61,8 @@ switch machinename
         base_fp = 'D:\data\promoted\';
     case 'CALLISTO'
         base_fp = 'E:\data\promoted\';
+    case 'DESKTOP-RBK90DF'
+        base_fp = 'C:\Jeff\U01\datatouse';
     otherwise
         error('Unrecognized machine. Edit this function: add your machine name and base data path.')
 end
