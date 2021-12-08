@@ -27,7 +27,17 @@ for iSess = 1:length(fd)
         if exist(strcat(SSN, '-VT1_proc.mat'))
             %         [S] = LoadSpikesJeff;
             spikefiles = FindFiles('*.t');
-            [temporalSaccades, nasalSaccades, combinedSaccades, index_tP_final, index_nP_final, tsdH, tsdV, diffH, diffV] = processPupilData2(cfg);
+%             [temporalSaccades, nasalSaccades, combinedSaccades, index_tP_final, index_nP_final, tsdH, tsdV, diffH, diffV] = processPupilData2(cfg);
+            try load(FindFile('*saccades-edited.mat'), 'nasalSaccades', 'nasalAmplitudes', 'temporalSaccades', 'temporalAmplitudes')
+                keep = find(~isnan(temporalSaccades));
+                temporalSaccades = temporalSaccades(keep); temporalAmplitudes = temporalAmplitudes(keep);
+                
+                keep = find(~isnan(nasalSaccades));
+                nasalSaccades = nasalSaccades(keep); nasalAmplitudes = nasalAmplitudes(keep);
+            catch
+                disp('WARNING: No edited saccades file available, computing automated version...')
+                [temporalSaccades, nasalSaccades, ~, ~, ~, tsdH, tsdV] = processPupilData2([]);
+            end
             for iCell = 1:length(S.t)
                 [a, b, c] = fileparts(spikefiles{iCell});
                 celltitle = b;
