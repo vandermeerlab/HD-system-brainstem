@@ -8,7 +8,7 @@ function out = SESSION_ahv_glmfit_jeff(cfg_in)
 %
 
 cfg_def = []; % overall params
-cfg_def.dt = 0.001;
+cfg_def.dt = 0.005;
 cfg_def.maxlag = 500; % bins for use in saccade PETH
 cfg_def.debug = 0;
 cfg_def.tc_binEdges = -150:10:150; % for AHV TC
@@ -25,15 +25,15 @@ S = LoadSpikesJeff; nCells = length(S.t);
 
 try load(FindFile('*saccades-edited.mat'))
     keep = find(~isnan(temporalSaccades));
-    if length(keep) < length(temporalSaccades)
-        warning('NaNs found in temporalSaccades!');
-    end
+%     if length(keep) < length(temporalSaccades)
+%         warning('NaNs found in temporalSaccades!');
+%     end
     temporalSaccades = temporalSaccades(keep); temporalAmplitudes = temporalAmplitudes(keep);
     
     keep = find(~isnan(nasalSaccades));
-    if length(keep) < length(nasalSaccades)
-        warning('NaNs found in nasalSaccades!');
-    end
+%     if length(keep) < length(nasalSaccades)
+%         warning('NaNs found in nasalSaccades!');
+%     end
     nasalSaccades = nasalSaccades(keep); nasalAmplitudes = nasalAmplitudes(keep);
 catch
     disp('WARNING: No edited saccades file available, computing automated version...')
@@ -79,10 +79,10 @@ this_pupilX = tsd(sd.TVECc, p.pupilX');
 
 % PCA PETH predictors
 cfg_peth = [];
-[FRxBinT, FRxBinN, FRxBinTsmooth, FRxBinNsmooth, FRxBinTnorm, FRxBinNnorm, TnormSmooth, NnormSmooth, outputIT, binCenters, ~, cellID, cellname] = makeSaccadeHeatPlot(cfg_peth);
-% pushdir('C:\Users\mvdm\Dropbox\projects\Jeff\ahv_peth_pca');
-% load SaccadePETHs
-% popdir;
+% [FRxBinT, FRxBinN, FRxBinTsmooth, FRxBinNsmooth, FRxBinTnorm, FRxBinNnorm, TnormSmooth, NnormSmooth, outputIT, binCenters, ~, cellID, cellname] = makeSaccadeHeatPlot(cfg_peth);
+pushdir('D:\Jeff\U01\analysis\dot mat files');
+load SaccadePETHs
+popdir;
 
 x1 = FRxBinNsmooth'; x2 = FRxBinTsmooth'; x = cat(2, x1, x2);
 [coeff, score] = pca(x);

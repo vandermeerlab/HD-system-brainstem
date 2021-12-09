@@ -1,10 +1,14 @@
+function [cfg_master, out, rsq_all, sacc_gain, ahv_gain, peth_bin_centers, sessUsed] = COLLECT_ahv_glmfit_jeff() 
+
 %% collect data from all sessions
 %% set up data path
 cd('C:\Jeff\U01\datatouse');
 cfg = [];
-cfg.rats = {'M085', 'M089', 'M090'};
+cfg.rats = {'M039', 'M052', 'M079', 'M080', 'M086', 'M085', 'M089', 'M090', 'M105', 'M112', 'M212', 'M269', 'M271', 'M293'};
+%  'M094'. 'M104'. crashing on sessions M094-2021-12-28, M105-2021-01-17, M105-2021-01-17. temporalamplitudes is ~= ts_idx.
 fd = getDataPath(cfg);
 
+endSess = length(fd); 
 %%
 cfg_master = []; % overall params
 cfg_master.dt = 0.001;
@@ -14,13 +18,24 @@ cfg_master.tc_binEdges = -150:10:150;
 cfg_master.pupil_tc_binEdges = -80:5:80; % for pupilX TC
 
 out = [];
+sessUsed = {};
+sessCounter = 0; 
 
-for iS = 1:length(fd)
-   pushdir(fd{iS});
-   
-   out = cat(2, out, SESSION_ahv_glmfit_jeff(cfg_master));
-   
-   popdir;
+for iS = 1:endSess
+    pushdir(fd{iS});
+    SSN = HD_GetSSN; disp(SSN);
+    if exist(strcat(SSN, '-VT1_proc.mat')) == 2
+        if strcmp(SSN, 'M094-2021-12-28') == 0 && strcmp(SSN, 'M105-2021-01-17') == 0 && strcmp(SSN, 'M212-2021-07-21') == 0 && strcmp(SSN, 'M271-2021-08-28') == 0 && strcmp(SSN, 'M086-2020-11-21') == 0
+            sessCounter = sessCounter +1; 
+            sessUsed{sessCounter} = SSN; 
+            out = cat(2, out, SESSION_ahv_glmfit_jeff(cfg_master));
+        else
+            disp('problem session. skipping for now...')
+        end
+    else
+        disp('no video tracking data. skipping session...')
+    end
+    popdir;
 end
 
 nCells = length(out);
@@ -45,7 +60,7 @@ figure;
 
 subplot(221)
 for iC = 1:nCells
-    h = text(ahv_gain(iC), sacc_gain(iC), num2str(iC)); 
+    h = text(ahv_gain(iC), sacc_gain(iC), num2str(iC));
     set(h, 'FontSize', 16, 'FontWeight', 'Bold');
     hold on;
 end
@@ -76,17 +91,17 @@ for iF = 1:nFigures
     for iC = start_cell:end_cell
         
         plot_idx = iC - (iF-1)*cells_per_figure;
-        
+        %% subplot 1. AHV tuning curve.
         this_plot = (plot_idx-1)*3 + 1;
-        subplot(cells_per_figure, 3, this_plot);
+        subplot(cells_per_figure, 3, this_plot);  
         
         tc_bin_centers = cfg_master.tc_binEdges(1:end-1) + median(diff(cfg_master.tc_binEdges))/2;
         plot(tc_bin_centers, out(iC).tc);
         box off;
         set(gca, 'TickDir', 'out', 'FontSize', 18, 'XLim', [-150 150]); xlabel('AHV');
         yl = ylabel(num2str(iC)); set(yl, 'FontWeight', 'Bold');
-        
-        subplot(cells_per_figure, 3, this_plot + 1);
+        %%   subplot 2. Saccade PETH.
+        subplot(cells_per_figure, 3, this_plot + 1); 
         
         peth_bin_centers = -floor(length(out(iC).ns_peth)/2):floor(length(out(iC).ns_peth)/2);
         peth_bin_centers = peth_bin_centers .* cfg_master.dt;
@@ -95,9 +110,9 @@ for iF = 1:nFigures
         plot(peth_bin_centers, out(iC).ns_peth ./ cfg_master.dt);
         hold on;
         plot(peth_bin_centers, out(iC).ts_peth ./ cfg_master.dt, 'r');
-        set(gca, 'TickDir', 'out', 'FontSize', 18, 'XLim', [-1 1]); xlabel('time to sacc (s)');
-        
-        subplot(cells_per_figure, 3, this_plot + 2);
+        set(gca, 'TickDir', 'out', 'FontSize', 18, 'XLim', [-.2 .2]); xlabel('time to sacc (s)');
+        %%  subplot 3. Pupil Tuning Curve.
+        subplot(cells_per_figure, 3, this_plot + 2);       
         
         tc_bin_centers = cfg_master.pupil_tc_binEdges(1:end-1) + median(diff(cfg_master.pupil_tc_binEdges))/2;
         plot(tc_bin_centers, out(iC).pupil_tc);
