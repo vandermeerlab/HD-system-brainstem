@@ -66,6 +66,11 @@ fn = strcat(b,c);
 tvec_raw = read_smi(fn);
 tvec = tvec_raw - starttime;
 
+if strcmp(SSN, 'M281-2021-12-23')              % exception for this session where cheetah crashed and .smi is shorter than pupilH
+    tvec = .02*(1:length(pupilH));
+    tvec = tvec';
+end
+
 %% Get the pupil trace dervied from Facemap
 f = FindFiles('*VT1_proc.mat');
 load(f{1}, 'pupil');

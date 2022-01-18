@@ -1,11 +1,12 @@
-function out = SESSION_ahv_glmfit_jeff(cfg_in)
+function out = SESSION_ahv_glmfit_jeffbyPhase(cfg_in)
 % function out = SESSION_ahv_glmfit(cfg_in)
-%
-% perform single session GLM fits of spiking data with AHV and saccade
+% Based on code by MvdM. 11/2021.
+% 12/13/2021. JJS.
+% Objective: perform single session GLM fits of spiking data with AHV and saccade
 % regressors
 %
 % run from single session's data folder
-%
+% This version calculates all values for two different session epochs: (1) during rotation periods (2) during stationary periods 
 
 cfg_def = []; % overall params
 cfg_def.dt = 0.005;
@@ -41,6 +42,11 @@ catch
     disp('WARNING: No edited saccades file available, computing automated version...')
     [temporalSaccades, nasalSaccades, ~, ~, ~, tsdH, tsdV] = processPupilData2([]);
 end
+%% Divide into rotation vs. stationary periods
+
+
+
+
 %%
 p = table; % contains regressors
 

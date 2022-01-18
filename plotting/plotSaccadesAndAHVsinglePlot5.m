@@ -21,7 +21,7 @@ function [] = plotSaccadesAndAHVsinglePlot5(cfg, savedestination, fd, varargin)
 occthresh = 0.5; % threshold number of seconds occupancy for including in tuning curve
 LineWidth = 5;
 doSave = 1;
-doPause = 1;
+doPause = 0;
 figType = 'jpg';
 process_varargin(varargin);
 % formatSpec = '%.2f';
@@ -32,6 +32,10 @@ cfg = ProcessConfig(cfg_def,cfg);
 if isempty(fd)
     fd = FindFiles('*keys.m');
 end
+if isempty(savedestination)
+    savedestination = pwd;
+end
+TTs = FindFiles('*.t');
 for iSess = 1:length(fd)
     pushdir(fileparts(fd{iSess}));
     SSN = HD_GetSSN;
@@ -66,50 +70,54 @@ for iSess = 1:length(fd)
         
         spikefiles = FindFiles('*.t');
         %         s = strfind(spikefiles, fd{iSess});
-        iPlot = find(strcmp(spikefiles, fd{iSess}));
         %         iPlot = find(cell2mat(s));
         clf
-        t = tiledlayout(1,1);
-        %% Plot the AHV data
-        ax1 = axes(t);
-        plot(ax1, AHV_tsd.data, AHV_F(iPlot,:), '.', 'MarkerSize', .5, 'color', [.8 .8 .8]);
-        hold on
-        plot(ax1, tc_out.usr.binCenters(tc_out.occ_hist>occthresh), smoothdata(tc_out.tc(iPlot,(tc_out.occ_hist>occthresh))), 'k', 'LineWidth', 3);
-        c = axis;
-        axis([-200 200 c(3) c(4)])
-        ax1.XAxisLocation = 'top';
-        ax1.YAxisLocation = 'right';
-        ylabel('AHV Firing Rate (Hz)')
-        title(S.label{iPlot})
-        ax1.XColor = 'k';
-        ax1.YColor = 'k';
-        %             h = get(gca, 'XLim');
-        %             h2 = get(gca, 'YLim');
-        %             text(.75*h(1), 5, 'CW', 'FontSize', 12)
-        %             text(.5*h(2), 5, 'CCW', 'FontSize', 12)
-        
-        %% Plot the saccade data
-        ax2 = axes(t);
-        plot(ax2, binCenters, nasaldata(iPlot,:), 'Color', [1 .6 .2], 'LineWidth', LineWidth);
-        hold on
-        plot(ax2, binCenters, temporaldata(iPlot,:), 'Color', 'r', 'LineWidth', LineWidth);
-        legend('Nasal (CW)', 'Temporal (CCW)', 'Location', 'NorthWest')
-        xlabel('Time peri Saccade (sec)')
-        ylabel('Saccade Firing Rate (Hz)')
-        
-        h = get(gca, 'XLim');
-        h2 = get(gca, 'YLim');
-        text(.75*h(1), 1.2*h2(1), 'CW', 'FontSize', 12)
-        text(.5*h(2), 1.2*h2(1), 'CCW', 'FontSize', 12)
-        
-        ax2.Color = 'none';
-        ax1.Box = 'off';
-        ax2.Box = 'off';
-        ax2.XColor = 'r';
-        ax2.YColor = 'r';
-        %             text(.1,.85,num2str(zVal_T(iPlot),formatSpec), 'Units', 'Normalized', 'Color', 'r', 'FontSize', FontSize);
-        %             text(.1,.65,num2str(zVal_N(iPlot),formatSpec), 'Units', 'Normalized', 'Color', [1 .6 .2], 'FontSize', FontSize);
-        
+        numPlots = length(spikefiles); 
+        t = tiledlayout(1,numPlots);
+        for iPlot = 1:numPlots
+            ax1 = nexttile
+            %             subtightplot(1,iPlot,1)
+            %% Plot the AHV data
+            ax1 = axes(t);
+            plot(ax1, AHV_tsd.data, AHV_F(iPlot,:), '.', 'MarkerSize', .5, 'color', [.8 .8 .8]);
+            hold on
+            plot(ax1, tc_out.usr.binCenters(tc_out.occ_hist>occthresh), smoothdata(tc_out.tc(iPlot,(tc_out.occ_hist>occthresh))), 'k', 'LineWidth', 3);
+            c = axis;
+            axis([-200 200 c(3) c(4)])
+            ax1.XAxisLocation = 'top';
+            ax1.YAxisLocation = 'right';
+            ylabel('AHV Firing Rate (Hz)')
+            title(S.label{iPlot})
+            ax1.XColor = 'k';
+            ax1.YColor = 'k';
+            %             h = get(gca, 'XLim');
+            %             h2 = get(gca, 'YLim');
+            %             text(.75*h(1), 5, 'CW', 'FontSize', 12)
+            %             text(.5*h(2), 5, 'CCW', 'FontSize', 12)
+            
+            %% Plot the saccade data
+            ax2 = axes(t);
+            plot(ax2, binCenters, nasaldata(iPlot,:), 'Color', [1 .6 .2], 'LineWidth', LineWidth);
+            hold on
+            plot(ax2, binCenters, temporaldata(iPlot,:), 'Color', 'r', 'LineWidth', LineWidth);
+            legend('Nasal (CW)', 'Temporal (CCW)', 'Location', 'NorthWest')
+            xlabel('Time peri Saccade (sec)')
+            ylabel('Saccade Firing Rate (Hz)')
+            
+            h = get(gca, 'XLim');
+            h2 = get(gca, 'YLim');
+            text(.75*h(1), 1.2*h2(1), 'CW', 'FontSize', 12)
+            text(.5*h(2), 1.2*h2(1), 'CCW', 'FontSize', 12)
+            
+            ax2.Color = 'none';
+            ax1.Box = 'off';
+            ax2.Box = 'off';
+            ax2.XColor = 'r';
+            ax2.YColor = 'r';
+            %             text(.1,.85,num2str(zVal_T(iPlot),formatSpec), 'Units', 'Normalized', 'Color', 'r', 'FontSize', FontSize);
+            %             text(.1,.65,num2str(zVal_N(iPlot),formatSpec), 'Units', 'Normalized', 'Color', [1 .6 .2], 'FontSize', FontSize);
+%             nexttile 
+        end
         if doPause == 1
             disp('paused. waiting for user')
             pause

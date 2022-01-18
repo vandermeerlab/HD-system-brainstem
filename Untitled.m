@@ -35,3 +35,8 @@ for iSess = 1:length(fd)
 end
 
 
+    t = temporalSaccades;
+    cfg_in = [];
+    cfg_in.window = [-.5 .5];
+    cfg_in.dt = 0.005;
+    [outputS, outputT, outputGau, outputIT, cfg] = SpikePETHvdm(cfg_in, S, t); 

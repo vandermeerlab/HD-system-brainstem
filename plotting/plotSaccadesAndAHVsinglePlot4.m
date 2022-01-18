@@ -26,6 +26,9 @@ figType = 'matlab';
 process_varargin(varargin);
 % formatSpec = '%.2f';
 
+if isempty(savedestination)
+    savedestination = pwd; 
+end
 if isempty(fd)
     fd = FindFiles('*keys.m');
 end

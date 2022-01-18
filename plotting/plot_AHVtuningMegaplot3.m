@@ -5,6 +5,7 @@ function plot_AHVtuningMegaplot3(iCell, varargin)
 
 process_varargin(varargin)
 % cd to data folder
+SSN = HD_GetSSN; disp(SSN);
 % miscellaney
 clf
 FontSize = 13;
@@ -16,7 +17,7 @@ subtractStartTime = 1;
 cfg = [];
 cfg.uint = '64';
 spikefiles = FindFiles('*.t');
-% cfg.fc = {spikefiles}; 
+% cfg.fc = {spikefiles};
 cfg.fc = {spikefiles{iCell}};
 Sold = LoadSpikes(cfg);
 % S = LoadSpikesJeff;
@@ -24,16 +25,20 @@ Sold = LoadSpikes(cfg);
 if subtractStartTime == 1 % New cheetah versions have timestamps
     events_ts = LoadEvents([]);
     wrapper = @(events_ts) strcmp(events_ts, 'Starting Recording');
-    A = cellfun(wrapper, events_ts.label); 
-    Startindex = find(A); % index which label says 'Start Recording' 
+    A = cellfun(wrapper, events_ts.label);
+    Startindex = find(A); % index which label says 'Start Recording'
     starttime = events_ts.t{Startindex}(1); % use the very first start record time
-    wrapper2 = @(events_ts) strcmp(events_ts, 'Stopping Recording');
-    B = cellfun(wrapper2, events_ts.label);
-    EndIndex = find(B); 
-    endtime = events_ts.t{EndIndex};
-%     assert(strcmp(events_ts.label{1}, 'Starting Recording')==1)
+    %     wrapper2 = @(events_ts) strcmp(events_ts, 'Stopping Recording');
+    %     B = cellfun(wrapper2, events_ts.label);
+    %     EndIndex = find(B);
+    %     endtime = events_ts.t{EndIndex};
+    %     assert(strcmp(events_ts.label{1}, 'Starting Recording')==1)
     for iC = 1:length(Sold.t)
-        S.t{iC} = Sold.t{iC} - starttime;  % subtract the very first time stamp to convert from Unix time to 'start at zero' time.
+        if strcmp(SSN, 'M054-2020-03-03') == 1
+            S.t{iC} = Sold.t{iC} - Sold.t{iC}(1);
+        else
+            S.t{iC} = Sold.t{iC} - starttime;  % subtract the very first time stamp to convert from Unix time to 'start at zero' time.
+        end
     end
 end
 % get AHV Tuning Curve
@@ -147,7 +152,7 @@ cfg_Q = []; cfg_Q.dt = 0.001; cfg_Q.gausswin_sd = 0.05;cfg_Q.smooth = 'gauss';
 Q = MakeQfromS(cfg_Q, S);
 tvec = Q.tvec - Q.tvec(1);
 yyaxis left
-plot(tvec, Q.data./cfg_Q.dt)
+plot(Q.tvec, Q.data./cfg_Q.dt)
 maxFR = max(Q.data./cfg_Q.dt);
 set(gca, 'Xlim', [0 tvec(end)], 'FontSize', FontSize)
 ylabel('FR (Hz)', 'FontSize', FontSize)
@@ -192,14 +197,14 @@ if exist(strcat(SSN, '-VT1_proc.mat'))
     % pupiltime = [1:length(pupil{1}.area)] ./ VT1fps;   % this is slightly off. Need to load timestamps from the Nvt file
     
     events_ts = LoadEvents([]);
-    assert(strcmp(events_ts.label{1}, 'Starting Recording'))=1;  % assert is not working. matlab thinks its a variable 
-%     starttime = events_ts.t{1}(1);
+    assert(strcmp(events_ts.label{1}, 'Starting Recording'))=1;  % assert is not working. matlab thinks its a variable
+    %     starttime = events_ts.t{1}(1);
     
-%     [~, videofn, ext] = fileparts(FindFiles('*VT1.nvt'));
-%     cfg = [];
-%     cfg.fn = strcat(videofn, ext);
-%     cfg.removeZeros = 0 ;
-%     pos_tsd = LoadPos(cfg);
+    %     [~, videofn, ext] = fileparts(FindFiles('*VT1.nvt'));
+    %     cfg = [];
+    %     cfg.fn = strcat(videofn, ext);
+    %     cfg.removeZeros = 0 ;
+    %     pos_tsd = LoadPos(cfg);
     %     pupiltime = pos_tsd.tvec;   % it apprears to Nvt file is 2 frames longer than the number of frames from facemap
     %     pupiltime = pupiltime - pupiltime(1);
     
@@ -207,6 +212,11 @@ if exist(strcat(SSN, '-VT1_proc.mat'))
     fn = strcat(b,c);
     tvec_raw = read_smi(fn);
     tvec = tvec_raw - starttime;
+    
+    if strcmp(SSN, 'M281-2021-12-23')              % exception for this session where cheetah crashed and .smi is shorter than pupilH
+        tvec = .02*(1:length( pupil{1}.com));
+        tvec = tvec';
+    end
     
     yyaxis left
     plot(tvec, pupil{1}.com(:,2));         % pupil{1}.com(:,2)  is the horizontal eye position from facemap
@@ -218,7 +228,7 @@ if exist(strcat(SSN, '-VT1_proc.mat'))
     plot(AHV_tsd.tvec, AHV_tsd.data)
     ylabel('AHV (deg./sec)')
     c = axis;
-    axis([c(1) endtime-starttime c(3) c(4)]);
+    axis([c(1) AHV_tsd.tvec(end) c(3) c(4)]);
     %%
     linkaxes([plot7 plot8 plot9], 'x');
 else

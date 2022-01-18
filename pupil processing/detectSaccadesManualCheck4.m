@@ -39,7 +39,7 @@ if exist(strcat(SSN, '-VT1.smi'), 'file') == 2
     elseif strcmp(f, 's')
         skip = 1;
     else
-        error('unrecognized response')
+        derror('unrecognized response')
     end
     
     
@@ -84,6 +84,11 @@ if exist(strcat(SSN, '-VT1.smi'), 'file') == 2
             load(f{1}, 'pupil');
             pupilH = pupil{1}.com(:,2);
             pupilV = pupil{1}.com(:,1);
+            
+             if strcmp(SSN, 'M281-2021-12-23')              % exception for this session where cheetah crashed and .smi is shorter than pupilH
+                 tvec = .02*(1:length(pupilH));
+                 tvec = tvec';
+             end
             
             % Subtract the mean
             meanH = nanmean(pupilH);
