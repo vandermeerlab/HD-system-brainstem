@@ -271,7 +271,7 @@ if exist(strcat(SSN, '-VT1.smi'), 'file') == 2
         set(gca, 'FontSize', FontSize)
         % legend('horiz eye vel.', 'vertical eye vel.', 'horizontal eye position', 'filtered vert. vel. 10-15 Hz', 'filtered horiz. vel. 10-15 Hz', '', '', '')
         yyaxis right
-%         plot(AHV_tsd.tvec, AHV_tsd.data, 'Color', [.75 .75 0])
+        plot(AHV_tsd.tvec, AHV_tsd.data, 'Color', [.75 .75 0])
         % c = axis;
         % line([c(1) c(2)], [0 0], 'Color', [.75 .75 0], 'LineStyle', '--', 'LineWidth', 3)        % plotting another line makes it glitchy with the
         ylabel('horizontal pupil position', 'FontSize', FontSize)
