@@ -29,6 +29,7 @@ please.fc{1} = FindFile(cfg.chB);
 chB = LoadCSC(please); 
      
 assert(length(chA.tvec) == length(chB.tvec))   % size of the tsd's should be identical
+
 % Error testing: NaNs
 if sum(isnan(chA.data))>0; warning('NaNs detected in chA. Shouldnt be any NaNs'); end
 if sum(isnan(chB.data))>0; warning('NaNs detected in chB. Shouldnt be any NaNs'); end
