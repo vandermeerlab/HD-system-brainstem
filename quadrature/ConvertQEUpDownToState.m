@@ -12,9 +12,6 @@ s2 = 2;
 s3 = 3;
 s4 = 4;
 
-disp('before the loop, the state vector is') %debugging
-state_vec
-
 for i = 1:length(vec_1)
    
     if (vec_1(i) == 1 & vec_2(i) == 1)
