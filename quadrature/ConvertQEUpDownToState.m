@@ -26,13 +26,13 @@ for i = 1:length(vec_1)
     end
     
     %state 3
-    if (vec_1(i) == 0 & vec_2(i) == 0)
+    if (vec_1(i) == 0 & vec_2(i) == 1)
         state_vec(i) = s3;
         %disp('state 3')
     end
     
     %state 4
-    if (vec_1(i) == 0 & vec_2(i) == 1)
+    if (vec_1(i) == 0 & vec_2(i) == 0)
         state_vec(i) = s4;
         %disp('state 4')
     end
