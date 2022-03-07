@@ -1,4 +1,4 @@
-function output = ConvertQEUpDownToState(up_down_tsd) %better vector names
+function state_tsd = ConvertQEUpDownToState(up_down_tsd) %better vector names
 
 %create empty state vector
 state_vec = zeros(1, length(up_down_tsd.tvec)); 
@@ -40,4 +40,4 @@ for i = 1:length(vec_1)
 end
 
 up_down_tsd.data = state_vec;
-output = up_down_tsd;
+state_tsd = up_down_tsd;
