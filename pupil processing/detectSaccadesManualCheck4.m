@@ -23,6 +23,9 @@ function detectSaccadesManualCheck4(cfg_in)
 SSN = HD_GetSSN; disp(SSN);
 overwrite = 1;
 skip = 0;
+cfg_def.plotAHV = 1; 
+cfg = ProcessConfig2(cfg_def, cfg_in);
+
 
 if exist(strcat(SSN, '-VT1.smi'), 'file') == 2
     if exist(strcat(SSN, '-saccades-edited.mat'), 'file') == 2
@@ -64,7 +67,11 @@ if exist(strcat(SSN, '-VT1.smi'), 'file') == 2
             [AHV_tsd] = Get_AHV(cfg_AHV);
             
             %% Load Events and get the session start time
-            events_ts = LoadEvents([]);
+            if exist('events_ts.mat') == 2
+                load('events_ts.mat');
+            else
+                events_ts = LoadEvents([]);
+            end
             index = strfind(events_ts.label, 'Starting Recording');
             if index{1} == 1                                 % Start Recording should be in the first or second .label position.
                 starttime = events_ts.t{1}(1);  % subtract the very first time stamp to convert from Unix time to 'start at zero' time.
@@ -85,10 +92,10 @@ if exist(strcat(SSN, '-VT1.smi'), 'file') == 2
             pupilH = pupil{1}.com(:,2);
             pupilV = pupil{1}.com(:,1);
             
-             if strcmp(SSN, 'M281-2021-12-23')              % exception for this session where cheetah crashed and .smi is shorter than pupilH
-                 tvec = .02*(1:length(pupilH));
-                 tvec = tvec';
-             end
+            if strcmp(SSN, 'M281-2021-12-23')              % exception for this session where cheetah crashed and .smi is shorter than pupilH
+                tvec = .02*(1:length(pupilH));
+                tvec = tvec';
+            end
             
             % Subtract the mean
             meanH = nanmean(pupilH);
@@ -271,9 +278,11 @@ if exist(strcat(SSN, '-VT1.smi'), 'file') == 2
         set(gca, 'FontSize', FontSize)
         % legend('horiz eye vel.', 'vertical eye vel.', 'horizontal eye position', 'filtered vert. vel. 10-15 Hz', 'filtered horiz. vel. 10-15 Hz', '', '', '')
         yyaxis right
-%         plot(AHV_tsd.tvec, AHV_tsd.data, 'Color', [.75 .75 0])
-        % c = axis;
-        % line([c(1) c(2)], [0 0], 'Color', [.75 .75 0], 'LineStyle', '--', 'LineWidth', 3)        % plotting another line makes it glitchy with the
+        if cfg.plotAHV == 1
+            plot(AHV_tsd.tvec, AHV_tsd.data, 'Color', [.75 .75 0])
+        end
+        c = axis;
+        line([c(1) c(2)], [0 0], 'Color', [.75 .75 0], 'LineStyle', '--', 'LineWidth', 3)        % plotting another line makes it glitchy with the
         ylabel('horizontal pupil position', 'FontSize', FontSize)
         yyaxis left
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -426,12 +435,16 @@ if exist(strcat(SSN, '-VT1.smi'), 'file') == 2
         ylabel('horizontal pupil position', 'FontSize', FontSize)
         yyaxis left
         
-        temporalSaccades = temporalSaccades_sorted;
-        nasalSaccades = nasalSaccades_sorted;
-        temporalAmplitudes = temporalAmplitudes_sorted;
-        nasalAmplitudes = nasalAmplitudes_sorted;
-        numtemporalSaccades = length(~isnan(temporalSaccades));
-        numnasalSaccades = length(~isnan(nasalSaccades_sorted));
+%         temporalSaccades = temporalSaccades_sorted;
+        temporalSaccades = temporalSaccades_sorted(~isnan(temporalSaccades_sorted));
+        nasalSaccades = nasalSaccades_sorted(~isnan(nasalSaccades_sorted));
+        
+        
+        temporalAmplitudes = temporalAmplitudes_sorted(~isnan(temporalAmplitudes_sorted);
+        nasalAmplitudes = nasalAmplitudes_sorted(~isnan(nasalAmplitudes_sorted));
+        
+%         numtemporalSaccades = length(~isnan(temporalSaccades));
+%         numnasalSaccades = length(~isnan(nasalSaccades_sorted));
         
         %% Save data
         disp('Saving data as new -saccade.mat file')

@@ -4,6 +4,7 @@ function detectSaccadesManualCheck3(cfg_in)
 %      and the trace is scrolled through to check/add/remove indivudal saccades that automatic method may have missed.
 % This version accepts all potential saccades in the first pass, and sorts them (temporal vs. nasal) afterward, according to sign (+ = temp., - = nasal).
 % *** Need to also add a way to remove saccades that are incorrect
+%% THIS  VERSION CANNOT APPEND NEW CHANGES TO AN EXISTING FILE!!!!
 
 % INPUTS:
 %           cfg_in: define variables such as the number of pixels

@@ -23,7 +23,11 @@ Sold = LoadSpikes(cfg);
 % S = LoadSpikesJeff;
 
 if subtractStartTime == 1 % New cheetah versions have timestamps
-    events_ts = LoadEvents([]);
+    if exist('events_ts.mat') == 2
+        load('events_ts.mat');
+    else
+        events_ts = LoadEvents([]);
+    end
     wrapper = @(events_ts) strcmp(events_ts, 'Starting Recording');
     A = cellfun(wrapper, events_ts.label);
     Startindex = find(A); % index which label says 'Start Recording'
@@ -163,7 +167,7 @@ yyaxis right
 plot(AHV_tsd.tvec, AHV_tsd.data)
 ylabel('AHV (deg./sec)')
 
-events_ts = LoadEvents([]);
+% events_ts = LoadEvents([]);
 % endtime = events_ts.t{2}(end) - events_ts.t{1}(1);
 c = axis;
 % axis([c(1) endtime c(3) c(4)]);
@@ -196,8 +200,8 @@ if exist(strcat(SSN, '-VT1_proc.mat'))
     load(strcat(SSN, '-VT1_proc.mat'), 'pupil');         % load the output of facemap
     % pupiltime = [1:length(pupil{1}.area)] ./ VT1fps;   % this is slightly off. Need to load timestamps from the Nvt file
     
-    events_ts = LoadEvents([]);
-    assert(strcmp(events_ts.label{1}, 'Starting Recording'))=1;  % assert is not working. matlab thinks its a variable
+%     events_ts = LoadEvents([]);
+%     assert(strcmp(events_ts.label{1}, 'Starting Recording'))=1;  % assert is not working. matlab thinks its a variable
     %     starttime = events_ts.t{1}(1);
     
     %     [~, videofn, ext] = fileparts(FindFiles('*VT1.nvt'));

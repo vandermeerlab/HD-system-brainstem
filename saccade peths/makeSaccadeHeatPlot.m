@@ -22,7 +22,7 @@ for iSess = 1:length(fd)
     pushdir(fileparts(fd{iSess}));
     SSN = HD_GetSSN;
     disp(SSN)
-    if strcmp(SSN, 'M293-2021-08-19') ~= 1
+%     if strcmp(SSN, 'M293-2021-08-19') ~= 1
         [S] = LoadSpikesJeff;
         if exist(strcat(SSN, '-VT1_proc.mat'))
             %         [S] = LoadSpikesJeff;
@@ -76,7 +76,7 @@ for iSess = 1:length(fd)
             end
             disp('no eye tracking file detected. Skipping Session.')
         end
-    end
+%     end
     popdir;
 end
 A = outputIT;
