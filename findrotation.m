@@ -1,15 +1,22 @@
 function [] = findrotation()
-% JJS. 12/2021.
+% JJS. 5/2022.
 % Find periods where the platform is stationary by thresholding AHV, and check by plotting. 
-minPoints = 100; 
+threshold = 0.5;
 
 cfg_in = [];
 [AHV_tsd] = Get_AHV(cfg_in);
 
-idxS = AHV_tsd.data < .2 & AHV_tsd.data > -.2;  % Stationary periods 
-St = AHV_tsd.tvec(idxS); 
-dSt = diff(St); 
-dStpoints = dSt > 10; 
-[fr, fc] = find(dStpoints); 
+idxS = AHV_tsd.data < threshold & AHV_tsd.data > -threshold;  % tvec indices for Stationary periods. This will include transition points of CW-CCW rotations [need to exclude] 
+% St = AHV_tsd.tvec(idxS); 
+% dSt = diff(St); 
+% dStpoints = dSt > 1; 
+% [fr, ~] = find(dStpoints); 
+% changepoints = St(fr);
+%% exclude periods 
 
-idxR = ~idxS; 
+
+
+%%
+plot(AHV_tsd.tvec, AHV_tsd.data, '.')
+hold on
+plot(AHV_tsd.tvec(idxS), AHV_tsd.data(idxS), 'r.')
