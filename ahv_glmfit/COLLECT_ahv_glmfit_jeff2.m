@@ -5,7 +5,7 @@ function [cfg_master, out, rsq_all, sacc_gain, ahv_gain, sessUsed] = COLLECT_ahv
 %% set up data path
 cd('C:\Jeff\U01\datatouse');
 cfg = [];
-cfg.rats = {'M039', 'M052', 'M055', 'M079', 'M080', 'M085', 'M086', 'M089', 'M090', 'M094', 'M096', 'M104', 'M105', 'M112', 'M212', 'M247', 'M269', 'M271', 'M281', 'M293'};
+cfg.rats = {'M039', 'M052', 'M055', 'M079', 'M080', 'M085', 'M086', 'M089', 'M090', 'M094', 'M096', 'M104', 'M105', 'M112', 'M212', 'M222', 'M247', 'M269', 'M271', 'M281', 'M282', 'M284', 'M293'};
 fd = getDataPath(cfg);
 
 endSess = length(fd);

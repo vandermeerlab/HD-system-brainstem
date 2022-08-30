@@ -20,7 +20,7 @@ function [] = plotSaccadesAndAHVsinglePlot4(savedestination, fd, varargin)
 
 occthresh = 0.5; % threshold number of seconds occupancy for including in tuning curve
 LineWidth = 5;
-doSave = 1;
+doSave = 0;
 doPause = 1;
 figType = 'matlab';
 process_varargin(varargin);
@@ -38,9 +38,9 @@ for iSess = 1:length(fd)
     disp(SSN)
     
     if exist(strcat(SSN, '-VT1_proc.mat'))
-        [FRxBinT, FRxBinN, FRxBinTsmooth, FRxBinNsmooth, FRxBinTnorm, FRxBinNnorm, TnormSmooth, NnormSmooth, outputIT, binCenters, cfg, cellID, cellname] = makeSaccadeHeatPlot([]);
-        temporaldata = FRxBinTsmooth;
-        nasaldata = FRxBinNsmooth;
+        [Z] = makeSaccadeHeatPlot([], [], []);
+        temporaldata = Z.FRxBinTsmooth;
+        nasaldata = Z.FRxBinNsmooth;
         
         %         fc = FindFile('*FRxAHV.mat');    % this is pre-computed AHV tuning curve-type info. Should have variables AHV_tsd and AHV_F
         %         load(fc);
@@ -91,9 +91,9 @@ for iSess = 1:length(fd)
             
             %% Plot the saccade data
             ax2 = axes(t);
-            plot(ax2, binCenters, nasaldata(iPlot,:), 'Color', [1 .6 .2], 'LineWidth', LineWidth);
+            plot(ax2, Z.binCenters, nasaldata(iPlot,:), 'Color', [1 .6 .2], 'LineWidth', LineWidth);
             hold on
-            plot(ax2, binCenters, temporaldata(iPlot,:), 'Color', 'r', 'LineWidth', LineWidth);
+            plot(ax2, Z.binCenters, temporaldata(iPlot,:), 'Color', 'r', 'LineWidth', LineWidth);
             legend('Nasal (CW)', 'Temporal (CCW)', 'Location', 'NorthWest')
             xlabel('Time peri Saccade (sec)')
             ylabel('Saccade Firing Rate (Hz)')

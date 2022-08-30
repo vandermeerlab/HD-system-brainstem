@@ -24,7 +24,7 @@ SSN = HD_GetSSN; disp(SSN);
 overwrite = 1;
 skip = 0;
 cfg_def.plotAHV = 1; 
-cfg = ProcessConfig2(cfg_def, cfg_in);
+cfg_main = ProcessConfig2(cfg_def, cfg_in);
 
 
 if exist(strcat(SSN, '-VT1.smi'), 'file') == 2
@@ -278,7 +278,7 @@ if exist(strcat(SSN, '-VT1.smi'), 'file') == 2
         set(gca, 'FontSize', FontSize)
         % legend('horiz eye vel.', 'vertical eye vel.', 'horizontal eye position', 'filtered vert. vel. 10-15 Hz', 'filtered horiz. vel. 10-15 Hz', '', '', '')
         yyaxis right
-        if cfg.plotAHV == 1
+        if cfg_main.plotAHV == 1
             plot(AHV_tsd.tvec, AHV_tsd.data, 'Color', [.75 .75 0])
         end
         c = axis;
@@ -440,7 +440,7 @@ if exist(strcat(SSN, '-VT1.smi'), 'file') == 2
         nasalSaccades = nasalSaccades_sorted(~isnan(nasalSaccades_sorted));
         
         
-        temporalAmplitudes = temporalAmplitudes_sorted(~isnan(temporalAmplitudes_sorted);
+        temporalAmplitudes = temporalAmplitudes_sorted(~isnan(temporalAmplitudes_sorted));
         nasalAmplitudes = nasalAmplitudes_sorted(~isnan(nasalAmplitudes_sorted));
         
 %         numtemporalSaccades = length(~isnan(temporalSaccades));
@@ -448,7 +448,7 @@ if exist(strcat(SSN, '-VT1.smi'), 'file') == 2
         
         %% Save data
         disp('Saving data as new -saccade.mat file')
-        save(strcat(SSN, '-saccades-edited.mat'), 'numtemporalSaccades', 'numnasalSaccades', 'temporalSaccades', 'nasalSaccades', 'combinedSaccades', 'temporalAmplitudes', 'nasalAmplitudes', 'tsdH', 'tsdV', 'diffH', 'diffV', 'amp1tsd', 'amp2tsd', 'XS_Remove', 'YS_Remove', 'XS_Add', 'YS_Add', 'cfg', 'Button', 'AHV_tsd', 'tstart', 'tend', 'tvec');
+        save(strcat(SSN, '-saccades-edited.mat'), 'temporalSaccades', 'nasalSaccades', 'combinedSaccades', 'temporalAmplitudes', 'nasalAmplitudes', 'tsdH', 'tsdV', 'diffH', 'diffV', 'amp1tsd', 'amp2tsd', 'XS_Remove', 'YS_Remove', 'XS_Add', 'YS_Add', 'cfg', 'Button', 'AHV_tsd', 'tstart', 'tend', 'tvec');
         savefig(strcat(SSN, '-saccades-edited.fig'))
     else
         disp('Skipping this session ............')

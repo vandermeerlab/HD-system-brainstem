@@ -1,4 +1,4 @@
-function [FRxBinT, FRxBinN, FRxBinTsmooth, FRxBinNsmooth, FRxBinTnorm, FRxBinNnorm, TnormSmooth, NnormSmooth, outputIT, binCenters, cfg, cellID, cellname] = makeSaccadeHeatPlot(cfg_in, varargin)
+function [Z] = makeSaccadeHeatPlot(cfg_in, nasalSaccadesToUse, temporalSaccadesToUse, varargin)
 % [] = makeSaccadeHeatPlot
 % JJS. 4/2021.
 
@@ -22,78 +22,100 @@ for iSess = 1:length(fd)
     pushdir(fileparts(fd{iSess}));
     SSN = HD_GetSSN;
     disp(SSN)
-%     if strcmp(SSN, 'M293-2021-08-19') ~= 1
-        [S] = LoadSpikesJeff;
-        if exist(strcat(SSN, '-VT1_proc.mat'))
-            %         [S] = LoadSpikesJeff;
-            spikefiles = FindFiles('*.t');
-%             [temporalSaccades, nasalSaccades, combinedSaccades, index_tP_final, index_nP_final, tsdH, tsdV, diffH, diffV] = processPupilData2(cfg);
-            try load(FindFile('*saccades-edited.mat'), 'nasalSaccades', 'nasalAmplitudes', 'temporalSaccades', 'temporalAmplitudes')
+    %     if strcmp(SSN, 'M293-2021-08-19') ~= 1
+    [S] = LoadSpikesJeff;
+    if exist(strcat(SSN, '-VT1_proc.mat'))
+        %         [S] = LoadSpikesJeff;
+        spikefiles = FindFiles('*.t');
+        %             [temporalSaccades, nasalSaccades, combinedSaccades, index_tP_final, index_nP_final, tsdH, tsdV, diffH, diffV] = processPupilData2(cfg);
+        if isempty(nasalSaccadesToUse) || isempty(nasalSaccadesToUse) 
+            try load(FindFile('*saccades-edited.mat'), 'nasalSaccades', 'temporalSaccades')
                 keep = find(~isnan(temporalSaccades));
-                temporalSaccades = temporalSaccades(keep); temporalAmplitudes = temporalAmplitudes(keep);
+                temporalSaccades = temporalSaccades(keep);  %#ok<*FNDSB>
                 
                 keep = find(~isnan(nasalSaccades));
-                nasalSaccades = nasalSaccades(keep); nasalAmplitudes = nasalAmplitudes(keep);
+                nasalSaccades = nasalSaccades(keep);
             catch
                 disp('WARNING: No edited saccades file available, computing automated version...')
                 [temporalSaccades, nasalSaccades, ~, ~, ~, tsdH, tsdV] = processPupilData2([]);
             end
-            for iCell = 1:length(S.t)
-                [a, b, c] = fileparts(spikefiles{iCell});
-                celltitle = b;
-                cellCounterToUse = cellCounterToUse + 1;   % this counts eye tracking neuron. Neurons from sessions that are skipped (above) are not recorded. This total will = total neurons with eye tracking.
-                cellCounterIndex = cellCounterIndex +1;    % this counts every neuron, whether or not it has eye tracking data associated with it.
-                cellID(cellCounterToUse) = cellCounterIndex; % this is the order of the eye tracking neurons, with respect to the total group of neurons.
-                cellname{cellCounterToUse} = S.label{iCell}; % this is the name of the eye tracking neurons (SSN-TT__.t, etc.)
-                myCell = SelectTS([], S, iCell);
-                cfg_in = [];
-                cfg_in.window = cfg.FRwindow;
-                cfg_in.dt = cfg.dt;
-                if doPlot == 1
-                    figure(1)
-                    subplot(2,1,1); title(celltitle)
-                    subplot(2,1,2); title('Temporal Saccades')
-                end
-                [outputS, outputT, outputGau, outputIT, cfg_out] = SpikePETHvdm(cfg_in, myCell, temporalSaccades, 'doPlot', doPlot);
-                assert(isequal(pethBins, outputIT))
-                mT = histcounts(outputS, outputIT);
-                FRxBinT(cellCounterToUse,:) = mT/cfg.dt/length(temporalSaccades);
-                if doPlot == 1
-                    figure(2)
-                    subplot(2,1,1); title(celltitle)
-                    subplot(2,1,2); title('Nasal Saccades')
-                end
-                [outputS, outputT, outputGau, outputIT, cfg_out] = SpikePETHvdm(cfg_in, myCell, nasalSaccades, 'doPlot', doPlot);
-                mN = histcounts(outputS, outputIT);
-                FRxBinN(cellCounterToUse,:) = mN/cfg.dt/length(nasalSaccades);
-            end
         else
-            for iCell = 1:length(S.t)
-                cellCounterIndex = cellCounterIndex +1;
-                %             cellCounterToUse = cellCounterToUse + 1;
-                %             FRxBinT(cellCounterToUse,:) = nan(1,length(pethBins)-1);
-                %             FRxBinN(cellCounterToUse,:) = nan(1,length(pethBins)-1);
-            end
-            disp('no eye tracking file detected. Skipping Session.')
+            nasalSaccades = nasalSaccadesToUse; 
+            temporalSaccades = temporalSaccadesToUse;
         end
-%     end
+        
+        for iCell = 1:length(S.t)
+            [a, b, c] = fileparts(spikefiles{iCell});
+            celltitle = b;
+            cellCounterToUse = cellCounterToUse + 1;   % this counts eye tracking neuron. Neurons from sessions that are skipped (above) are not recorded. This total will = total neurons with eye tracking.
+            cellCounterIndex = cellCounterIndex +1;    % this counts every neuron, whether or not it has eye tracking data associated with it.
+            cellID(cellCounterToUse) = cellCounterIndex; % this is the order of the eye tracking neurons, with respect to the total group of neurons.
+            cellname{cellCounterToUse} = S.label{iCell}; % this is the name of the eye tracking neurons (SSN-TT__.t, etc.)
+            myCell = SelectTS([], S, iCell);
+            cfg_in = [];
+            cfg_in.window = cfg.FRwindow;
+            cfg_in.dt = cfg.dt;
+            if doPlot == 1
+                figure(1)
+                subplot(2,1,1); title(celltitle)
+                subplot(2,1,2); title('Temporal Saccades')
+            end
+            [outputS, outputT, outputGau, outputIT, cfg_out] = SpikePETHvdm(cfg_in, myCell, temporalSaccades, 'doPlot', doPlot);
+            assert(isequal(pethBins, outputIT))
+            mT = histcounts(outputS, outputIT);
+            FRxBinT(cellCounterToUse,:) = mT/cfg.dt/length(temporalSaccades);
+            if doPlot == 1
+                figure(2)
+                subplot(2,1,1); title(celltitle)
+                subplot(2,1,2); title('Nasal Saccades')
+            end
+            [outputS, outputT, outputGau, outputIT, cfg_out] = SpikePETHvdm(cfg_in, myCell, nasalSaccades, 'doPlot', doPlot);
+            mN = histcounts(outputS, outputIT);
+            FRxBinN(cellCounterToUse,:) = mN/cfg.dt/length(nasalSaccades);
+        end
+    else
+        for iCell = 1:length(S.t)
+            cellCounterIndex = cellCounterIndex +1;
+            %             cellCounterToUse = cellCounterToUse + 1;
+            %             FRxBinT(cellCounterToUse,:) = nan(1,length(pethBins)-1);
+            %             FRxBinN(cellCounterToUse,:) = nan(1,length(pethBins)-1);
+        end
+        disp('no eye tracking file detected. Skipping Session.')
+    end
+    %     end
     popdir;
 end
 A = outputIT;
 binCenters = (A(:,1:end-1) + A(:,2:end)) / 2;
 %% Temporal Saccades
-[FRxBinTsmooth, smoothwindow_a] = smoothdata(FRxBinT,2);
+[FRxBinTsmooth, ~] = smoothdata(FRxBinT,2);
 [mT, iT] = max(FRxBinT,[], 2);
 FRxBinTnorm = FRxBinT./mT;       % normalized by FR
 [bT, sT] = sort(iT);             % sT = sorted, unnormalized
-[TnormSmooth, smoothwindow_b] = smoothdata(FRxBinTnorm,2);
+[TnormSmooth, ~] = smoothdata(FRxBinTnorm,2);
 
 %% Nasal Saccades
-[FRxBinNsmooth, smoothwindow_c] = smoothdata(FRxBinN,2);
+[FRxBinNsmooth, ~] = smoothdata(FRxBinN,2);
 [mN, iN] = max(FRxBinN,[], 2);
 FRxBinNnorm = FRxBinN./mN;       % normalized by FR
 [bN, sN] = sort(iN);             % sT = sorted, unnormalized
-[NnormSmooth, smoothwindow_d] = smoothdata(FRxBinNnorm,2);
+[NnormSmooth, ~] = smoothdata(FRxBinNnorm,2);
+
+Z.FRxBinT = FRxBinT;
+Z.FRxBinN = FRxBinN;
+Z.FRxBinTsmooth = FRxBinTsmooth;
+Z.FRxBinNsmooth = FRxBinNsmooth;
+Z.FRxBinTnorm = FRxBinTnorm;
+Z.FRxBinNnorm = FRxBinNnorm;
+Z.TnormSmooth = TnormSmooth;
+Z.NnormSmooth = NnormSmooth;
+Z.outputIT = outputIT;
+Z.binCenters = binCenters;
+Z.cfg = cfg;
+Z.cellID = cellID;
+Z.cellname = cellname;
+
+
 
 % %% Arrange the data in pairs so that you can see temporal and nasal saccades for the same cell, one above the other
 % pairs = nan(size(FRxBinT,1), size(FRxBinT,2));

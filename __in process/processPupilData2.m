@@ -21,8 +21,8 @@ FontSize = 20;
 cfg_def = [];
 cfg_def.LineWidth = 3;
 cfg_def.threshAdj  = 4;  % how many timesteps around a saccade that are disqualified from being considered as subsequent saccades. Saccades usually have a rebound that can hit the other threshold.
-cfg_def.threshT = 10;  % positive displacement in image pixel space. TEMPORAL saccades.
-cfg_def.threshN = -10; % negative displacement in image pixel space. NASAL saccades.
+cfg_def.threshT = 1;  % positive displacement in image pixel space. TEMPORAL saccades.
+cfg_def.threshN = -1; % negative displacement in image pixel space. NASAL saccades.
 
 cfg_def.scalingfactor = 1;  % for shrinking the pupil trace so its the same height as diffH
 cfg_def.artifactThresh = 4;  % units of pixels

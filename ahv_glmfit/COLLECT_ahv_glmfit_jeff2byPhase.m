@@ -32,7 +32,7 @@ for iS = 1:endSess
     SSN = HD_GetSSN; disp(SSN);
     if exist(strcat(SSN, '-VT1_proc.mat')) == 2
         if skip == 1
-            if strcmp(SSN, 'M094-2021-12-28') == 0 && strcmp(SSN, 'M105-2021-01-17') == 0 && strcmp(SSN, 'M212-2021-07-21') == 0 && strcmp(SSN, 'M271-2021-08-28') == 0 && strcmp(SSN, 'M086-2020-11-21') == 0 && strcmp(SSN, 'M094-2020-12-28') == 0
+            if strcmp(SSN, 'M094-2021-12-28') == 0 && strcmp(SSN, 'M105-2021-01-17') == 0 && strcmp(SSN, 'M212-2021-07-21') == 0 && strcmp(SSN, 'M271-2021-08-28') == 0 && strcmp(SSN, 'M086-2020-11-21') == 0 && strcmp(SSN, 'M094-2020-12-28') == 0 && strcmp(SSN, 'M284-2022-05-05-2') == 0
                 sessCounter = sessCounter +1;
                 sessUsed{sessCounter} = SSN;
                 out = cat(2, out, SESSION_ahv_glmfit_jeff(cfg_master));

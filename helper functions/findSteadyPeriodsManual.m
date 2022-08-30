@@ -1,4 +1,4 @@
-function [STtstart, STtend, tlistX] = findSteadyPeriods()
+function [STtstart, STtend, tlistX] = findSteadyPeriodsManual()
 %2022-05-19. JJS. Manually identify start and end times for stationary periods in a recording session with platform veloicty info (AHV values).
 %   code is borrowed from detectSaccadesManualCheck4.m 
 
