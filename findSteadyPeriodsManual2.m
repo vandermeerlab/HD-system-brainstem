@@ -38,8 +38,8 @@ if skip == 0
     if exist(fn) ==2
         load(fn);
         yyaxis right
-        plot(diffH.tvec, diffH.data);
-        ylabel('Horizontal Pupil Position')
+%         plot(diffH.tvec, diffH.data);
+%         ylabel('Horizontal Pupil Position')
     else
         disp('NO PUPIL DATA FOUND FOR THIS SESSION!')
     end
@@ -89,12 +89,14 @@ if skip == 0
     disp('here are the start and end times')
     STtstart %#ok<*NOPRT>
     STtend
+    tlistX = STtstart;
+    tlistX(2,:) = STtend;
     
     save(strcat(SSN, '-AHV_StationaryTimes.mat'), 'STtstart', 'STtend', 'tlistX');
     disp('data saved')
     
 else
     disp('skipping session')
-    STtstart = []; STtend = []; tlistX = []; 
+    STtstart = []; STtend = []; 
 end
 
