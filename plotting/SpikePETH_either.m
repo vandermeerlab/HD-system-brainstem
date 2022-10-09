@@ -1,4 +1,4 @@
-function [outputS, outputT, outputGau, outputIT, cfg] = SpikePETHvdm(cfg_in, S,t,varargin)
+function [outputS, outputT, outputGau, outputIT, cfg] = SpikePETH_either(cfg_in, S,t,varargin)
 %% SpikePETH: computes the perievent histogram for spike data "S" at events
 %             "t".  Outputs
 %
@@ -14,8 +14,10 @@ function [outputS, outputT, outputGau, outputIT, cfg] = SpikePETHvdm(cfg_in, S,t
 %           -
 % based on spikePETH by MvdM
 % modified by EC to match mvdmlab codebase- 2017-05-01%% set defaults
-doPlot = 1;
-cfg_def.window = [-1 1];
+cfg_def.doPlot = 1;
+cfg_def.doRaster = 0;
+cfg_def.doBar = 1;
+cfg_def.window = [-.2 .2];
 % cfg_def.dt = 0.00025;
 cfg_def.dt = 0.01;
 cfg_def.excessBounds = 1;
@@ -81,45 +83,50 @@ if isempty(outputT)
     disp('No spikes')
     return
 end
-%% display
-if doPlot ==1
-    clf% spike raster
-    subplot(2,1,1);
-    % 	imagesc(window,[1 nT], outputID);
-    % 	colormap(1-0.25*gray);
-    % 	hold on;
-    plot(outputS, outputT+0.5, 'k.', 'MarkerSize', 5);
-    %     xlabel('peri-event (sec)');
-    ylabel('Event #');
-    ylim([1 nT])
-    xlim(cfg.window);
-    hold on
-    %     if size(t,2) > 1
-    %         rectangle('position', [0 1 abs(mode(t(:,2)-t(:,1)))  nT], 'facecolor', [cfg.evt_color 0.5], 'edgecolor', [cfg.evt_color 0.5])
-    %     else
-    %         rectangle('position', [0 1 0.001  nT], 'facecolor', [cfg.evt_color 0.5], 'edgecolor', [cfg.evt_color 0.5])
-    %     end
-    %% add in the wave forms
-    if ~isempty(cfg.waves)
-        for ii = 1:4
-            axes('Position', [(.65+(.05*ii)) .8 0.05 .1])
-            plot(cfg.waves.mWV(:,ii), 'color', cfg.c_ord(ii, :))
-            set(gca, 'visible', 'off')
-        end
-    end%%
-    % bar graph
-    subplot(2,1,2);
-    m = histc(outputS, outputIT);
-    bar(outputIT,m/cfg.dt/length(t));
-    % 	x = outputIT;
-    % 	m = nanmean(1./outputID);
-    % 	se =  nanstd(1./outputID)/sqrt(nT+1);
-    % 	plot(x,m,'b',x,m+se,'r:',x,m-se,'r:');
-    set(gca, 'XLim', cfg.window);
-    ylabel('FR (Hz)')
-    xlabel('peri-event (sec)');% mean frequency line
-end
 
+% m = histc(outputS, outputIT);
+% m = histcounts(outputS, outputIT);
+
+if cfg.doPlot == 1
+    %% display
+    if cfg.doRaster ==1
+        % spike raster
+        % 	imagesc(window,[1 nT], outputID);
+        % 	colormap(1-0.25*gray);
+        % 	hold on;
+        plot(outputS, outputT+0.5, 'k.', 'MarkerSize', 5);
+        %     xlabel('peri-event (sec)');
+        ylabel('Event #');
+        ylim([1 nT])
+        xlim(cfg.window);
+        hold on
+        %     if size(t,2) > 1
+        %         rectangle('position', [0 1 abs(mode(t(:,2)-t(:,1)))  nT], 'facecolor', [cfg.evt_color 0.5], 'edgecolor', [cfg.evt_color 0.5])
+        %     else
+        %         rectangle('position', [0 1 0.001  nT], 'facecolor', [cfg.evt_color 0.5], 'edgecolor', [cfg.evt_color 0.5])
+        %     end
+        %% add in the wave forms
+        if ~isempty(cfg.waves)
+            for ii = 1:4
+                axes('Position', [(.65+(.05*ii)) .8 0.05 .1])
+                plot(cfg.waves.mWV(:,ii), 'color', cfg.c_ord(ii, :))
+                set(gca, 'visible', 'off')
+            end
+        end%%
+    end
+    if cfg.doBar == 1
+        % bar graph
+        m = histc(outputS, outputIT);
+        bar(outputIT,m/cfg.dt/length(t));
+        % 	x = outputIT;
+        % 	m = nanmean(1./outputID);
+        % 	se =  nanstd(1./outputID)/sqrt(nT+1);
+        % 	plot(x,m,'b',x,m+se,'r:',x,m-se,'r:');
+        set(gca, 'XLim', cfg.window);
+        ylabel('FR (Hz)')
+        xlabel('peri-event (sec)');% mean frequency line
+    end
+end
 % subplot(2,1,2);
 % mean_S_gau = nanmean(outputGau,1);
 % % se_S_gau = nanstd(outputGau,2)/sqrt(nT+1);

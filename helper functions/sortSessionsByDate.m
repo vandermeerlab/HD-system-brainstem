@@ -1,4 +1,6 @@
-% Z = the sorted list of sessions by chronological order
+function [fdSort] = sortSessionsByDate(fd) 
+% Input:            fd 
+% Output:           fdSort = the sorted list of sessions by chronological order
 % 
 datetouse = [];
 for iF = 1:length(fd)
@@ -12,4 +14,4 @@ x = 1:length(datetouse); x = x';
 t = table(time, x);
 T = sortrows(t, 'time'); 
 Tnew = table2array(T(:,2));
-Z = fd(Tnew);
+fdSort = fd(Tnew);
