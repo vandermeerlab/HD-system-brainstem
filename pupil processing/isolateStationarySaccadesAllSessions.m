@@ -1,4 +1,4 @@
-function [nasal_indices, temporal_indices, nasalREST, temporalREST, numNasal, numTemporal, nNaNtouse, tNaNtouse, sessList] = isolateStationarySaccadesAllSessions(fd, varargin)
+function [nasal_indices_REST, temporal_indices_REST, nasal_timestamps_REST, temporal_timestamps_REST, numNasal, numTemporal, nNaNtouse, tNaNtouse, sessList] = isolateStationarySaccadesAllSessions(fd, varargin)
 
 % JJS. 2022-09-05.
 % This function finds the indices (which) and timestamps (when) of saccades that fall during stationary periods when the platform is at rest.
@@ -27,7 +27,7 @@ function [nasal_indices, temporal_indices, nasalREST, temporalREST, numNasal, nu
 doPlot = 1;
 MarkerSize = 10;
 FontSize = 18;
-saccadeThresh = 20; 
+saccadeThresh = 15; 
 process_varargin(varargin); 
 
 if isempty(fd) 
@@ -38,7 +38,9 @@ for iSess = 1:length(fd)
     SSN = HD_GetSSN; disp(SSN);
     %     if exist(strcat(SSN, '-VT1_proc.mat')) ==2
     %         disp('video file found')
-    [nasal_indices{iSess}, temporal_indices{iSess}, nasalREST{iSess}, temporalREST{iSess}] = isolateStationarySaccades;
+%     [nasal_indices{iSess}, temporal_indices{iSess}, nasalREST{iSess}, temporalREST{iSess}] = isolateStationarySaccades;
+    [nasal_indices_REST{iSess}, temporal_indices_REST{iSess}, nasal_timestamps_REST{iSess}, temporal_timestamps_REST{iSess}] = isolateStationarySaccades();
+
     %     else
     %         disp('video file not detected. Skipping.')
 end
@@ -47,23 +49,23 @@ end
 %% replace NaNs with empty brackets in order to determine the length of each element.
 % ind = cellfun(@isnan, nasal_indices, 'UniformOutput', false);
 
-nasal_indices_noNaN = nasal_indices;
-temporal_indices_noNaN = temporal_indices;
-for iSess = 1:length(nasal_indices)
-    if isnan(nasal_indices{iSess})
+nasal_indices_noNaN = nasal_indices_REST;
+temporal_indices_noNaN = temporal_indices_REST;
+for iSess = 1:length(nasal_indices_REST)
+    if isnan(nasal_indices_REST{iSess})
         nasal_indices_noNaN{iSess} = [];
     end
-    if isnan(temporal_indices{iSess})
+    if isnan(temporal_indices_REST{iSess})
         temporal_indices_noNaN{iSess} = [];
     end
     % keep track of sessions without video data [versus session with video data, but no stationary saccades]
-    nNaN{iSess} = isnan(nasal_indices{iSess});
+    nNaN{iSess} = isnan(nasal_indices_REST{iSess});
     if find(nNaN{iSess})
         nNaNtouse(iSess) = 0;   % this indicates a session with ___NO___ video tracking data
     else
         nNaNtouse(iSess) = 1;   % this indicates a session with ___YES___ video tracking data
     end
-    tNaN{iSess} = isnan(temporal_indices{iSess});
+    tNaN{iSess} = isnan(temporal_indices_REST{iSess});
     if find(tNaN{iSess})
         tNaNtouse(iSess) = 0;   % this indicates a session with ___NO___ video tracking data
     else

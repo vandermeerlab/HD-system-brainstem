@@ -1,4 +1,4 @@
-function [] = plotStationaryVsSpontaneous2
+function [] = plotStationaryVsSpontaneous2(startCell)
 
 % JJS. 2022-10-18.
 % This function plots peths for saccades when the platform was moving (i.e. 'evoked saccades') and peths for saccades when the platform was stationary ('spontaneous').
@@ -11,12 +11,15 @@ LineWidth = 4;
 FontSize = 12;
 % cfg_in = [];
 [~, ~, ~, ~, nasal_timestamps_MOVING, temporal_timestamps_MOVING] = isolateManualSaccades();
-[~, ~, ~, ~, nasal_timestamps_REST, temporal_timestamps_REST] = isolateStationarySaccades();
+[~, ~, nasal_timestamps_REST, temporal_timestamps_REST] = isolateStationarySaccades();
 close all;
 
 S = LoadSpikesJeff;
 
-for iCell = 1:length(S.t)
+if isempty(startCell)
+    startCell = 1;
+end
+for iCell = startCell:length(S.t)
     disp(strcat('myCell', num2str(iCell)))
     myCell = SelectTS([], S, iCell);
     figure(iCell)
@@ -92,7 +95,7 @@ for iCell = 1:length(S.t)
                 c = axis;
                 line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '-')
             case 4
-                %% plot nasal and temporal saccasde peths MOVING, 400 millisecond window 
+                %% plot nasal and temporal saccasde peths STATIONARY, 400 millisecond window 
                 subtightplot(2,4,6,[tightX tightY]);
                 cfg_1.doPlot = 0;
                 cfg_1.window = [-.2 .2];
@@ -117,6 +120,8 @@ for iCell = 1:length(S.t)
                 %% AHV peth for MOVING saccades
                 subtightplot(2,4,3,[tightX tightY]);
                 cfg_peth.window = [-2 2];
+                cfg_peth.mode = 'interp'; 
+                cfg_peth.dt = median(diff(AHV_tsd.tvec));
                 out_nasal = TSDpeth(cfg_peth, AHV_tsd, nasal_timestamps_MOVING);
                 out_temporal = TSDpeth(cfg_peth, AHV_tsd, temporal_timestamps_MOVING);
                 plot(out_nasal, 'LineWidth', LineWidth); hold on
