@@ -3,6 +3,8 @@ function plot_AHVtuningMegaplot3(iCell, varargin)
 % For plotting most/all of the relevant data for a single cell for a headfixed brainstem recording session.
 % 2021-02-16. Added more elements, like platform orientation and eye position. Expanded from 3x6 subplot to 4x6.
 
+tightX = .05; 
+tightY = .02;
 process_varargin(varargin)
 % cd to data folder
 SSN = HD_GetSSN; disp(SSN);
@@ -52,7 +54,7 @@ cfg_AHV.subsample_factor = 10;
 AHV_dt = median(diff(AHV_tsd.tvec));
 
 %% #2 plot scatterplot
-subplot(4,6,2)
+subtightplot(4,6,2, [tightX tightY])
 cfg_Q = [];
 cfg_Q.smooth = 'gauss';
 cfg_Q.gausswin_sd = 0.05;
@@ -77,7 +79,7 @@ text(.75*h(1), 10, 'CW', 'FontSize', 12)
 text(.5*h(2), 10, 'CCW', 'FontSize', 12)
 
 %% #1 plot tuning curves
-subplot(4,6,1)
+subtightplot(4,6,1, [tightX tightY])
 fc = FindFiles('*.t', 'CheckSubdirs', 0);
 [a, b, c] = fileparts(fc{iCell});
 plot(tc_out.usr.binCenters, tc_out.tc, 'LineWidth', LineWidth);
@@ -93,7 +95,7 @@ text(.5*h(2), 10, 'CCW', 'FontSize', 12)
 
 
 %% #3 acf
-subplot(4,6,3)
+subtightplot(4,6,3, [tightX tightY])
 cfg_acf = [];
 cfg_acf.binsize = 0.001;
 cfg_acf.max_t = 0.5;
@@ -111,7 +113,7 @@ title('Acorr')
 
 
 %% #4 acf zoomed in
-subplot(4,6,4); hold on
+subtightplot(4,6,4, [tightX tightY]); hold on
 cfg_acf = [];
 cfg_acf.binsize = 0.001;
 cfg_acf.max_t = 0.05;
@@ -129,7 +131,7 @@ title('Acorr')
 
 
 %% #5 HistISI
-subplot(4,6,5); hold on
+subtightplot(4,6,5, [tightX tightY]); hold on
 [h, n] = HistISIsubplot(S.t{1});
 HistISIsubplot(S.t{1});
 c = axis;
@@ -143,7 +145,7 @@ title('HistISI')
 
 
 %% #6 tbd
-subplot(4,6,6); hold on
+subtightplot(4,6,6, [tightX tightY]); hold on
 
 
 
@@ -151,7 +153,7 @@ subplot(4,6,6); hold on
 
 
 %%  #7 Firing Rate
-plot7 = subplot(4,6,7:12); hold on
+plot7 = subtightplot(4,6,7:12, [tightX tightY]); hold on
 cfg_Q = []; cfg_Q.dt = 0.001; cfg_Q.gausswin_sd = 0.05;cfg_Q.smooth = 'gauss';
 Q = MakeQfromS(cfg_Q, S);
 tvec = Q.tvec - Q.tvec(1);
@@ -173,7 +175,7 @@ c = axis;
 % axis([c(1) endtime c(3) c(4)]);
 
 %% #8 MultiRaster
-plot8 = subplot(4,6,13:18);
+plot8 = subtightplot(4,6,13:18, [tightX tightY]);
 
 cfg = [];
 cfg.uint = '64';
@@ -194,7 +196,7 @@ c = axis;
 % axis([c(1) endtime c(3) c(4)]);
 
 %% #9 AHV and horizontal eye position
-plot9 = subplot(4,6,19:24);
+plot9 = subtightplot(4,6,19:24, [tightX tightY]);
 SSN = HD_GetSSN;
 if exist(strcat(SSN, '-VT1_proc.mat'))
     load(strcat(SSN, '-VT1_proc.mat'), 'pupil');         % load the output of facemap

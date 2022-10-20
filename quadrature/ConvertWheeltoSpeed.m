@@ -20,6 +20,7 @@ d.tvec = timestamps;
 d.data = distance; 
 
 speed.tvec = timestamps;
+tic
 speed.data = dxdt(d.tvec, d.data);
-
+toc
 end

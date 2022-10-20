@@ -89,7 +89,7 @@ if nargout == 0 || ~isempty(axesHandle)  % no output args, plot it
     if complexISIs
         xlabel('ISI (s).  WARNING: contains negative components.');
     else
-        xlabel('ISI (s).');
+%         xlabel('ISI (s).');
     end
     title(myTitle);
     %     set(gca, 'XScale', 'log', 'XLim', [10^minLogISI 10^maxLogISI]);
