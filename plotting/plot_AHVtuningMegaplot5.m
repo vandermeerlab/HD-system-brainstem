@@ -1,4 +1,4 @@
-function plot_AHVtuningMegaplot4(iCell, varargin)
+function plot_AHVtuningMegaplot5(iCell, varargin)
 % JJS.
 % For plotting most/all of the relevant data for a single cell for a headfixed brainstem recording session.
 % 2021-02-16. Added more elements, like platform orientation and eye position. Expanded from 3x6 subtightplot to 4x6.
@@ -55,7 +55,7 @@ cfg_AHV = [];
 cfg_AHV.subsample_factor = 10;
 [AHV_tsd, tc_out] = AHV_tuning(cfg_AHV, S);
 AHV_dt = median(diff(AHV_tsd.tvec));
-%--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 %% #1 plot scatterplot
 p = subtightplot(6,6,1, [tightX tightY]);
 cfg_Q = [];
@@ -72,7 +72,7 @@ set(gca, 'TickDir', 'out', 'FontSize', FontSize)
 plot(AHV_tsd.data, AHV_F, '.', 'MarkerSize', .5); hold on
 set(gca, 'Ylim', [0 ymax], 'FontSize', FontSize)
 
-% Add Tuning Curve
+%% Add Tuning Curve
 plot(tc_out.usr.binCenters, tc_out.tc, 'LineWidth', LineWidth, 'Color', 'k');
 ylabel('FR (Hz)', 'FontSize', FontSize)
 set(groot, 'DefaultLegendInterpreter', 'none')
@@ -83,47 +83,7 @@ text(.5*h(2), 10, 'CCW', 'FontSize', 12)
 p.XAxisLocation = 'top';
 c = axis;
 line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'k')
-%--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-%% #2 pupil TC
-p = subtightplot(6,6,2, [tightX tightY]); hold on
-try
-    load(FindFile('*saccades-edited.mat'), 'tsdH') % tsdH is the pupil position variable
-catch
-    warning('cannot find saccade data')
-end
-% calculate Q matrix
-tsdH_dt = median(diff(tsdH.tvec));
-cfg_Q = [];
-cfg_Q.smooth = 'gauss';
-cfg_Q.gausswin_sd = 0.05;
-cfg_Q.dt = tsdH_dt;
-cfg_Q.tvec_edges = tsdH.tvec(1):tsdH_dt:tsdH.tvec(end);
-F = MakeQfromS(cfg_Q, S); % convert to FR
-F.data = F.data ./ cfg_Q.dt;
 
-% find FR corresponding to each AHV sample
-F_idx = nearest_idx3(tsdH.tvec, F.tvec);
-tsdH_F = F.data(:,F_idx);
-plot(tsdH.data, tsdH_F(1,:), '.', 'MarkerSize', .5, 'color', [.8 .8 .8]); hold on
-
-tsdH.data = tsdH.data'; % change the shape so that it is a "well-formed tsd" for tuning curves
-cfg_tc = [];
-cfg_tc.nBins = 50;
-cfg_tc.binEdges = {linspace(-60, 60, 101)};
-cfg_tc.occ_dt = median(diff(tsdH.tvec));
-cfg_tc.minOcc = 10;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
-tc_pupil = TuningCurves(cfg_tc, S, tsdH);
-plot(tc_pupil.usr.binCenters(tc_pupil.occ_hist>occthresh), smoothdata(tc_pupil.tc(1,(tc_pupil.occ_hist>occthresh))), 'k', 'LineWidth', 3);
-set(gca, 'FontSize', FontSize)
-title('Pupil Position (pixels)')
-axis tight
-c = axis;
-line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'k')
-text(-30, c(4)/2, 'nasal', 'FontSize', 20)
-text(10, c(4)/2, 'temporal', 'FontSize', 20)
-p.XAxisLocation = 'top';
-
-%--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 %% #3 acf
 p = subtightplot(6,6,3, [tightX tightY]);
 cfg_acf = [];
@@ -141,7 +101,7 @@ plot(tvec, acf, 'LineWidth', 1);
 set(gca, 'xtick', [-.5 -.25 0 .25 .5], 'FontSize', FontSize); grid on;
 title('Acorr')
 p.XAxisLocation = 'top';
-%--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 %% #4 acf zoomed in
 p = subtightplot(6,6,4, [tightX tightY]); hold on
 cfg_acf = [];
@@ -159,11 +119,6 @@ plot(tvec, acf, 'LineWidth', 1);
 set(gca, 'xtick', [-.05 0 .05], 'FontSize', FontSize); grid on;
 title('Acorr')
 p.XAxisLocation = 'top';
-
-%% #4 Upper Right Hand Corner: histo image 
-p = subtightplot(6,6,[5:6 11:12], [tightX tightY]); hold on
-
-
 
 %% #10 HistISI
 p = subtightplot(6,6,10, [tightX tightY]); hold on
@@ -319,6 +274,14 @@ legend('nasal', 'temporal', '', 'FontSize', smallfont)
 set(gca, 'XTick', [-2 2])
 t = title('AHV PETH', 'Units', 'normalized', 'Position', [0.5, 0.5, 0], 'FontSize', FontSize);
 
+%% #15 EMPTY
+subtightplot(6,6,15, [tightX tightY]); hold on
+
+
+
+
+
+
 
 %% #15 empty
 subtightplot(6,6,15, [tightX tightY]); hold on
@@ -327,7 +290,44 @@ set(gca, 'FontSize', FontSize)
 set(gca, 'XTick', [])
 set(gca, 'YTick', [])
 
+%% #2 pupil TC
+p = subtightplot(6,6,2, [tightX tightY]); hold on
+try
+    load(FindFile('*saccades-edited.mat'), 'tsdH') % tsdH is the pupil position variable
+catch
+    warning('cannot find saccade data')
+end
+% calculate Q matrix
+tsdH_dt = median(diff(tsdH.tvec));
+cfg_Q = [];
+cfg_Q.smooth = 'gauss';
+cfg_Q.gausswin_sd = 0.05;
+cfg_Q.dt = tsdH_dt;
+cfg_Q.tvec_edges = tsdH.tvec(1):tsdH_dt:tsdH.tvec(end);
+F = MakeQfromS(cfg_Q, S); % convert to FR
+F.data = F.data ./ cfg_Q.dt;
 
+% find FR corresponding to each AHV sample
+F_idx = nearest_idx3(tsdH.tvec, F.tvec);
+tsdH_F = F.data(:,F_idx);
+plot(tsdH.data, tsdH_F(1,:), '.', 'MarkerSize', .5, 'color', [.8 .8 .8]); hold on
+
+tsdH.data = tsdH.data'; % change the shape so that it is a "well-formed tsd" for tuning curves
+cfg_tc = [];
+cfg_tc.nBins = 50;
+cfg_tc.binEdges = {linspace(-60, 60, 101)};
+cfg_tc.occ_dt = median(diff(tsdH.tvec));
+cfg_tc.minOcc = 10;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
+tc_pupil = TuningCurves(cfg_tc, S, tsdH);
+plot(tc_pupil.usr.binCenters(tc_pupil.occ_hist>occthresh), smoothdata(tc_pupil.tc(1,(tc_pupil.occ_hist>occthresh))), 'k', 'LineWidth', 3);
+set(gca, 'FontSize', FontSize)
+title('Pupil Position (pixels)')
+axis tight
+c = axis;
+line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'k')
+text(-30, c(4)/2, 'nasal', 'FontSize', 20)
+text(10, c(4)/2, 'temporal', 'FontSize', 20)
+p.XAxisLocation = 'top';
 
 % -------------------------------------------------------------------------------------------------------------------------------------------------------------------
 % -------------------------------------------------------------------------------------------------------------------------------------------------------------------

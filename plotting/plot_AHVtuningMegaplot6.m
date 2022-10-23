@@ -1,4 +1,4 @@
-function plot_AHVtuningMegaplot4(iCell, varargin)
+function plot_AHVtuningMegaplot6(iCell, varargin)
 % JJS.
 % For plotting most/all of the relevant data for a single cell for a headfixed brainstem recording session.
 % 2021-02-16. Added more elements, like platform orientation and eye position. Expanded from 3x6 subtightplot to 4x6.
@@ -15,6 +15,7 @@ tightX = .025;
 tightY = .02;
 occthresh = 0.5;
 smallfont = 8;
+insetText = 18;
 process_varargin(varargin)
 % cd to data folder
 SSN = HD_GetSSN; disp(SSN);
@@ -78,8 +79,10 @@ ylabel('FR (Hz)', 'FontSize', FontSize)
 set(groot, 'DefaultLegendInterpreter', 'none')
 title('AHV Tuning Curve')
 h = get(gca, 'XLim');
-text(.75*h(1), 10, 'CW', 'FontSize', 12)
-text(.5*h(2), 10, 'CCW', 'FontSize', 12)
+% text(.75*h(1), 10, 'CW', 'FontSize', 12)
+% text(.5*h(2), 10, 'CCW', 'FontSize', 12)
+text(NaN, NaN, 'CW', 'FontSize', insetText, 'Units', 'normalized', 'Position', [.25 .85 0])
+text(NaN, NaN, 'CCW', 'FontSize', insetText, 'Units', 'normalized', 'Position', [.6 .85 0])
 p.XAxisLocation = 'top';
 c = axis;
 line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'k')
@@ -116,11 +119,12 @@ tc_pupil = TuningCurves(cfg_tc, S, tsdH);
 plot(tc_pupil.usr.binCenters(tc_pupil.occ_hist>occthresh), smoothdata(tc_pupil.tc(1,(tc_pupil.occ_hist>occthresh))), 'k', 'LineWidth', 3);
 set(gca, 'FontSize', FontSize)
 title('Pupil Position (pixels)')
-axis tight
+% axis tight
 c = axis;
+axis([-45 45 c(3) c(4)])
 line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'k')
-text(-30, c(4)/2, 'nasal', 'FontSize', 20)
-text(10, c(4)/2, 'temporal', 'FontSize', 20)
+text(-30, c(4)/2, 'nasal', 'FontSize', insetText, 'Units', 'normalized', 'Position', [.15 .85 0])
+text(5, c(4)/2, 'temporal', 'FontSize', insetText, 'Units', 'normalized', 'Position', [.55 .85 0])
 p.XAxisLocation = 'top';
 
 %--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -159,12 +163,35 @@ plot(tvec, acf, 'LineWidth', 1);
 set(gca, 'xtick', [-.05 0 .05], 'FontSize', FontSize); grid on;
 title('Acorr')
 p.XAxisLocation = 'top';
-
-%% #4 Upper Right Hand Corner: histo image 
-p = subtightplot(6,6,[5:6 11:12], [tightX tightY]); hold on
-
-
-
+%---------------------------------------------------------------------------------------------------------------------------------------------------
+%% #4 Upper Right Hand Corner: histo image
+p = subtightplot(6,6,[5:6 11:12 17:18], [tightX tightY]); hold on
+[fc] = FindFiles(strcat(SSN, '*.t'));
+[~, b, ~] = fileparts(fc);
+if iscell(b)
+    cellID = b{iCell};
+else
+    cellID = b;
+end
+otherID = cellID;
+otherID(21) = '-';
+[~, filenamejpg, ext] = fileparts(FindFiles(strcat(cellID, '*', 'histology', '.jpg')));
+filenamejpg = strcat(filenamejpg, ext);
+[~, filenamepng, ext] = fileparts(FindFiles(strcat(cellID, '*', 'histology', '.png')));
+filenamepng = strcat(filenamepng, ext);
+doShow = 1;
+if ~isempty(filenamejpg)
+    filename = filenamejpg;
+elseif ~isempty(filenamepng)
+    filename = filenamepng;
+else
+    doShow = 0;
+    disp('no histology file found for this neuron')
+end
+if doShow == 1
+    [X,~] = imread(filename);
+    imshow(X)
+end
 %% #10 HistISI
 p = subtightplot(6,6,10, [tightX tightY]); hold on
 [h, n] = HistISIsubplot(S.t{1});
@@ -180,28 +207,57 @@ t = title('HIST ISI', 'Units', 'normalized', 'Position', [0.5, 0.5, 0], 'FontSiz
 % p.XAxisLocation = 'top';
 set(gca, 'XTick', [])
 
-%% #16 Laser PETH 
-p = subtightplot(6,6,16, [tightX tightY]); 
+%% #15 Laser PETH
+p = subtightplot(6,6,15, [tightX tightY]); hold on
 laser_on = events_ts.t{1}-events_ts.t{2};
-cfg_laser.window = [-1 2];
+cfg_laser.window = [-1.1 2];
 cfg_laser.dt = 0.01;
 cfg_laser.binsize = cfg_laser.dt; % used for gaussian kernal.  select a small bin size for good time resolution
 cfg_laser.doPlot = 1;
 cfg_laser.doRaster = 1;
 cfg_laser.doBar = 0;
-[~, ~, ~, ~, ~] = SpikePETH_either(cfg_laser, S, laser_on);
+[~, ~, ~, ~, ~] = SpikePETH_either(cfg_laser, S, laser_on); hold on
+c = axis;
+rectangle(Position=[0,0,1,c(4)], FaceColor=[0 1 1], EdgeColor=[0 1 1])
+[~, ~, ~, ~, ~] = SpikePETH_either(cfg_laser, S, laser_on);  % this is a hack to get the background color 'in back'. otherwise it occludes the spikes.
+set(gca, 'YTick', [])
+set(gca, 'FontSize', FontSize)
+title('Laser PETH', 'FontSize', FontSize)
+set(gca, 'XTick', [-1 0 1 2])
 
-%% #17 Average neuron waveform (non-laser spikes)
-p = subtightplot(6,6,17, [tightX tightY]); hold on
-title('Average Waveform: non-laser', 'FontSize', FontSize)
-% p.XAxisLocation = 'top';
-set(gca, 'Xtick', [])
+%% #16 Laser PETH
+p = subtightplot(6,6,16, [tightX tightY]); hold on
+title('Average Waveform', 'FontSize', FontSize)
+waveName = strcat(otherID, '-wv.mat');
+if exist(waveName)
+    load(waveName)
+    CO = get(gca,'ColorOrder');
+    eIND = xrange(1:2:end,1);
+    hold on
+    for iT = 1:4
+        temp = xrange(:,iT);
+        ind = temp(1:2:end);
+        plot(xrange(:,iT), mWV(:,iT));
+        h = errorbar(ind, mWV(eIND,iT), sWV(eIND,iT),'.');
+        set(h, 'Color',CO(2*iT-1,:),'MarkerSize',1); % it uses every other color, for some reason
+    end
+else
+    disp('no wave file found. skipping average waveform')
+end
+set(gca, 'XTick', []);
+set(gca, 'YTick', []);
 
-%% #18 Average neuron waveform (laser-only spikes)
-p = subtightplot(6,6,18, [tightX tightY]); hold on
-title('Average Waveform: laser only', 'FontSize', FontSize)
-% p.XAxisLocation = 'top';
-set(gca, 'Xtick', [])
+% %% #17 Average neuron waveform (non-laser spikes)
+% p = subtightplot(6,6,17, [tightX tightY]); hold on
+% title('Average Waveform: non-laser', 'FontSize', FontSize)
+% % p.XAxisLocation = 'top';
+% set(gca, 'Xtick', [])
+%
+% %% #18 Average neuron waveform (laser-only spikes)
+% p = subtightplot(6,6,18, [tightX tightY]); hold on
+% title('Average Waveform: laser only', 'FontSize', FontSize)
+% % p.XAxisLocation = 'top';
+% set(gca, 'Xtick', [])
 
 %% GET SACCADE INFO
 [~, ~, ~, ~, nasal_timestamps_MOVING, temporal_timestamps_MOVING] = isolateManualSaccades();
@@ -318,15 +374,6 @@ line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '-')
 legend('nasal', 'temporal', '', 'FontSize', smallfont)
 set(gca, 'XTick', [-2 2])
 t = title('AHV PETH', 'Units', 'normalized', 'Position', [0.5, 0.5, 0], 'FontSize', FontSize);
-
-
-%% #15 empty
-subtightplot(6,6,15, [tightX tightY]); hold on
-% title('AHV PETH')
-set(gca, 'FontSize', FontSize)
-set(gca, 'XTick', [])
-set(gca, 'YTick', [])
-
 
 
 % -------------------------------------------------------------------------------------------------------------------------------------------------------------------
