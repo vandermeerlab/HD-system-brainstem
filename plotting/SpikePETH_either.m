@@ -15,9 +15,9 @@ function [outputS, outputT, outputGau, outputIT, cfg] = SpikePETH_either(cfg_in,
 % based on spikePETH by MvdM
 % modified by EC to match mvdmlab codebase- 2017-05-01%% set defaults
 cfg_def.doPlot = 1;
-cfg_def.doRaster = 0;
-cfg_def.doBar = 1;
-cfg_def.window = [-.2 .2];
+cfg_def.doRaster = 1;
+cfg_def.doBar = 0;
+cfg_def.window = [-1 2];
 % cfg_def.dt = 0.00025;
 cfg_def.dt = 0.01;
 cfg_def.excessBounds = 1;

@@ -1,0 +1,10 @@
+function [START_TIME, STOP_TIME, LASER_ON, LASER_OFF] = run_laserEvents_all_sessions(fd)
+
+if isempty(fd)
+    fd = FindFiles('*keys.m');
+end
+for iSess = 1:length(fd)
+    pushdir(fileparts(fd{iSess}));
+    SSN = HD_GetSSN; disp(SSN);
+    [START_TIME{iSess}, STOP_TIME{iSess}, LASER_ON{iSess}, LASER_OFF{iSess}] = SortBrainstemEventLabels;
+end

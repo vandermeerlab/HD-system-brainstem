@@ -1,4 +1,4 @@
-function plot_AHVtuningMegaplot6(iCell, varargin)
+function plot_AHVtuningMegaplot7(iCell, varargin)
 % JJS.
 % For plotting most/all of the relevant data for a single cell for a headfixed brainstem recording session.
 % 2021-02-16. Added more elements, like platform orientation and eye position. Expanded from 3x6 subtightplot to 4x6.
@@ -89,44 +89,43 @@ line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color
 %--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 %% #2 pupil TC
 p = subtightplot(6,6,2, [tightX tightY]); hold on
-try
+if exist('*saccades-edited.mat')
     load(FindFile('*saccades-edited.mat'), 'tsdH') % tsdH is the pupil position variable
-catch
+    % calculate Q matrix
+    tsdH_dt = median(diff(tsdH.tvec));
+    cfg_Q = [];
+    cfg_Q.smooth = 'gauss';
+    cfg_Q.gausswin_sd = 0.05;
+    cfg_Q.dt = tsdH_dt;
+    cfg_Q.tvec_edges = tsdH.tvec(1):tsdH_dt:tsdH.tvec(end);
+    F = MakeQfromS(cfg_Q, S); % convert to FR
+    F.data = F.data ./ cfg_Q.dt;
+    
+    % find FR corresponding to each AHV sample
+    F_idx = nearest_idx3(tsdH.tvec, F.tvec);
+    tsdH_F = F.data(:,F_idx);
+    plot(tsdH.data, tsdH_F(1,:), '.', 'MarkerSize', .5, 'color', [.8 .8 .8]); hold on
+    
+    tsdH.data = tsdH.data'; % change the shape so that it is a "well-formed tsd" for tuning curves
+    cfg_tc = [];
+    cfg_tc.nBins = 50;
+    cfg_tc.binEdges = {linspace(-60, 60, 101)};
+    cfg_tc.occ_dt = median(diff(tsdH.tvec));
+    cfg_tc.minOcc = 10;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
+    tc_pupil = TuningCurves(cfg_tc, S, tsdH);
+    plot(tc_pupil.usr.binCenters(tc_pupil.occ_hist>occthresh), smoothdata(tc_pupil.tc(1,(tc_pupil.occ_hist>occthresh))), 'k', 'LineWidth', 3);
+    set(gca, 'FontSize', FontSize)
+    title('Pupil Position (pixels)')
+    % axis tight
+    c = axis;
+    axis([-45 45 c(3) c(4)])
+    line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'k')
+    text(-30, c(4)/2, 'nasal', 'FontSize', insetText, 'Units', 'normalized', 'Position', [.15 .85 0])
+    text(5, c(4)/2, 'temporal', 'FontSize', insetText, 'Units', 'normalized', 'Position', [.55 .85 0])
+    p.XAxisLocation = 'top';
+else
     warning('cannot find saccade data')
 end
-% calculate Q matrix
-tsdH_dt = median(diff(tsdH.tvec));
-cfg_Q = [];
-cfg_Q.smooth = 'gauss';
-cfg_Q.gausswin_sd = 0.05;
-cfg_Q.dt = tsdH_dt;
-cfg_Q.tvec_edges = tsdH.tvec(1):tsdH_dt:tsdH.tvec(end);
-F = MakeQfromS(cfg_Q, S); % convert to FR
-F.data = F.data ./ cfg_Q.dt;
-
-% find FR corresponding to each AHV sample
-F_idx = nearest_idx3(tsdH.tvec, F.tvec);
-tsdH_F = F.data(:,F_idx);
-plot(tsdH.data, tsdH_F(1,:), '.', 'MarkerSize', .5, 'color', [.8 .8 .8]); hold on
-
-tsdH.data = tsdH.data'; % change the shape so that it is a "well-formed tsd" for tuning curves
-cfg_tc = [];
-cfg_tc.nBins = 50;
-cfg_tc.binEdges = {linspace(-60, 60, 101)};
-cfg_tc.occ_dt = median(diff(tsdH.tvec));
-cfg_tc.minOcc = 10;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
-tc_pupil = TuningCurves(cfg_tc, S, tsdH);
-plot(tc_pupil.usr.binCenters(tc_pupil.occ_hist>occthresh), smoothdata(tc_pupil.tc(1,(tc_pupil.occ_hist>occthresh))), 'k', 'LineWidth', 3);
-set(gca, 'FontSize', FontSize)
-title('Pupil Position (pixels)')
-% axis tight
-c = axis;
-axis([-45 45 c(3) c(4)])
-line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'k')
-text(-30, c(4)/2, 'nasal', 'FontSize', insetText, 'Units', 'normalized', 'Position', [.15 .85 0])
-text(5, c(4)/2, 'temporal', 'FontSize', insetText, 'Units', 'normalized', 'Position', [.55 .85 0])
-p.XAxisLocation = 'top';
-
 %--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 %% #3 acf
 p = subtightplot(6,6,3, [tightX tightY]);
@@ -211,7 +210,39 @@ set(gca, 'XTick', [])
 p = subtightplot(6,6,15, [tightX tightY]); hold on
 % -----------------------------------------------------------------------------------------------------------------------------------------------------
 % -----------------------------------------------------------------------------------------------------------------------------------------------------
-laser_on = events_ts.t{1}-events_ts.t{2};                % this needs to be fixed. laser_on and laser_off occur at variable positions 
+% Get the correct timestamps for the different session events
+
+wrapper = @(events_ts) strcmp(events_ts, 'Starting Recording');
+A = cellfun(wrapper, events_ts.label);
+start_label = find(A); % index which label says 'Start Recording'
+start_time = events_ts.t{start_label}; %#ok<FNDSB> 
+
+wrapper = @(events_ts) strcmp(events_ts, 'Stopping Recording');
+A = cellfun(wrapper, events_ts.label);
+stop_label = find(A); % index which label says 'Stopping Recording'
+stop_time = events_ts.t{stop_label}; %#ok<FNDSB> 
+
+wrapper = @(events_ts) strcmp(events_ts, 'Laser On');
+A = cellfun(wrapper, events_ts.label);
+laser_on_label = find(A); % index which label says 'Laser On'
+if ~isempty(laser_on_label)
+laser_on_unix = events_ts.t{laser_on_label}; %#ok<FNDSB> 
+laser_on = laser_on_unix - start_time; 
+end
+
+wrapper = @(events_ts) strcmp(events_ts, 'TTL Input on AcqSystem1_0 board 0 port 2 value (0x0000).');
+A = cellfun(wrapper, events_ts.label);
+laser_off_label = find(A); % index which label says 'Start Recording'
+if ~isempty(laser_off_label)
+laser_off_unix = events_ts.t{laser_off_label}; %#ok<FNDSB> 
+laser_off = laser_off_unix - start_time;
+end
+
+
+
+% TTL Input on AcqSystem1_0 board 0 port 2 value (0x0000).
+% laser_on = events_ts.t{1} - events_ts.t{2};                % this needs to be fixed. laser_on and laser_off occur at variable positions
+% laser_off = events_ts.t{4} - events_ts.t{2};
 % -----------------------------------------------------------------------------------------------------------------------------------------------------
 % -----------------------------------------------------------------------------------------------------------------------------------------------------
 cfg_laser.window = [-1.1 2];
@@ -229,9 +260,9 @@ set(gca, 'FontSize', FontSize)
 title('Laser PETH', 'FontSize', FontSize)
 set(gca, 'XTick', [-1 0 1 2])
 
-%% #16 Laser PETH
+%% #16 Average Waveform
 p = subtightplot(6,6,16, [tightX tightY]); hold on
-title('Average Waveform', 'FontSize', FontSize)
+% title('Average Waveform', 'FontSize', FontSize)
 waveName = strcat(otherID, '-wv.mat');
 if exist(waveName)
     load(waveName)
@@ -245,6 +276,18 @@ if exist(waveName)
         h = errorbar(ind, mWV(eIND,iT), sWV(eIND,iT),'.');
         set(h, 'Color',CO(2*iT-1,:),'MarkerSize',1); % it uses every other color, for some reason
     end
+    if exist(strcat(otherID, '-ClusterQual.mat'))
+        load(strcat(otherID, '-ClusterQual.mat'))
+        %          title(sprintf('%s    Lap %d    zidPhi = %.02f ', sd.SSN, iL, sd.zIdPhi(iL)), 'FontSize', FontSize);
+        text(NaN, NaN, sprintf('Lratio %.2f \n', CluSep.Lratio), 'FontSize', 13, 'Units', 'normalized', 'Position', [.1 .85 0])
+        text(NaN, NaN, sprintf('IsoD %.2f \n', CluSep.IsolationDist), 'FontSize', 13, 'Units', 'normalized', 'Position', [.7 .85 0])
+        %     text(NaN, NaN, sprintf('IsoD %.2f \n', CluSep.IsolationDist), 'FontSize', 13, 'Units', 'normalized', 'Position', [.1 .2 0])  % peak voltage
+    end
+    %Extract AD2BitVoltConversioFactor from corresponding .ntt file
+    %     temp_idx = find(fn_prefix == '-');
+    %     ntt_fn = strcat(extractBefore(fn_prefix, temp_idx(end)), '.ntt');
+    %     if isfile(ntt_fn)
+    %         [~, ~, ~, ~, ~, hdr] = Nlx2MatSpike(ntt_fn, [1 1 1 1 1], 1, 1, []);
 else
     disp('no wave file found. skipping average waveform')
 end
@@ -399,12 +442,19 @@ cfg_Q = []; cfg_Q.dt = 0.001; cfg_Q.gausswin_sd = 0.05;cfg_Q.smooth = 'gauss';
 Q = MakeQfromS(cfg_Q, S);
 tvec = Q.tvec - Q.tvec(1);
 yyaxis left
-plot(Q.tvec, Q.data./cfg_Q.dt)
+h = plot(Q.tvec, Q.data./cfg_Q.dt);
 set(gca, 'Xlim', [0 tvec(end)], 'FontSize', FontSize)
 ylabel('FR (Hz)', 'FontSize', FontSize)
 yyaxis right
 plot(AHV_tsd.tvec, AHV_tsd.data)
 set(gca, 'XTick', [])
+yyaxis left
+c = axis;
+for iLaser = 1:length(laser_on)
+    rectangle(Position=[laser_on(iLaser), 0, laser_off(iLaser) - laser_on(iLaser), c(4)], FaceColor=[0 1 1], EdgeColor=[0 1 1])
+end
+g = plot(Q.tvec, Q.data./cfg_Q.dt, 'LineStyle', '-');
+% g.FaceColor = h.FaceColor;
 
 %% #19:24 WHEEL SPEED and AHV
 plot8 = subtightplot(6,6,19:24, [tightX tightY]);
@@ -421,6 +471,13 @@ ylabel('Wheel Speed (cm/s)')
 yyaxis right
 plot(AHV_tsd.tvec, AHV_tsd.data)
 set(gca, 'XTick', [])
+
+yyaxis left
+c = axis; hold on
+for iLaser = 1:length(laser_on)
+    rectangle(Position=[laser_on(iLaser), 0, laser_off(iLaser) - laser_on(iLaser), c(4)], FaceColor=[0 1 1], EdgeColor=[0 1 1])
+end
+plot(speed.tvec, -speed.data)
 
 %% #31:36 HORIZONTAL EYE POSITIION and AHV
 plot9 = subtightplot(6,6,31:36, [tightX tightY]);
@@ -448,8 +505,17 @@ if exist(strcat(SSN, '-VT1_proc.mat'))
     axis([c(1) AHV_tsd.tvec(end) c(3) c(4)]);
     %%
     linkaxes([plot7 plot8 plot9], 'x');
+    
+    yyaxis left
+    c = axis; hold on
+    for iLaser = 1:length(laser_on)
+        rectangle(Position=[laser_on(iLaser), 0, laser_off(iLaser) - laser_on(iLaser), c(4)], FaceColor=[0 1 1], EdgeColor=[0 1 1])
+    end
+    plot(tvec, pupil{1}.com(:,2), 'LineStyle', '-');
 else
+    disp('no eyetracking data for this session')
 end
+
 toc
 
 
