@@ -56,5 +56,9 @@ else
     warning('one or more files missing')
     Mstart = NaN;
     Mend = NaN;
+    nasal_indices_MOVING = NaN;
+    temporal_indices_MOVING = NaN; 
+    nasal_timestamps_MOVING = NaN;
+    temporal_timestamps_MOVING = NaN;
 end
 

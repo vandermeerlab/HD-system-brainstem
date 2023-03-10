@@ -1,4 +1,4 @@
-function [fdSort] = sortSessionsByDate(fd) 
+function [fdSort, SSNonly] = sortSessionsByDate(fd) 
 % Input:            fd 
 % Output:           fdSort = the sorted list of sessions by chronological order
 % 
@@ -15,3 +15,9 @@ t = table(time, x);
 T = sortrows(t, 'time'); 
 Tnew = table2array(T(:,2));
 fdSort = fd(Tnew);
+
+for iF = 1:length(fdSort)
+    [~, b, ~] = fileparts(fdSort{iF});
+    SSNonly{iF} = b; 
+end
+SSNonly = SSNonly';

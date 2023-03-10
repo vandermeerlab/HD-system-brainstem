@@ -48,7 +48,7 @@ maxL = min(csc_tsd.data);                   % Counterclockwise rotation produces
 Rrange = abs(maxR-baseline);
 Lrange = abs(maxL-baseline);
 rangediff = Lrange/Rrange;
-
+%                                          for rare sessions in which I do not move the platform through its full range, the 'fullrange' variable can be estimated as Fullrange =120550.
 Fullrange = abs(maxL - maxR);           % ***Figure out what this value is and make sure it is the same from session to session. Add a warning.
 format bank
 disp(strcat('Fullrange = ', num2str(Fullrange)));

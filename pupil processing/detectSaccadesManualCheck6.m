@@ -1,4 +1,5 @@
-function detectSaccadesManualCheck4(cfg_in)
+
+function detectSaccadesManualCheck6(cfg_in)
 % 2021-11. JJS.
 % This function calculates saccades times from the eye position trace, similar to processPupilData2.feedback. Here, the threshold to use is manually adjusted,
 %      and the trace is scrolled through to check/add/remove indivudal saccades that automatic method may have missed.
@@ -51,8 +52,8 @@ if exist(strcat(SSN, '-VT1.smi'), 'file') == 2
         FontSize = 20;
         cfg_def = [];
         cfg_def.threshAdj  = 4;  % how many timesteps around a saccade that are disqualified from being considered as subsequent saccades. Saccades usually have a rebound that can hit the other threshold.
-        cfg_def.threshT = 1000;  % positive displacement in image pixel space. TEMPORAL saccades.
-        cfg_def.threshN = -1000; % negative displacement in image pixel space. NASAL saccades.
+        cfg_def.threshT = 12;  % positive displacement in image pixel space. TEMPORAL saccades.
+        cfg_def.threshN = -12; % negative displacement in image pixel space. NASAL saccades.
         
         cfg_def.scalingfactor = 1;  % for shrinking the pupil trace so its the same height as diffH
         cfg_def.artifactThresh = 4;  % units of pixels
@@ -73,13 +74,23 @@ if exist(strcat(SSN, '-VT1.smi'), 'file') == 2
                 events_ts = LoadEvents([]);
             end
             index = strfind(events_ts.label, 'Starting Recording');
-            if index{1} == 1                                 % Start Recording should be in the first or second .label position.
-                starttime = events_ts.t{1}(1);  % subtract the very first time stamp to convert from Unix time to 'start at zero' time.
-            elseif index{2} == 1
-                starttime = events_ts.t{2}(1); % for session with laser events, the start recording time moves to position 2.
+            %             temp = cellfun(@isempty, index, 'UniformOutput', false);
+            for iCell = 1:length(index)
+                isone(iCell) = ~isempty(index{iCell});
+            end
+            indextouse = find(isone);
+            if length(indextouse) == 1
+                starttime = events_ts.t{indextouse};
             else
                 error('could not find start time for this session')
             end
+            %             if index{1} == 1                                 % Start Recording should be in the first or second .label position.
+            %                 starttime = events_ts.t{1}(1);  % subtract the very first time stamp to convert from Unix time to 'start at zero' time.
+            %             elseif index{2} == 1
+            %                 starttime = events_ts.t{2}(1); % for session with laser events, the start recording time moves to position 2.
+            %             else
+            %                 error('could not find start time for this session')
+            %             end
             %% Get timestamps from the .smi file
             [~, b, c] = fileparts(FindFile('*VT1.smi'));
             fn = strcat(b,c);
@@ -220,50 +231,56 @@ if exist(strcat(SSN, '-VT1.smi'), 'file') == 2
             end
             
             %% Find Temproal and Nasal saccades that are within a few timesteps and remove
-            if isempty(index_tP_touse) || isempty(index_nP_touse)
-                disp('no saccades detected')
-                return
-            end
-            B = horzcat(index_tP_touse, index_nP_touse);   % combined array of temporal and nasal saccade indices
-            tPsize = 1:length(index_tP_touse);
-            nPsize = length(index_tP_touse)+1: length(index_tP_touse) + length(index_nP_touse);
-            [sortedB, I] = sort(B);                        % now in order of appearance
-            diffB = horzcat([NaN diff(sortedB)]);          % # of time steps between adjacent saccades
-            oppPeaks = diffB <= cfg.threshAdj;                         % find saccades that are 3 apart or less (60ms or less apart)
-            oppPeaksdata = diffH.data(sortedB);            % pupil positions for the sorted array
-            new_oppPeaks = oppPeaks;
-            idx = find(oppPeaks);
-            for iAdj = idx(1:end)
-                [~, c] = min(abs(oppPeaksdata(iAdj-1: iAdj)));
-                if c ==1
-                    new_oppPeaks(iAdj-1) = 1;
-                    new_oppPeaks(iAdj) = 0;
-                elseif c == 2
-                    new_oppPeaks(iAdj-1) = 0;
-                    new_oppPeaks(iAdj) = 1;
-                else
-                    warning('cant find the max for saccade start')
+            if ~isempty(index_tP_touse) && ~isempty(index_nP_touse)
+                
+                B = horzcat(index_tP_touse, index_nP_touse);   % combined array of temporal and nasal saccade indices
+                tPsize = 1:length(index_tP_touse);
+                nPsize = length(index_tP_touse)+1: length(index_tP_touse) + length(index_nP_touse);
+                [sortedB, I] = sort(B);                        % now in order of appearance
+                diffB = horzcat([NaN diff(sortedB)]);          % # of time steps between adjacent saccades
+                oppPeaks = diffB <= cfg.threshAdj;                         % find saccades that are 3 apart or less (60ms or less apart)
+                oppPeaksdata = diffH.data(sortedB);            % pupil positions for the sorted array
+                new_oppPeaks = oppPeaks;
+                idx = find(oppPeaks);
+                for iAdj = idx(1:end)
+                    [~, c] = min(abs(oppPeaksdata(iAdj-1: iAdj)));
+                    if c ==1
+                        new_oppPeaks(iAdj-1) = 1;
+                        new_oppPeaks(iAdj) = 0;
+                    elseif c == 2
+                        new_oppPeaks(iAdj-1) = 0;
+                        new_oppPeaks(iAdj) = 1;
+                    else
+                        warning('cant find the max for saccade start')
+                    end
                 end
+                list = B(I(new_oppPeaks==1)) ;
+                c = ismember(B, list);
+                indexes = find(c);
+                B(indexes) = NaN;
+                tP_wnan = B(tPsize);
+                index_tP_final = tP_wnan(~isnan(tP_wnan));
+                nP_wnan = B(nPsize);
+                index_nP_final = nP_wnan(~isnan(nP_wnan));
+                
+                temporalSaccades = diffH.tvec(index_tP_final);
+                temporalAmplitudes = diffH.data(index_tP_final);
+                nasalSaccades = diffH.tvec(index_nP_final);
+                nasalAmplitudes = diffH.data(index_nP_final);
+                
+                disp(strcat('Num opposite peaks = ', num2str(sum(oppPeaks))));
+                disp(strcat('Adjacent opposite points removed  = ', num2str(length(indexes))));
+                disp(strcat('Num temporal saccades = ', num2str(length(index_tP_final))));
+                disp(strcat('Num nasal saccades = ', num2str(length(index_nP_final))));
+                disp(strcat('Total num saccades = ', num2str(length(index_nP_final)+length(index_tP_final))));
+                
+            else
+                disp('no saccades detected')
+                temporalSaccades = [];
+                temporalAmplitudes = [];
+                nasalSaccades = [];
+                nasalAmplitudes = [];
             end
-            list = B(I(new_oppPeaks==1)) ;
-            c = ismember(B, list);
-            indexes = find(c);
-            B(indexes) = NaN;
-            tP_wnan = B(tPsize);
-            index_tP_final = tP_wnan(~isnan(tP_wnan));
-            nP_wnan = B(nPsize);
-            index_nP_final = nP_wnan(~isnan(nP_wnan));
-            
-            temporalSaccades = diffH.tvec(index_tP_final);
-            temporalAmplitudes = diffH.data(index_tP_final);
-            nasalSaccades = diffH.tvec(index_nP_final);
-            nasalAmplitudes = diffH.data(index_nP_final);
-            
-            disp(strcat('Num opposite peaks = ', num2str(sum(oppPeaks))));
-            disp(strcat('Adjacent opposite points removed  = ', num2str(length(indexes))));
-            disp(strcat('Num temporal saccades = ', num2str(length(index_tP_final))));
-            disp(strcat('Num nasal saccades = ', num2str(length(index_nP_final))));
-            disp(strcat('Total num saccades = ', num2str(length(index_nP_final)+length(index_tP_final))));
         else
             disp('Skipping Calculations ..........................')
             disp('Loading Data')

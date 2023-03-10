@@ -1,4 +1,4 @@
-function plot_AHVtuningMegaplot7(iCell, varargin)
+function plot_AHVtuningMegaplot8(iCell, varargin)
 % JJS.
 % For plotting most/all of the relevant data for a single cell for a headfixed brainstem recording session.
 % 2021-02-16. Added more elements, like platform orientation and eye position. Expanded from 3x6 subtightplot to 4x6.
@@ -164,7 +164,7 @@ title('Acorr')
 p.XAxisLocation = 'top';
 %---------------------------------------------------------------------------------------------------------------------------------------------------
 %% #4 Upper Right Hand Corner: histo image
-p = subtightplot(6,6,[5:6 11:12 17:18], [tightX tightY]); hold on
+p = subtightplot(6,6,[5:6 ], [tightX tightY]); hold on   % had also included 11:12 17:18 
 [fc] = FindFiles(strcat(SSN, '*.t'));
 [~, b, ~] = fileparts(fc);
 if iscell(b)
@@ -193,6 +193,7 @@ if doShow == 1
     imshow(X)
 end
 title(newID, 'Color', 'r', 'FontSize', 20)
+set(gca, 'XTick', [])
 %% #10 HistISI
 p = subtightplot(6,6,10, [tightX tightY]); hold on
 [h, n] = HistISIsubplot(S.t{1});
@@ -224,11 +225,27 @@ cfg_laser.doBar = 0;
 [~, ~, ~, ~, ~] = SpikePETH_either(cfg_laser, S, laser_on); hold on
 c = axis;
 rectangle(Position = [0, 0, dur, c(4)], FaceColor=[0 1 1], EdgeColor=[0 1 1])    % change the 3rd entry in rectangle to the diff of laser_off and laser_on
-[~, ~, ~, ~, ~] = SpikePETH_either(cfg_laser, S, laser_on);  % this is a hack to get the background color 'in back'. otherwise it occludes the spikes.
+[outputS, outputT, outputGau, outputIT, cfg] = SpikePETH_either(cfg_laser, S, laser_on);  % this is a hack to get the background color 'in back'. otherwise it occludes the spikes.
+line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'w')
+line([1 1], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'w')
 set(gca, 'YTick', [])
 set(gca, 'FontSize', FontSize)
 title('Laser PETH', 'FontSize', FontSize)
 set(gca, 'XTick', [-1 0 1 2])
+hold on 
+% add line for Ave Firing Rate, esp. when rasters are so dense that it turns black
+cfg_laser.dt = 0.05;
+cfg_laser.doPlot = 0;
+cfg_laser.doRaster = 0;
+cfg_laser.doBar = 0;
+[outputS, outputT, outputGau, outputIT, cfg] = SpikePETH_either(cfg_laser, S, laser_on);
+m = histc(outputS, outputIT);
+yyaxis right
+plot(outputIT,m/cfg.dt/length(laser_on), 'LineWidth', 4);
+
+
+
+
 
 %% #16 Average Waveform
 p = subtightplot(6,6,16, [tightX tightY]); hold on
@@ -455,6 +472,40 @@ for iLaser = 1:arraysize
     rectangle(Position=[laser_on(iLaser), 0, laser_off(iLaser) - laser_on(iLaser), c(4)], FaceColor=[0 1 1], EdgeColor=[0 1 1])
 end
 plot(speed.tvec, -speed.data)
+
+%% #17   Wheel speed Tuning Curve
+p = subtightplot(6,6,[11:12 17:18], [tightX tightY]); hold on
+    % calculate Q matrix
+    speed_dt = median(diff(tsdH.tvec));
+    cfg_Q = [];
+    cfg_Q.smooth = 'gauss';
+    cfg_Q.gausswin_sd = 0.05;
+    cfg_Q.dt = tsdH_dt;
+    cfg_Q.tvec_edges = speed.tvec(1): speed_dt: speed.tvec(end);
+    F = MakeQfromS(cfg_Q, S); % convert to FR
+    F.data = F.data ./ cfg_Q.dt;
+    
+    % find FR corresponding to each AHV sample
+    F_idx = nearest_idx3(speed.tvec, F.tvec);
+    tsdH_F = F.data(:,F_idx);
+    yyaxis right
+    plot(-speed.data, tsdH_F(1,:), '.', 'MarkerSize', .5, 'color', [.8 .8 .8]); hold on
+    
+    speed.data = -speed.data; % we want forward motion to be displayed as a positive velocity 
+    cfg_tc = [];
+    cfg_tc.nBins = 50;
+    cfg_tc.binEdges = {linspace(-5, 30, 101)};
+    cfg_tc.occ_dt = median(diff(speed.tvec));
+    cfg_tc.minOcc = 1;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
+    tc_speed = TuningCurves(cfg_tc, S, speed);
+    plot(tc_speed.usr.binCenters(tc_speed.occ_hist>occthresh), smoothdata(tc_speed.tc(1,(tc_speed.occ_hist>occthresh))), 'k', 'LineWidth', 3);
+    axis tight
+    ylabel('FR (Hz)', 'FontSize', FontSize)
+    title('Speed Tuning Curve', 'FontSize', FontSize) 
+    yyaxis left
+    set(gca, 'YTick', [])
+    yyaxis right
+    grid on
 
 %% #31:36 HORIZONTAL EYE POSITIION and AHV
 plot9 = subtightplot(6,6,31:36, [tightX tightY]);

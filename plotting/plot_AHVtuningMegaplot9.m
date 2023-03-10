@@ -1,4 +1,4 @@
-function plot_AHVtuningMegaplot7(iCell, varargin)
+function plot_AHVtuningMegaplot9(iCell, varargin)
 % JJS.
 % For plotting most/all of the relevant data for a single cell for a headfixed brainstem recording session.
 % 2021-02-16. Added more elements, like platform orientation and eye position. Expanded from 3x6 subtightplot to 4x6.
@@ -16,9 +16,21 @@ tightY = .02;
 occthresh = 0.5;
 smallfont = 8;
 insetText = 18;
+speedthresh = 0.3;
+ahv_thresh = 4;
 process_varargin(varargin)
-% cd to data folder
+% get sessionID and tetrodeID 
 SSN = HD_GetSSN; disp(SSN);
+[fc] = FindFiles(strcat(SSN, '*.t'));
+[~, b, ~] = fileparts(fc);
+if iscell(b)
+    cellID = b{iCell};
+else
+    cellID = b;
+end
+newID = cellID;
+k = strfind(cellID, '_');
+newID(k) = '-';
 % miscellaney
 clf
 FontSize = 13;
@@ -86,11 +98,12 @@ text(NaN, NaN, 'CCW', 'FontSize', insetText, 'Units', 'normalized', 'Position', 
 p.XAxisLocation = 'top';
 c = axis;
 line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'k')
+axis tight
 %--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 %% #2 pupil TC
 p = subtightplot(6,6,2, [tightX tightY]); hold on
 if exist(strcat(SSN, '-saccades-edited.mat'))
-    load(FindFile('*saccades-edited.mat'), 'tsdH') % tsdH is the pupil position variable
+    load(FindFile('*saccades-edited.mat'), 'tsdH') % tsdH is the horizontal pupil position variable
     % calculate Q matrix
     tsdH_dt = median(diff(tsdH.tvec));
     cfg_Q = [];
@@ -163,36 +176,6 @@ set(gca, 'xtick', [-.05 0 .05], 'FontSize', FontSize); grid on;
 title('Acorr')
 p.XAxisLocation = 'top';
 %---------------------------------------------------------------------------------------------------------------------------------------------------
-%% #4 Upper Right Hand Corner: histo image
-p = subtightplot(6,6,[5:6 11:12 17:18], [tightX tightY]); hold on
-[fc] = FindFiles(strcat(SSN, '*.t'));
-[~, b, ~] = fileparts(fc);
-if iscell(b)
-    cellID = b{iCell};
-else
-    cellID = b;
-end
-newID = cellID;
-k = strfind(cellID, '_');
-newID(k) = '-';
-[~, filenamejpg, ext] = fileparts(FindFiles(strcat(cellID, '*', 'histology', '.jpg')));
-filenamejpg = strcat(filenamejpg, ext);
-[~, filenamepng, ext] = fileparts(FindFiles(strcat(cellID, '*', 'histology', '.png')));
-filenamepng = strcat(filenamepng, ext);
-doShow = 1;
-if ~isempty(filenamejpg)
-    filename = filenamejpg;
-elseif ~isempty(filenamepng)
-    filename = filenamepng;
-else
-    doShow = 0;
-    disp('no histology file found for this neuron')
-end
-if doShow == 1
-    [X,~] = imread(filename);
-    imshow(X)
-end
-title(newID, 'Color', 'r', 'FontSize', 20)
 %% #10 HistISI
 p = subtightplot(6,6,10, [tightX tightY]); hold on
 [h, n] = HistISIsubplot(S.t{1});
@@ -224,11 +207,23 @@ cfg_laser.doBar = 0;
 [~, ~, ~, ~, ~] = SpikePETH_either(cfg_laser, S, laser_on); hold on
 c = axis;
 rectangle(Position = [0, 0, dur, c(4)], FaceColor=[0 1 1], EdgeColor=[0 1 1])    % change the 3rd entry in rectangle to the diff of laser_off and laser_on
-[~, ~, ~, ~, ~] = SpikePETH_either(cfg_laser, S, laser_on);  % this is a hack to get the background color 'in back'. otherwise it occludes the spikes.
+[outputS, outputT, outputGau, outputIT, cfg] = SpikePETH_either(cfg_laser, S, laser_on);  % this is a hack to get the background color 'in back'. otherwise it occludes the spikes.
+line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'w')
+line([1 1], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'w')
 set(gca, 'YTick', [])
 set(gca, 'FontSize', FontSize)
 title('Laser PETH', 'FontSize', FontSize)
 set(gca, 'XTick', [-1 0 1 2])
+hold on
+% add line for Ave Firing Rate, esp. when rasters are so dense that it turns black
+cfg_laser.dt = 0.05;
+cfg_laser.doPlot = 0;
+cfg_laser.doRaster = 0;
+cfg_laser.doBar = 0;
+[outputS, outputT, outputGau, outputIT, cfg] = SpikePETH_either(cfg_laser, S, laser_on);
+m = histc(outputS, outputIT);
+yyaxis right
+plot(outputIT(1:end-1),m(1:end-1)/cfg.dt/length(laser_on), 'LineWidth', 4);   % JJS. 11/15/22. This is a hack. Last value of m is always zero (erroneously).
 
 %% #16 Average Waveform
 p = subtightplot(6,6,16, [tightX tightY]); hold on
@@ -271,17 +266,8 @@ end
 set(gca, 'XTick', [])
 set(gca, 'FontSize', FontSize)
 axis tight
-% %% #17 Average neuron waveform (non-laser spikes)
-% p = subtightplot(6,6,17, [tightX tightY]); hold on
-% title('Average Waveform: non-laser', 'FontSize', FontSize)
-% % p.XAxisLocation = 'top';
-% set(gca, 'Xtick', [])
-%
-% %% #18 Average neuron waveform (laser-only spikes)
-% p = subtightplot(6,6,18, [tightX tightY]); hold on
-% title('Average Waveform: laser only', 'FontSize', FontSize)
-% % p.XAxisLocation = 'top';
-% set(gca, 'Xtick', [])
+p.YAxisLocation = 'right';
+
 
 %% GET SACCADE INFO
 [~, ~, ~, ~, nasal_timestamps_MOVING, temporal_timestamps_MOVING] = isolateManualSaccades();
@@ -398,7 +384,21 @@ line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '-')
 legend('nasal', 'temporal', '', 'FontSize', smallfont)
 set(gca, 'XTick', [-2 2])
 t = title('AHV PETH', 'Units', 'normalized', 'Position', [0.5, 0.5, 0], 'FontSize', FontSize);
+% ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+%% #10 laser-triggered EYE movement 
+subtightplot(6,6,11, [tightX tightY]); hold on
+% out: tsd with PETH
+% cfg options:
+%
+% cfg_def.window = [-2 2]; % start and end times of window (in s)
+% cfg_def.dt = []; % time step, specify this for 'interp' mode
+% cfg_def.mode = 'raw'; % 'raw' or 'interp'; if 'interp', need to specify cfg_def.dt
+% cfg_def.interp_mode = 'linear';
 
+cfg_eye.window = [-2 2];
+cfg_eye.dt = .1; 
+
+% out = TSDpeth(cfg_eye, tsdH, laser_on); 
 
 % -------------------------------------------------------------------------------------------------------------------------------------------------------------------
 % -------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -456,6 +456,87 @@ for iLaser = 1:arraysize
 end
 plot(speed.tvec, -speed.data)
 
+
+%% #17   Wheel speed Tuning Curve
+p = subtightplot(6,6,5, [tightX tightY]); hold on
+% calculate Q matrix
+speed_dt = median(diff(tsdH.tvec));  % tsdH is the pupil position variable
+cfg_Q = [];
+cfg_Q.smooth = 'gauss';
+cfg_Q.gausswin_sd = 0.05;
+cfg_Q.dt = tsdH_dt;
+cfg_Q.tvec_edges = speed.tvec(1): speed_dt: speed.tvec(end);
+F = MakeQfromS(cfg_Q, S); % convert to FR
+F.data = F.data ./ cfg_Q.dt;
+
+speed.data = -speed.data; % we want forward motion to be displayed as a positive velocity
+% find FR corresponding to each AHV sample
+F_idx = nearest_idx3(speed.tvec, F.tvec);
+tsdH_F = F.data(:,F_idx);
+yyaxis right
+
+z = speed.data > speedthresh | speed.data < -speedthresh;
+plot(speed.data(z), tsdH_F(1,z), '.', 'MarkerSize', .5, 'color', [.8 .8 .8]); hold on
+h = lsline;
+set(h(1), 'Color', 'k')
+set(h(1), 'LineWidth', 2)
+%     Fit = polyfit(h(1).XData, h(1).YData, 1);
+speeddata = speed.data(z)';
+speeddata(:,2) = ones(length(speeddata), 1);
+[b,bint,r,rint,stats] = regress(tsdH_F(1,z)', speeddata);
+c = axis;
+line([-speedthresh -speedthresh], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'r')
+line([speedthresh speedthresh], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'r')
+text(NaN, NaN, strcat('Rsq =', sprintf('%0.2f', stats(1))), 'FontSize', 12, 'Units', 'normalized', 'Position', [.55 .85 0])
+
+cfg_tc = [];
+cfg_tc.nBins = 50;
+cfg_tc.binEdges = {linspace(-5, 30, 101)};
+cfg_tc.occ_dt = median(diff(speed.tvec));
+cfg_tc.minOcc = 1;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
+tc_speed = TuningCurves(cfg_tc, S, speed);
+plot(tc_speed.usr.binCenters(tc_speed.occ_hist>occthresh), smoothdata(tc_speed.tc(1,(tc_speed.occ_hist>occthresh))), 'k', 'LineWidth', 3);
+axis tight
+ylabel('FR (Hz)', 'FontSize', FontSize)
+title('Wheel Speed Tuning Curve', 'FontSize', FontSize)
+yyaxis left
+set(gca, 'YTick', [])
+yyaxis right
+grid on
+set(gca, 'FontSize', FontSize)
+p.XAxisLocation = 'top';
+axis tight
+
+%% #31:36 WHEEL speed vs. AHV scatterplot
+plot6 = subtightplot(6,6,6, [tightX tightY]);
+
+X = AHV_tsd.data > ahv_thresh | AHV_tsd.data < -ahv_thresh;
+% Y = speed.data > speedthresh | speed.data < -speedthresh;
+
+Z_idx = nearest_idx3(AHV_tsd.tvec(X), speed.tvec);   % this did not work: Z_idx = nearest_idx3(AHV_tsd.tvec(X), speed.tvec(Y));
+SPEED = tsd(speed.tvec(Z_idx,:), speed.data(:,Z_idx));
+plot(AHV_tsd.data(X), SPEED.data, '.', 'MarkerSize', 1);
+axis tight
+xlabel('AHV', 'FontSize', FontSize)
+ylabel('Wheel Speed', 'FontSize', FontSize)
+plot6.YAxisLocation = 'right';
+plot6.XAxisLocation = 'top';
+set(gca, 'FontSize', FontSize)
+h = lsline;
+set(h(1), 'Color', 'k')
+set(h(1), 'LineWidth', 2)
+c = axis;
+line([c(1) c(2)], [0 0], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'k')
+line([-ahv_thresh -ahv_thresh], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'r')
+line([ahv_thresh ahv_thresh], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'r')
+
+SPEEDregress = SPEED.data';
+SPEEDregress(:,2) = ones(length(SPEED.data), 1);
+[b,bint,r,rint,stats] = regress(AHV_tsd.data(X)', SPEEDregress);
+text(NaN, NaN, strcat('Rsq =', sprintf('%0.2f', stats(1))), 'FontSize', 12, 'Units', 'normalized', 'Position', [.05 .85 0])
+
+
+
 %% #31:36 HORIZONTAL EYE POSITIION and AHV
 plot9 = subtightplot(6,6,31:36, [tightX tightY]);
 SSN = HD_GetSSN;
@@ -499,3 +580,35 @@ toc
 % title(Sold.label{iCell}, 'Color', 'r')
 % t = title('this is my title', 'Units', 'normalized', 'Position', [0.5, 0.75, 0]);
 % t.Color = 'r'; t.FontSize = 10; % with this you can change color, font name and size
+
+% %% #4 Upper Right Hand Corner: histo image
+% p = subtightplot(6,6,[5:6 ], [tightX tightY]); hold on   % had also included 11:12 17:18
+% [fc] = FindFiles(strcat(SSN, '*.t'));
+% [~, b, ~] = fileparts(fc);
+% if iscell(b)
+%     cellID = b{iCell};
+% else
+%     cellID = b;
+% end
+% newID = cellID;
+% k = strfind(cellID, '_');
+% newID(k) = '-';
+% [~, filenamejpg, ext] = fileparts(FindFiles(strcat(cellID, '*', 'histology', '.jpg')));
+% filenamejpg = strcat(filenamejpg, ext);
+% [~, filenamepng, ext] = fileparts(FindFiles(strcat(cellID, '*', 'histology', '.png')));
+% filenamepng = strcat(filenamepng, ext);
+% doShow = 1;
+% if ~isempty(filenamejpg)
+%     filename = filenamejpg;
+% elseif ~isempty(filenamepng)
+%     filename = filenamepng;
+% else
+%     doShow = 0;
+%     disp('no histology file found for this neuron')
+% end
+% if doShow == 1
+%     [X,~] = imread(filename);
+%     imshow(X)
+% end
+% title(newID, 'Color', 'r', 'FontSize', 20)
+% set(gca, 'XTick', [])
