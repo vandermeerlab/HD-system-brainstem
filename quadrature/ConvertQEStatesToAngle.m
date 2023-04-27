@@ -3,7 +3,7 @@ function [angle_tsd, wheel_tsd] = ConvertQEStatesToAngle(cfg_in, state_tsd)
 
 cfg_def = [];
 cfg_def.dphi = 1; % encoder angle step -- property of the encoder (should be obtained by calibration procedure)
-cfg_def.angle_to_turn  = 1024; % this is the conversion factor for coverting integer "angle" values into # of wheel turns. This was determined empirically with a recording session on 3/3/2022. 
+cfg_def.angle_to_turn  = 1024; % This is how many pulses per revolution for the wheel encoder. We have a Grayhill encoder from digikey. The part number is 63KS256. [this (angle_to_turn) is the conversion factor for coverting integer "angle" values into # of wheel turns. This was determined empirically with a recording session on 3/3/2022.] 
 
 
 % state definitions:

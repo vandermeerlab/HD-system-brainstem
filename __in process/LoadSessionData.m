@@ -17,14 +17,14 @@ function sd = LoadSessionData(fd, varargin)
 %           sd.ExpKeys - structure with the elements loaded from LoadExpKeys. Should include start time [1x1], stop time [1x1], laser ON ts, Laser OFF ts, any manual entries, such as for DARK recording, optokinetic stim.
 %           sd.cfg - contains config parameters that were used to generate the variables above
 tic
-CheckOrientation = 0; 
+CheckOrientation = 0;
 CheckAHV = 0;
 Keys = true; %1 = load keys.m, 0 = don't
 Events = true; % load events file
 Spikes = true;  %1 = load spikes, 0 = don't
 Use__Ts = false; % load ._t cells
 AHV = true;
-EYE = true; 
+EYE = true;
 process_varargin(varargin);
 
 if ~isempty(fd)
@@ -46,17 +46,15 @@ if Keys ==1
     if exist(keysfn, 'file')~= 2
         warning('Cannot find keys file %s.', keysfn);
     end
-    events_ts = LoadEvents([]);
-    sd.ExpKeys = events_ts;
-    sd.ExpKeys.SSN = SSN;
-    sd.ExpKeys.fd = fd;
+    EvalKeys(fd);
+    sd.ExpKeys = ExpKeys;
 end
 %-------------------------
 % EVENTS
 %-------------------------
 if Events
     events_fn = fullfile(fd, [SSN '-Events.Nev']);
-    if exist(events_fn, 'file') ~= 2 
+    if exist(events_fn, 'file') ~= 2
         warning('Cannot find events file %s.', events_fn);
     end
     events_ts = LoadEvents([]);
@@ -76,18 +74,17 @@ if Spikes ==1
     sd.fc = cfg.fc;
     S = LoadSpikes(cfg);
     % New cheetah versions have timestamps that are in Unix Epoch Time
-    index = strfind(sd.Events.label, 'Starting Recording');
-    if index{1} == 1                                 % Start Recording should be in the first or second .label position.
-        for iC = 1:length(S.t)
-            S.t{iC} = S.t{iC} - events_ts.t{1}(1);  % subtract the very first time stamp to convert from Unix time to 'start at zero' time.
-        end
-    elseif index{2} == 1                   % this is for cases in which there is more than one start/stop time. Would not be usable for eye movement data, but can still be analyzed for AHV.
-        for iC = 1:length(S.t)
-            S.t{iC} = S.t{iC} - events_ts.t{2}(1);
-        end
-    else
-        warning('could not find start record time')
+    
+    wrapper = @(events_ts) strcmp(events_ts, 'Starting Recording');
+    A = cellfun(wrapper, events_ts.label);
+    Startindex = find(A); % index which label says 'Start Recording'
+    starttime = events_ts.t{Startindex}(1); % use the very first start record time
+    % Start Recording should be in the first or second .label position.
+    for iC = 1:length(S.t)
+        S.t{iC} = S.t{iC} - starttime;  % subtract the very first time stamp to convert from Unix time to 'start at zero' time.
     end
+    sd.S = S;
+    
     sd.fn = {};
     for iC = 1:length(sd.fc)
         [~,sd.fn{iC}] = fileparts(sd.fc{iC});
@@ -101,14 +98,14 @@ end
 if AHV
     cfg = [];
     cfg.CheckPlot = 0;  % if CheckPlot == 1, will display the orientation plot.
-    cfg.rangetouse = 360;  % this is the angular range for the platform, a critical value. Should be 360 for all sessions, except two, where it was set lower. *Note: hardcode thse here.
+    cfg.rangetouse = 360;  % this is the angular range for the platform, a critical value.
     [csc_tsd, orientation, samplingrate, dt] = GetOrientationValues(cfg); %#ok<ASGLU>
     subsample_factor = 10;
     orientationtousedata = downsample(orientation.data, subsample_factor);
     orientationtouserange = downsample(orientation.tvec, subsample_factor);
     
     if CheckOrientation ==1
-        figure; 
+        figure;
         plot(orientationtouserange, orientationtousedata);
         xlabel('Time (sec)')
         ylabel('Heading Direction (deg)')
@@ -128,20 +125,76 @@ end
 % EYE MOVEMENTS
 %-------------------------
 if EYE
-    cfg = [];
-    cfg.threshAdj  = 4;
-    cfg.threshN = 10;      % pixel threshold for CW rotation and Nasal Saccades. 
-    cfg.threshT = -10;     % pixel threshold for CCW rotation and Temporal Saccades.
-    
-    cfg.scalingfactor = 1;  % for shrinking the pupil trace so its the same height as diffH
-    cfg.artifactThresh = 4;  % units of pixels sq.
-    cfg.doPlotThresholds = 1;  % plot the eye velocity trace with thresholds and identified saccades
-    cfg.doPlotEverything = 1;
-    [sd.temporalSaccades, sd.nasalSaccades, ~, ~, ~, ~, ~, ~, ~] = processPupilData2(cfg, sd);
+    success = 0; %#ok<NASGU>
+    try
+        load(FindFile('*saccades-edited.mat'), 'temporalSaccades', 'temporalAmplitudes', 'nasalSaccades', 'nasalAmplitudes', 'tsdH', 'tsdV')
+        % ____saccades = timestamps.
+        % ____amplitudes = saccade amplitdues.
+        % tsdH is horizontal pupil position
+        % tsdV is vertical pupil position
+        success = 1;
+        if success
+            sd.temporalSaccades = temporalSaccades;
+            sd.temporalAmplitudes = temporalAmplitudes;
+            sd.nasalSaccades = nasalSaccades;
+            sd.nasalAmplitudes = nasalAmplitudes;
+            sd.tsdH = tsdH;
+            sd.tsdV = tsdV;
+        end
+    catch
+        warning('cannot find saccade data')
+    end
 end
 
+%----------------------------
+% WHEEL ENCODER (Quadrature)
+%----------------------------
+updownTSD = getQEupdown([]);
+state_tsd = ConvertQEUpDownToState(updownTSD);
+[angle_tsd, wheel_tsd] = ConvertQEStatesToAngle([], state_tsd); %#ok<*ASGLU>
+[d, speed, cfg] = ConvertWheeltoSpeed([], wheel_tsd);
+
+d.tvec = d.tvec - starttime;
+speed.tvec = speed.tvec - starttime;
+
+sd.d = d; % total distance travelled on the wheel (in centimenters)
+sd.speed = speed;  % speed the wheel (in centimeters per second)
+
+%----------------------------
+% PLATFORM ROTATION PERIODS
+%----------------------------
+try
+    success = 0; %#ok<*NASGU>
+    filename = strcat(SSN, '-AHV_StationaryTimes.mat');
+    load(filename);
+    success = 1;
+    sd.STstart = STtstart;
+    sd.STend = STtend;
+catch
+    warning('cannot platform stationary times file')
+end
 
 if dirpushed
     popdir;
 end
 toc
+
+
+%% alternate way of find start and stop recording times
+% start_index = strfind(sd.Events.label, 'Starting Recording');
+% if start_index{1} == 1                                 % Start Recording should be in the first or second .label position.
+%     for iC = 1:length(S.t)
+%         S.t{iC} = S.t{iC} - events_ts.t{1}(1);  % subtract the very first time stamp to convert from Unix time to 'start at zero' time.
+%     end
+% elseif start_index{2} == 1                   % this is for cases in which there is more than one start/stop time. Would not be usable for eye movement data, but can still be analyzed for AHV.
+%     for iC = 1:length(S.t)
+%         S.t{iC} = S.t{iC} - events_ts.t{2}(1);
+%     end
+% else
+%     warning('could not find start record time')
+% end
+%%
+% A = cell2mat(cellfun(@isempty, start_index,'UniformOutput',0));
+% B = A == 0;
+% indextouse = find(B);
+% start_time = sd.Events.t{indextouse};
