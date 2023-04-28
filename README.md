@@ -43,9 +43,11 @@ Event.nev		Labels and timestamps for events that occur during a session, usually
 Below is a list of important functions for extracting/plotting information about AHV and eye movements. 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------
 
-All of the relevant files for a recording session are in one folder. Once inside that folder, use 
-sd = LoadSessionData([]) 
-to calculate and gather all of the relevant information into one structure [sd] in the matlab workspace.  
+All of the relevant files for a recording session are in one folder. Once inside that folder, use **sd = LoadSessionData([])** to calculate and gather all of the relevant information into one structure **[sd]** in the matlab workspace. sd will be an input for most functions. 
+
+To calculated an AHV tuning curve, use **getAHV_TC.m**. Set 'doPlot'=1 to plot each TC. The default setting will smooth the data. One parameter that you may want to change is minOCC. This value determines the minimum number of samples needed in a given AHV bin to include that data. minOcc of 100 requires only 0.5 sec of occupancy to include those values. I usually set this to 200 to include at least 1 sec of data. But one may want to set it higher. 
+
+Due to eye movement tuning (and natural variability) the tuning curve variance can be high. We prefer to plot the raw firing rate data (FR x AHV) and overlay the binned (average) tuning curve. Use **plotAHVscatter** to visualize the raw firing rate data and the tuning curve together. 
 
 
 
