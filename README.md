@@ -42,3 +42,33 @@ Event.nev		Labels and timestamps for events that occur during a session, usually
 
 Below is a list of important functions for extracting/plotting information about AHV and eye movements. 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------
+
+All of the relevant files for a recording session are in one folder. Once inside that folder, use 
+sd = LoadSessionData([]) 
+to calculate and gather all of the relevant information into one structure [sd] in the matlab workspace.  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
