@@ -49,17 +49,17 @@ To calculate an AHV tuning curve, use **getAHV_TC.m**. Set 'doPlot'=1 to plot ea
 
 Due to eye movement tuning (and natural variability) the tuning curve variance can be high. We prefer to plot the raw firing rate data (FR x AHV) and overlay the binned (average) tuning curve. Use **plotAHVscatter** to visualize the raw firing rate data and the tuning curve together. 
 
+![AHV scatter example](https://user-images.githubusercontent.com/16581827/235242261-32805e02-7141-437a-86eb-c0daeedbe0b4.jpg)
+
 Use **saccadePETH.m** to collect the spike times (relative to zero) from a user-chosen window around saccade event times. Saccade times are calculated from a semi-automated process using the estimated pupil position from Facemap and from a velocity threshold and manual editing. saccadePETH will return the FR for each bin and can plot the raster plot for that time window with the FR overlaid. PETH information is generated separately for nasal and temporal saccades. A +- 200 ms window is good for seeing phasic changes. A +- 2 s window will show the saccade response on top of the underlying AHV oscillation (if present). 
 
 
+Use [blank] to calculate and plot the linear velocity (wheel speed) tuning curve. 
+![wheel speed TC](https://user-images.githubusercontent.com/16581827/235240827-e979ac97-9f75-4538-8ef7-955baac154fb.JPG)
 
+Use [blank] to calculate and plot the eye position tuning curve. 
 
-
-
-
-
-
-
+![pupil position TC example](https://user-images.githubusercontent.com/16581827/235244089-93c54a92-5e62-45fa-9614-24d094add4ad.JPG)
 
 
 
