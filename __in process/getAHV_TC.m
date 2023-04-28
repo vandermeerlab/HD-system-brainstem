@@ -15,10 +15,11 @@ function [tc_out] = getAHV_TC(sd, cfg_in)
 
 cfg_def = [];
 cfg_def.doPlot = 1;
+cfg_def.smooth = 1;
 cfg_def.nBins = 100;
 cfg_def.binEdges = {linspace(-200, 200, 101)};
 cfg_def.occ_dt = median(diff(sd.AHV.tvec));
-cfg_def.minOcc = 100;  % remember that Occ is measured in samples, not in seconds. Usually 5ms per sample, b/c the platform encoder sampling rate is 200Hz,
+cfg_def.minOcc = 200;  % remember that Occ is measured in samples, not in seconds. Usually 5ms per sample, b/c the platform encoder sampling rate is 200Hz,
 
 cfg_tc = ProcessConfig2(cfg_def, cfg_in);
 
@@ -27,7 +28,11 @@ tc_out = TuningCurves(cfg_tc, sd.S, sd.AHV);
 if cfg_tc.doPlot
     for iCell = 1:length(sd.S.t)
         % Add Tuning Curve
-        h = plot(tc_out.usr.binCenters, tc_out.tc(iCell,:), 'LineWidth', 3, 'Color', 'k');
+        if cfg_tc.smooth
+            plot(tc_out.usr.binCenters, smoothdata(tc_out.tc(iCell,:)), 'LineWidth', 3, 'Color', 'k');
+        else
+            plot(tc_out.usr.binCenters, tc_out.tc(iCell,:), 'LineWidth', 3, 'Color', 'k');
+        end
         xlabel('AHV (degrees/sec)')
         ylabel('FR (Hz)')
         set(groot, 'DefaultLegendInterpreter', 'none')

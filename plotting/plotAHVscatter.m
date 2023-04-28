@@ -12,8 +12,12 @@ cfg_Q.gausswin_sd = 0.05;
 cfg_Q.dt = AHV_dt;
 cfg_Q.tvec_edges = sd.AHV.tvec(1): AHV_dt: sd.AHV.tvec(end);
 
+cfg_in.doPlot = 0;
+[tc_out] = getAHV_TC(sd, cfg_in);
+
+figure
 for iCell = 1:length(sd.S.t)
-    Stouse.t{1} = sd.S.t{iCell}; 
+    Stouse.t{1} = sd.S.t{iCell};
     F = MakeQfromS(cfg_Q, Stouse);  % convert to FR
     F.data = F.data ./ cfg_Q.dt;
     F_idx = nearest_idx3(sd.AHV.tvec, F.tvec);
@@ -21,10 +25,10 @@ for iCell = 1:length(sd.S.t)
     ymax = max(AHV_F);
     set(gca, 'TickDir', 'out', 'FontSize', 16)
     plot(sd.AHV.data, AHV_F, '.', 'MarkerSize', .5); hold on
+    xlabel('AHV deg./sec')
+    ylabel('Firing Rate (Hz)')
     set(gca, 'Ylim', [0 ymax], 'FontSize', 16)
     
-    cfg_in.doPlot = 0;
-    [tc_out] = getAHV_TC(sd, cfg_in);
     if smooth == 1
         plot(tc_out.usr.binCenters, smoothdata(tc_out.tc(iCell,:)), 'LineWidth', 5, 'Color', 'k');
     else

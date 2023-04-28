@@ -15,8 +15,8 @@ function up_down_tsd = getQEupdown(cfg_in)
 
 cfg_def = [];
 cfg_def.verbose = 1; 
-cfg_def.chA = '*CSC35.Ncs'; % filename of quadrature encoder channel 1   % changed from cfg_in.chA = ... to cfg_def.chA = ...
-cfg_def.chB = '*CSC34.Ncs'; % filename of quadrature encoder channel 2
+cfg_def.chA = '*CSC34.Ncs'; % filename of quadrature encoder channel 1   % changed from cfg_in.chA = ... to cfg_def.chA = ...
+cfg_def.chB = '*CSC35.Ncs'; % filename of quadrature encoder channel 2
 
 cfg = ProcessConfig(cfg_def, cfg_in);
 

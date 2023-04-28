@@ -1,6 +1,6 @@
 function [outputS, outputT, outputGau, outputIT, cfg] = SpikePETH_either(cfg_in, S,t,varargin)
 %% SpikePETH: computes the perievent histogram for spike data "S" at events
-%             "t".  Outputs
+%             "t".  
 %
 %
 %
