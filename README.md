@@ -51,7 +51,10 @@ Due to eye movement tuning (and natural variability) the tuning curve variance c
 
 ![AHV scatter example](https://user-images.githubusercontent.com/16581827/235242261-32805e02-7141-437a-86eb-c0daeedbe0b4.jpg)
 
-Use **saccadePETH.m** to collect the spike times (relative to zero) from a user-chosen window around saccade event times. Saccade times are calculated from a semi-automated process using the estimated pupil position from Facemap and from a velocity threshold and manual editing. saccadePETH will return the FR for each bin and can plot the raster plot for that time window with the FR overlaid. PETH information is generated separately for nasal and temporal saccades. A +- 200 ms window is good for seeing phasic changes. A +- 2 s window will show the saccade response on top of the underlying AHV oscillation (if present). 
+Use **saccadePETH.m** to collect the spike times (relative to zero) and Firing Rate PETHs from a user-chosen window around saccade event times. Saccade times are calculated from a semi-automated process using the estimated pupil position from Facemap and from a velocity threshold and manual editing. saccadePETH will return the FR for each bin and can plot the raster plot for that time window with the FR overlaid. PETH information is generated separately for nasal and temporal saccades. A +- 200 ms window is good for seeing phasic changes. A +- 2 s window will show the saccade response on top of the underlying AHV oscillation (if present). Use **FR_PETH.m** if you want to generate a PETH with any general set of times t that you input. 
+![saccadePETH example](https://user-images.githubusercontent.com/16581827/235328676-9724619a-ddb0-46bb-a84c-da6385d9097f.jpg)
+
+
 
 
 Use **getWheel_TC.m** to calculate and plot the linear velocity (wheel speed) tuning curve. 
