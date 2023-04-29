@@ -1,46 +1,113 @@
-function []  = saccadePETH(sd, cfg_in)
+function [spkTimes_N, spkTimes_T, FR_N, FR_T, bins]  = saccadePETH(cfg_in, sd)
 % JJS. 2023-04-27.
 % This function pulls out the spike times in a window around temporal and nasal saccades
+%          Inputs:
+%           - cfg_in    [struct]: contains configuration paramters
+%           - S         [TS]      Spike timestamp data
+%           - t         [n x T]   timestamps for events
+%          Outputs:
+%           - outputS   [TS] spike times, relative to t
+%           - FR        1 x nBins  array of Firing Rate values
+%           - bins      bins for the Firing Rate values
 
-
-cfg_def.smooth = 1;
+doPlot = 1;
 cfg_def.FontSize = 16;
-cfg_def.LineWidth = 3;
-cfg_def.doPlot = 0;
-cfg_def.window = [-.2 .2];
+cfg_def.window = [-.2 .4];
 cfg_def.dt = 0.01;
-cfg_def.doPlot = 1;
-cfg_out = ProcessConfig2(cfg_def, cfg_in);
+cfg_def.excessBounds = 1;
+cfg = ProcessConfig2(cfg_def, cfg_in);
+
+T = sd.temporalSaccades;
+N = sd.nasalSaccades;
+
+nT = length(T);
+nN = length(N);
+bins = linspace(cfg.window(1), cfg.window(2), diff(cfg.window)/cfg.dt+1);
 
 for iCell = 1:length(sd.S.t)
+    %% Temporal
+    outputS = [];
+    outputT = [];
     Stouse.t{1} = sd.S.t{iCell};
-    [outputS, ~, ~, outputIT, ~] = SpikePETH_either(cfg_out, Stouse, sd.nasalSaccades); hold on
-    [mn3, edges] = histcounts(outputS, outputIT);
-    if cfg_out.smooth
-        FRnasal = smoothdata(mn3/cfg_out.dt/length(sd.nasalSaccades));
-    else
-        FRnasal = mn3/cfg_out.dt/length(sd.nasalSaccades);
+    for iT = 1:nT
+        S0 = restrict(Stouse, T(iT) + cfg.window(1) - cfg.excessBounds, T(iT) + cfg.window(2) + cfg.excessBounds);
+        S0 = restrict(S0, T(iT) + cfg.window(1), T(iT) + cfg.window(2));
+        if length(S0.t{1}) > 0 %#ok<*ISMT>
+            outputT = [outputT; repmat(iT, length(S0.t{1}),1)];
+            temp = outputS;
+            outputS = cat(1, temp, S0.t{1} - T(iT));   % JJS hack. Error with cat dim not consistent.
+        end
     end
+    [m, ~] = histcounts(outputS, bins);
+    FR_T{iCell} = m / cfg.dt / length(T);
+    spkTimes_T{iCell} = outputS;
+    eventindexT{iCell} = outputT; 
     
+    %% Nasal
+    outputS = [];
+    outputT = [];
+    Stouse.t{1} = sd.S.t{iCell};
+    for iT = 1:nN
+        S0 = restrict(Stouse, N(iT) + cfg.window(1) - cfg.excessBounds, N(iT) + cfg.window(2) + cfg.excessBounds);
+        S0 = restrict(S0, N(iT) + cfg.window(1), N(iT) + cfg.window(2));
+        if length(S0.t{1}) > 0 %#ok<*ISMT>
+            outputT = [outputT; repmat(iT, length(S0.t{1}),1)];
+            temp = outputS;
+            outputS = cat(1, temp, S0.t{1} - N(iT));   % JJS hack. Error with cat dim not consistent.
+        end
+    end
+    [m, ~] = histcounts(outputS, bins);
+    FR_N{iCell} = m / cfg.dt / length(N);
+    spkTimes_N{iCell} = outputS;
+    eventindexN{iCell} = outputT; 
     
-    if cfg_out.doPlot       
-        plot(edges(1:end-1), FRnasal, 'LineWidth', cfg_out.LineWidth);
-        amax = FRnasal;
-        set(gca, 'FontSize', cfg_out.FontSize)
-        disp('press any key to continue')
-        pause
+    %% check if there are any spikes
+    if isempty(outputT)
+        error('No spikes')
+    end
+    % display
+    if doPlot == 1
         clf
+        %% Temporal
+        subplot(2,2,1);
+        title('Temporal Saccades')
+        plot(spkTimes_T{iCell}, eventindexT{iCell} + 0.5, 'k.', 'MarkerSize', 5);
+        xlabel('peri-event (sec)');
+        ylabel('Event #');
+        ylim([1 nT])
+        xlim(cfg.window);
+        set(gca, 'FontSize', cfg.FontSize)
+        
+        % bar graph
+        subplot(2,2,3);
+        m = histc(spkTimes_T{iCell}, bins);
+        bar(bins, m / cfg.dt / length(T));
+        set(gca, 'XLim', cfg.window);
+        ylabel('FR (Hz)')
+        xlabel('peri-event (sec)');
+        set(gca, 'FontSize', cfg.FontSize)
+        
+        
+        %% Nasal
+        subplot(2,2,2);
+        title('Nasal Saccades')
+        plot(spkTimes_N{iCell}, eventindexN{iCell} + 0.5, 'k.', 'MarkerSize', 5);
+        xlabel('peri-event (sec)');
+        ylabel('Event #');
+        ylim([1 nN])
+        xlim(cfg.window);
+        set(gca, 'FontSize', cfg.FontSize)
+        
+        % bar graph
+        subplot(2,2,4);
+        m = histc(spkTimes_N{iCell}, bins);
+        bar(bins, m / cfg.dt / length(N));
+        set(gca, 'XLim', cfg.window);
+        ylabel('FR (Hz)')
+        xlabel('peri-event (sec)');
+        set(gca, 'FontSize', cfg.FontSize)
+        
+        disp('press any key')
+        pause
     end
 end
-% hold on
-% [outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, S, temporal_timestamps_MOVING);
-% [mt3, edges] = histcounts(outputS_t, outputIT_t);
-% plot(edges(1:end-1), mt3/cfg_1.dt/length(temporal_timestamps_MOVING), 'LineWidth', LineWidth);
-% bmax = max(mt3/cfg_1.dt/length(temporal_timestamps_MOVING));
-% allmax = max([amax bmax]);
-% title('Sacc. peth MOVING')
-% ylabel('FR (Hz)', 'FontSize', FontSize)
-% set(gca, 'FontSize', FontSize)
-% c = axis;
-% line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '-')
-% axis([c(1) c(2) c(3) allmax])

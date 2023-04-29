@@ -2,7 +2,7 @@ function [Z] = makeSaccadeHeatPlot(cfg_in, nasalSaccadesToUse, temporalSaccadesT
 % [] = makeSaccadeHeatPlot
 % JJS. 4/2021.
 
-doPlot = 0;
+doPlot = 1;
 cfg_def.FRwindow = [-.2 .2];
 cfg_def.dt = 0.005;
 cfg_def.threshH = 10;
