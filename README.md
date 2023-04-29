@@ -54,22 +54,18 @@ Due to eye movement tuning (and natural variability) the tuning curve variance c
 Use **saccadePETH.m** to collect the spike times (relative to zero) from a user-chosen window around saccade event times. Saccade times are calculated from a semi-automated process using the estimated pupil position from Facemap and from a velocity threshold and manual editing. saccadePETH will return the FR for each bin and can plot the raster plot for that time window with the FR overlaid. PETH information is generated separately for nasal and temporal saccades. A +- 200 ms window is good for seeing phasic changes. A +- 2 s window will show the saccade response on top of the underlying AHV oscillation (if present). 
 
 
-Use [blank] to calculate and plot the linear velocity (wheel speed) tuning curve. 
+Use **getWheel_TC.m** to calculate and plot the linear velocity (wheel speed) tuning curve. 
 ![wheel speed TC](https://user-images.githubusercontent.com/16581827/235240827-e979ac97-9f75-4538-8ef7-955baac154fb.JPG)
 
-Use [blank] to calculate and plot the eye position tuning curve. 
-
-![pupil position TC example](https://user-images.githubusercontent.com/16581827/235244089-93c54a92-5e62-45fa-9614-24d094add4ad.JPG)
 
 
+Use **getPupil_TC.m** to calculate and plot the eye position tuning curve. Efforts were made during surgery to cement the headbar in place so that it was level with the horizontal. There are sessions in which the eye is not perfectly on the horizontal. DLC could be used to correct.
 
-
+![pupil position TC example](https://user-images.githubusercontent.com/16581827/235252994-2643811d-d877-4a60-8244-62af6bd075c4.JPG)
 
 
 
-
-
-
+Use [blank] function to plot all of the relevant information in one figure with subplots. 
 
 
 
