@@ -3,9 +3,21 @@ Code for analyzing data from recordings in mouse brainstem head direction circui
 
 Makes extensive use of the vandermeerlab codebase: https://github.com/vandermeerlab/vandermeerlab
 
+Several example sessions are available for download in a google drive folder: 
+https://drive.google.com/drive/folders/11RaD-QtlHRowaEffT6OR2wNw98RGl02i?usp=sharing
+One session has prototypical AHV cells. One session has prototypical eye movement modulated cells. One sessions has an opto-tagged cell. 
+
+
+![recording setup](https://user-images.githubusercontent.com/16581827/235463777-083eddcd-3555-46cc-8685-165e3a747383.JPG)
+
+
+
 Experiments were carried out with headfixed mice on a running wheel. The platform situated below the mice could be rotated like a lazy susan so that the mice experienced periods of sinusoidal rotation at varying speeds. The platform speed is referred to as angular head velocity (AHV). 
 
-A camera and infrared light source were situated near the left eye to record eye movement data. 
+A camera and infrared light source were situated near the left eye to record eye movement data. The video data were analyzed with Facemap https://github.com/MouseLand/facemap to extract a time series of pupil position. Velocity was calculated (from position) and thresholded to get candidate saccade event times. These candidate events were screened by the experimenter to exclude events that appeared to be false positives and to include missed events. Pupil position coordinates are in units of camera pixels (x,y). The technically difficult process of calibrating and measurement needed to obtain degrees of visual angle was not conducted. 
+
+![sample eye trace](https://user-images.githubusercontent.com/16581827/235464246-c8276ff3-332f-431e-b532-2ef623d9a3a3.JPG)
+
 
 16 channel silicon probes from Neuronexus were advanced through a craniotomy to reach brainstem targets in the earliest part of the HD circuit; namely, nucleus prepositus (NPH), Gigantocellular nucleus (Gi) -- just below NPH, and supragenual nucleus (SGN). 
 
