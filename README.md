@@ -3,6 +3,15 @@ Code for analyzing data from recordings in mouse brainstem head direction circui
 
 Makes extensive use of the vandermeerlab codebase: https://github.com/vandermeerlab/vandermeerlab
 
+Execute these lines when you begin analysis to set up the correct Matlab path for analysis. 
+
+%% set up
+restoredefaultpath;
+clear classes;
+addpath(genpath('D:\My_Documents\GitHub\vandermeerlab\code-matlab\shared')); % replace with your path
+addpath(genpath('D:\My_Documents\GitHub\HD-system-brainstem')); % replace with your path
+
+
 Several example sessions are available for download in a google drive folder: 
 https://drive.google.com/drive/folders/11RaD-QtlHRowaEffT6OR2wNw98RGl02i?usp=sharing
 One session has prototypical AHV cells. One session has prototypical eye movement modulated cells. One sessions has an opto-tagged cell. 
