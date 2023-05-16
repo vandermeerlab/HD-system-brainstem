@@ -42,7 +42,7 @@ for iCell = 1:length(sd.S.t)
     [m, ~] = histcounts(outputS, bins);
     FR_T{iCell} = m / cfg.dt / length(T);
     spkTimes_T{iCell} = outputS;
-    eventindexT{iCell} = outputT; 
+    eventindexT{iCell} = outputT;
     
     %% Nasal
     outputS = [];
@@ -60,15 +60,17 @@ for iCell = 1:length(sd.S.t)
     [m, ~] = histcounts(outputS, bins);
     FR_N{iCell} = m / cfg.dt / length(N);
     spkTimes_N{iCell} = outputS;
-    eventindexN{iCell} = outputT; 
+    eventindexN{iCell} = outputT;
     
     %% check if there are any spikes
     if isempty(outputT)
         error('No spikes')
     end
-    % display
-    if doPlot == 1
-        clf
+end
+% display
+if doPlot == 1
+    clf
+    for iCell = 1:length(sd.S.t)
         %% Temporal
         subplot(2,2,1);
         title('Temporal Saccades')
@@ -112,3 +114,4 @@ for iCell = 1:length(sd.S.t)
         pause
     end
 end
+
