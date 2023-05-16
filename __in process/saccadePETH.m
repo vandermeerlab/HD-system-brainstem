@@ -29,6 +29,7 @@ for iCell = 1:length(sd.S.t)
     outputS = [];
     outputT = [];
     Stouse.t{1} = sd.S.t{iCell};
+    Stouse.cfg = sd.S.cfg;
     for iT = 1:nT
         S0 = restrict(Stouse, T(iT) + cfg.window(1) - cfg.excessBounds, T(iT) + cfg.window(2) + cfg.excessBounds);
         S0 = restrict(S0, T(iT) + cfg.window(1), T(iT) + cfg.window(2));

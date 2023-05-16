@@ -13,7 +13,7 @@ cfg_Q.dt = AHV_dt;
 cfg_Q.tvec_edges = sd.AHV.tvec(1): AHV_dt: sd.AHV.tvec(end);
 
 cfg_in.doPlot = 0;
-[tc_out] = getAHV_TC(sd, cfg_in);
+[tc_out] = getAHV_TC(cfg_in, sd);
 
 figure
 for iCell = 1:length(sd.S.t)
@@ -30,9 +30,9 @@ for iCell = 1:length(sd.S.t)
     set(gca, 'Ylim', [0 ymax], 'FontSize', 16)
     
     if smooth == 1
-        plot(tc_out.usr.binCenters, smoothdata(tc_out.tc(iCell,:)), 'LineWidth', 5, 'Color', 'k');
+        plot(tc_out.binCenters, smoothdata(tc_out.tc(iCell,:)), 'LineWidth', 5, 'Color', 'k');
     else
-        plot(tc_out.usr.binCenters, tc_out.tc(iCell,:), 'LineWidth', 5, 'Color', 'k');
+        plot(tc_out.binCenters, tc_out.tc(iCell,:), 'LineWidth', 5, 'Color', 'k');
     end
     disp('press any key to continue to the next cell')
     pause
