@@ -1,7 +1,7 @@
 # HD-system-brainstem
 Code for analyzing data from recordings in mouse brainstem head direction circuit. 
 
-Makes extensive use of the vandermeerlab codebase: https://github.com/vandermeerlab/vandermeerlab
+Makes extensive use of the vandermeerlab codebase. Use this commit: https://github.com/vandermeerlab/vandermeerlab/tree/e4ff8327ee8b7b65a856499f25bad2c7d57524dc
 
 Execute these lines when you begin analysis to set up the correct Matlab path for analysis. 
 
