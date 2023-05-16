@@ -1,11 +1,32 @@
 # HD-system-brainstem
 Code for analyzing data from recordings in mouse brainstem head direction circuit. 
 
-Makes extensive use of the vandermeerlab codebase: https://github.com/vandermeerlab/vandermeerlab
+Makes extensive use of the vandermeerlab codebase. Use this commit: https://github.com/vandermeerlab/vandermeerlab/tree/e4ff8327ee8b7b65a856499f25bad2c7d57524dc
+
+Execute these lines when you begin analysis to set up the correct Matlab path for analysis. 
+
+%% set up
+restoredefaultpath;
+clear classes;
+addpath(genpath('D:\My_Documents\GitHub\vandermeerlab\code-matlab\shared')); % replace with your path
+addpath(genpath('D:\My_Documents\GitHub\HD-system-brainstem')); % replace with your path
+
+
+Several example sessions are available for download in a google drive folder: 
+https://drive.google.com/drive/folders/11RaD-QtlHRowaEffT6OR2wNw98RGl02i?usp=sharing
+One session has prototypical AHV cells. One session has prototypical eye movement modulated cells. One sessions has an opto-tagged cell. 
+
+
+![recording setup](https://user-images.githubusercontent.com/16581827/235463777-083eddcd-3555-46cc-8685-165e3a747383.JPG)
+
+
 
 Experiments were carried out with headfixed mice on a running wheel. The platform situated below the mice could be rotated like a lazy susan so that the mice experienced periods of sinusoidal rotation at varying speeds. The platform speed is referred to as angular head velocity (AHV). 
 
-A camera and infrared light source were situated near the left eye to record eye movement data. 
+A camera and infrared light source were situated near the left eye to record eye movement data. The video data were analyzed with Facemap https://github.com/MouseLand/facemap to extract a time series of pupil position. Velocity was calculated (from position) and thresholded to get candidate saccade event times. These candidate events were screened by the experimenter to exclude events that appeared to be false positives and to include missed events. Pupil position coordinates are in units of camera pixels (x,y). The technically difficult process of calibrating and measurement needed to obtain degrees of visual angle was not conducted. 
+
+![sample eye trace](https://user-images.githubusercontent.com/16581827/235464246-c8276ff3-332f-431e-b532-2ef623d9a3a3.JPG)
+
 
 16 channel silicon probes from Neuronexus were advanced through a craniotomy to reach brainstem targets in the earliest part of the HD circuit; namely, nucleus prepositus (NPH), Gigantocellular nucleus (Gi) -- just below NPH, and supragenual nucleus (SGN). 
 
@@ -51,7 +72,10 @@ Due to eye movement tuning (and natural variability) the tuning curve variance c
 
 ![AHV scatter example](https://user-images.githubusercontent.com/16581827/235242261-32805e02-7141-437a-86eb-c0daeedbe0b4.jpg)
 
-Use **saccadePETH.m** to collect the spike times (relative to zero) from a user-chosen window around saccade event times. Saccade times are calculated from a semi-automated process using the estimated pupil position from Facemap and from a velocity threshold and manual editing. saccadePETH will return the FR for each bin and can plot the raster plot for that time window with the FR overlaid. PETH information is generated separately for nasal and temporal saccades. A +- 200 ms window is good for seeing phasic changes. A +- 2 s window will show the saccade response on top of the underlying AHV oscillation (if present). 
+Use **saccadePETH.m** to collect the spike times (relative to zero) and Firing Rate PETHs from a user-chosen window around saccade event times. Saccade times are calculated from a semi-automated process using the estimated pupil position from Facemap and from a velocity threshold and manual editing. saccadePETH will return the FR for each bin and can plot the raster plot for that time window with the FR overlaid. PETH information is generated separately for nasal and temporal saccades. A +- 200 ms window is good for seeing phasic changes. A +- 2 s window will show the saccade response on top of the underlying AHV oscillation (if present). Use **FR_PETH.m** if you want to generate a PETH with any general set of times t that you input. 
+![saccadePETH example](https://user-images.githubusercontent.com/16581827/235328676-9724619a-ddb0-46bb-a84c-da6385d9097f.jpg)
+
+
 
 
 Use **getWheel_TC.m** to calculate and plot the linear velocity (wheel speed) tuning curve. 
