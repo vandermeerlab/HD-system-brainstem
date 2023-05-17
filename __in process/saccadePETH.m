@@ -8,7 +8,7 @@ function [spkTimes_N, spkTimes_T, FR_N, FR_T, bins]  = saccadePETH(cfg_in, sd)
 %          Outputs:
 %           - outputS   [TS] spike times, relative to t
 %           - FR        1 x nBins  array of Firing Rate values
-%           - bins      bins for the Firing Rate values
+%           - bins      bins for the29*3 Firing Rate values
 
 doPlot = 1;
 cfg_def.FontSize = 16;

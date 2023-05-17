@@ -1,4 +1,4 @@
-function [tc_pupil] = getPupil_TC(sd, cfg_in)
+function [tc_pupil] = getPupil_TC(cfg_in, sd)
 % JJS. 2023-04-28.
 % Calculate and plot the tuning curve for eye position
 % input:   sd - session data structure with spike trains S 
@@ -41,7 +41,7 @@ if exist(strcat(SSN, '-saccades-edited.mat'))
             plot(tsdH.data, tsdH_F(1,:), '.', 'MarkerSize', .5, 'color', [.8 .8 .8]); hold on
             ylabel('Firing Rate (Hz)') 
             
-            plot(tc_pupil{iCell}.usr.binCenters(tc_pupil{iCell}.occ_hist > cfg_out.occthresh), smoothdata(tc_pupil{iCell}.tc(1,(tc_pupil{iCell}.occ_hist > cfg_out.occthresh))), 'k', 'LineWidth', 3);
+            plot(tc_pupil{iCell}.binCenters(tc_pupil{iCell}.occ_hist > cfg_out.occthresh), smoothdata(tc_pupil{iCell}.tc(1,(tc_pupil{iCell}.occ_hist > cfg_out.occthresh))), 'k', 'LineWidth', 3);
             set(gca, 'FontSize', cfg_def.FontSize)
             title('Pupil Position (pixels)')
             

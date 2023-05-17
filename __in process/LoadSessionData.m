@@ -17,6 +17,7 @@ function sd = LoadSessionData(fd, varargin)
 %           sd.ExpKeys - structure with the elements loaded from LoadExpKeys. Should include start time [1x1], stop time [1x1], laser ON ts, Laser OFF ts, any manual entries, such as for DARK recording, optokinetic stim.
 %           sd.cfg - contains config parameters that were used to generate the variables above
 tic
+subtractStartTime = 1;
 CheckOrientation = 0;
 CheckAHV = 0;
 Keys = true; %1 = load keys.m, 0 = don't
@@ -59,6 +60,13 @@ if Events
     end
     events_ts = LoadEvents([]);
     sd.Events = events_ts;
+end
+if subtractStartTime == 1 % New cheetah versions have timestamps
+    wrapper = @(events_ts) strcmp(events_ts, 'Starting Recording');
+    A = cellfun(wrapper, sd.Events.label);
+    Startindex = find(A); % index which label says 'Start Recording'
+    starttime = sd.Events.t{Startindex}(1); % use the very first start record time
+    sd.starttime = starttime; 
 end
 %-------------------------
 % SPIKES
