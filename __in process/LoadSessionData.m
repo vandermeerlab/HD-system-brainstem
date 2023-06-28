@@ -66,7 +66,7 @@ if subtractStartTime == 1 % New cheetah versions have timestamps
     A = cellfun(wrapper, sd.Events.label);
     Startindex = find(A); % index which label says 'Start Recording'
     starttime = sd.Events.t{Startindex}(1); % use the very first start record time
-    sd.starttime = starttime; 
+    sd.starttime = starttime;
 end
 %-------------------------
 % SPIKES
@@ -157,17 +157,19 @@ end
 %----------------------------
 % WHEEL ENCODER (Quadrature)
 %----------------------------
-updownTSD = getQEupdown([]);
-state_tsd = ConvertQEUpDownToState(updownTSD);
-[angle_tsd, wheel_tsd] = ConvertQEStatesToAngle([], state_tsd); %#ok<*ASGLU>
-[d, speed, cfg] = ConvertWheeltoSpeed([], wheel_tsd);
-
-d.tvec = d.tvec - starttime;
-speed.tvec = speed.tvec - starttime;
-
-sd.d = d; % total distance travelled on the wheel (in centimenters)
-sd.speed = speed;  % speed the wheel (in centimeters per second)
-
+encoderCSC = strcat(SSN, '-CSC34.Ncs');
+if exist(encoderCSC)  
+    updownTSD = getQEupdown([]);
+    state_tsd = ConvertQEUpDownToState(updownTSD);
+    [angle_tsd, wheel_tsd] = ConvertQEStatesToAngle([], state_tsd); %#ok<*ASGLU>
+    [d, speed, cfg] = ConvertWheeltoSpeed([], wheel_tsd);
+    
+    d.tvec = d.tvec - starttime;
+    speed.tvec = speed.tvec - starttime;
+    
+    sd.d = d; % total distance travelled on the wheel (in centimenters)
+    sd.speed = speed;  % speed the wheel (in centimeters per second)
+end
 %----------------------------
 % PLATFORM ROTATION PERIODS
 %----------------------------

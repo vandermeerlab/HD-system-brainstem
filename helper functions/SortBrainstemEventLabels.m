@@ -106,8 +106,7 @@ end
 %     bitFour = bitFour(5:24);
 % end
     
-    
-
+   
 Zerolength = length(bitZero);
     Fourlength = length(bitFour);
     arraysize = min([Zerolength Fourlength]);  % if the session ended before the last laser pulse turned off, then laser_off will be one short. 'arraysize' is designed to throw out the last laser pulse

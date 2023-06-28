@@ -1,4 +1,4 @@
-function plot_AHVtuningMegaplot10(iCell, varargin)
+function brainstem_megaplot(iCell, varargin)
 % JJS.
 % For plotting most/all of the relevant data for a single cell for a headfixed brainstem recording session.
 % 2021-02-16. Added more elements, like platform orientation and eye position. Expanded from 3x6 subtightplot to 4x6.
@@ -10,8 +10,8 @@ function plot_AHVtuningMegaplot10(iCell, varargin)
 %       - include wheel speed info into one of the subplots
 %       - include laser-triggered eye movement peth
 %       [aspirational: add ability to include histology image in one of the subtightplot spaces]    imread.m
-
-
+% 2023-06-26. Adding the ability to skip over data types that might not exist in earlier sessions (EYE tracking, WHEEL tracking, LASER events) and still plot
+%             Adding sd as an input to reduce the amount of code in this function.
 tic
 clf
 tightX = .025;
@@ -21,6 +21,7 @@ smallfont = 8;
 insetText = 18;
 speedthresh = 0.3;
 ahv_thresh = 4;
+doLaser = 0;
 process_varargin(varargin)
 % get sessionID and tetrodeID
 SSN = HD_GetSSN; disp(SSN);
@@ -89,7 +90,7 @@ plot(AHV_tsd.data, AHV_F, '.', 'MarkerSize', .5); hold on
 set(gca, 'Ylim', [0 ymax], 'FontSize', FontSize)
 
 % Add Tuning Curve
-plot(tc_out.usr.binCenters, tc_out.tc, 'LineWidth', LineWidth, 'Color', 'k');
+plot(tc_out.usr.binCenters, smoothdata(tc_out.tc), 'LineWidth', LineWidth, 'Color', 'k');
 ylabel('FR (Hz)', 'FontSize', FontSize)
 set(groot, 'DefaultLegendInterpreter', 'none')
 title('AHV Tuning Curve')
@@ -141,6 +142,7 @@ if exist(strcat(SSN, '-saccades-edited.mat'))
     p.XAxisLocation = 'top';
 else
     warning('cannot find saccade data')
+    title('Pupil Position (pixels)')
 end
 %--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 %% #3 acf
@@ -198,85 +200,92 @@ set(gca, 'XTick', [])
 p = subtightplot(6,6,15, [tightX tightY]); hold on
 % -----------------------------------------------------------------------------------------------------------------------------------------------------
 % Get the correct timestamps for the different session events
-% [start_time, stop_time, laser_on, laser_off, bit0, bit4] = SortBrainstemEventLabels;
-[start_time, stop_time, laser_on, laser_off, bit0, bit4] = SortBrainstemEventLabels2;
-
-
-if ~isnan(laser_on)
-%     dur = mode(laser_off(1:arraysize) - laser_on(1:arraysize));
-    dur = mode(laser_off - laser_on);
-
-    cfg_laser.window = [-1.1 2];
-    cfg_laser.dt = 0.01;
-    cfg_laser.binsize = cfg_laser.dt; % used for gaussian kernal.  select a small bin size for good time resolution
-    cfg_laser.doPlot = 1;
-    cfg_laser.doRaster = 1;
-    cfg_laser.doBar = 0;
-    [~, ~, ~, ~, ~] = SpikePETH_either(cfg_laser, S, laser_on); hold on
-    c = axis;
-    rectangle(Position = [0, 0, dur, c(4)], FaceColor=[0 1 1], EdgeColor=[0 1 1])    % change the 3rd entry in rectangle to the diff of laser_off and laser_on
-    [outputS, ~, ~, outputIT, cfg] = SpikePETH_either(cfg_laser, S, laser_on);  % this is a hack to get the background color 'in back'. otherwise it occludes the spikes.
-    line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'w')
-    line([1 1], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'w')
-    set(gca, 'YTick', [])
-    set(gca, 'FontSize', FontSize)
-    title('Laser PETH', 'FontSize', FontSize)
-    set(gca, 'XTick', [-1 0 1 2])
-    hold on
-    % add line for Ave Firing Rate, esp. when rasters are so dense that it turns black
-    cfg_laser.window = [-1.1 2];
-    cfg_laser.dt = 0.05;
-    cfg_laser.binsize = cfg_laser.dt; % used for gaussian kernal.  select a small bin size for good time resolution
-    cfg_laser.doPlot = 0;
-    cfg_laser.doRaster = 0;
-    cfg_laser.doBar = 0;
-    [outputS_laser, ~, ~, outputIT_laser, cfg_out_laser] = SpikePETH_either(cfg_laser, S, laser_on);
-    m = histc(outputS_laser, outputIT_laser);
-    yyaxis right
-    plot(outputIT_laser(1:end-1),m(1:end-1)/cfg_laser.dt/length(laser_on), 'LineWidth', 4);   % JJS. 11/15/22. This is a hack. Last value of m is always zero (erroneously).
-end
-%% #16 DUMMY Peth
-p = subtightplot(6,6,16, [tightX tightY]); hold on
-
-wrapper = @(events_ts) strcmp(events_ts, 'ShutterSound On');
-A = cellfun(wrapper, events_ts.label);
-sound_label = find(A); % index which label corresponds to 'ShutterSound On'
-if ~isempty(sound_label)
-    sound_times = events_ts.t{sound_label};
-    sound_times = sound_times - start_time;
+if doLaser == 1
+    [start_time, stop_time, laser_on, laser_off, bit0, bit4, arraysize] = SortBrainstemEventLabels;
+    % [start_time, stop_time, laser_on, laser_off, bit0, bit4] = SortBrainstemEventLabels2;
     
-    cfg_dummy.window = [-1.1 2];
-    cfg_dummy.dt = 0.01;
-    cfg_dummy.binsize = cfg_dummy.dt; % used for gaussian kernal.  select a small bin size for good time resolution
-    cfg_dummy.doPlot = 1;
-    cfg_dummy.doRaster = 1;
-    cfg_dummy.doBar = 0;
-    [~, ~, ~, ~, ~] = SpikePETH_either(cfg_dummy, S, sound_times); hold on
-    c = axis;
-    rectangle(Position = [0, 0, dur, c(4)], FaceColor=[0 .9 .4], EdgeColor=[0 .9 .4])    % change the 3rd entry in rectangle to the diff of laser_off and laser_on
-    [outputS_dummy, ~, ~, outputIT_dummy, cfg_out_dummy] = SpikePETH_either(cfg_dummy, S, sound_times);  % this is a hack to get the background color 'in back'. otherwise it occludes the spikes.
-    line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'w')
-    line([1 1], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'w')
-    set(gca, 'YTick', [])
-    set(gca, 'FontSize', FontSize)
-    title('Dummy PETH', 'FontSize', FontSize)
-    set(gca, 'XTick', [-1 0 1 2])
-    set(gca, 'Ylabel', [])
-    hold on
+    if ~isnan(laser_on)
+        %     dur = mode(laser_off(1:arraysize) - laser_on(1:arraysize));
+        dur = mode(laser_off - laser_on);
+        
+        cfg_laser.window = [-1.1 2];
+        cfg_laser.dt = 0.01;
+        cfg_laser.binsize = cfg_laser.dt; % used for gaussian kernal.  select a small bin size for good time resolution
+        cfg_laser.doPlot = 1;
+        cfg_laser.doRaster = 1;
+        cfg_laser.doBar = 0;
+        [~, ~, ~, ~, ~] = SpikePETH_either(cfg_laser, S, laser_on); hold on
+        c = axis;
+        rectangle(Position = [0, 0, dur, c(4)], FaceColor=[0 1 1], EdgeColor=[0 1 1])    % change the 3rd entry in rectangle to the diff of laser_off and laser_on
+        [outputS, ~, ~, outputIT, cfg] = SpikePETH_either(cfg_laser, S, laser_on);  % this is a hack to get the background color 'in back'. otherwise it occludes the spikes.
+        line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'w')
+        line([1 1], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'w')
+        set(gca, 'YTick', [])
+        set(gca, 'FontSize', FontSize)
+        title('Laser PETH', 'FontSize', FontSize)
+        set(gca, 'XTick', [-1 0 1 2])
+        hold on
+        % add line for Ave Firing Rate, esp. when rasters are so dense that it turns black
+        cfg_laser.window = [-1.1 2];
+        cfg_laser.dt = 0.05;
+        cfg_laser.binsize = cfg_laser.dt; % used for gaussian kernal.  select a small bin size for good time resolution
+        cfg_laser.doPlot = 0;
+        cfg_laser.doRaster = 0;
+        cfg_laser.doBar = 0;
+        [outputS_laser, ~, ~, outputIT_laser, cfg_out_laser] = SpikePETH_either(cfg_laser, S, laser_on);
+        m = histc(outputS_laser, outputIT_laser);
+        yyaxis right
+        plot(outputIT_laser(1:end-1),m(1:end-1)/cfg_laser.dt/length(laser_on), 'LineWidth', 4);   % JJS. 11/15/22. This is a hack. Last value of m is always zero (erroneously).
+    else
+        disp('laser events not found')
+        title('Laser PETH', 'FontSize', FontSize)
+    end
+    %% #16 DUMMY Peth
+    p = subtightplot(6,6,16, [tightX tightY]); hold on
     
-    % add line for Ave Firing Rate, esp. when rasters are so dense that it turns black
-    cfg_dummy.dt = 0.05;
-    cfg_dummy.doPlot = 0;
-    cfg_dummy.doRaster = 0;
-    cfg_dummy.doBar = 0;
-    [outputS_dummy, ~, ~, outputIT_dummy, cfg_out_dummy] = SpikePETH_either(cfg_dummy, S, sound_times);
-    m = histc(outputS_dummy, outputIT_dummy);
-    % m = histcounts(outputS, outputIT);
-    yyaxis right
-    plot(outputIT_dummy(1:end-1),m(1:end-1)/cfg_dummy.dt/length(sound_times), 'LineWidth', 4);   % JJS. 11/15/22. This is a hack. Last value of m is always zero (erroneously).
-    
+    wrapper = @(events_ts) strcmp(events_ts, 'ShutterSound On');
+    A = cellfun(wrapper, events_ts.label);
+    sound_label = find(A); % index which label corresponds to 'ShutterSound On'
+    if ~isempty(sound_label)
+        sound_times = events_ts.t{sound_label};
+        sound_times = sound_times - start_time;
+        
+        cfg_dummy.window = [-1.1 2];
+        cfg_dummy.dt = 0.01;
+        cfg_dummy.binsize = cfg_dummy.dt; % used for gaussian kernal.  select a small bin size for good time resolution
+        cfg_dummy.doPlot = 1;
+        cfg_dummy.doRaster = 1;
+        cfg_dummy.doBar = 0;
+        [~, ~, ~, ~, ~] = SpikePETH_either(cfg_dummy, S, sound_times); hold on
+        c = axis;
+        rectangle(Position = [0, 0, dur, c(4)], FaceColor=[0 .9 .4], EdgeColor=[0 .9 .4])    % change the 3rd entry in rectangle to the diff of laser_off and laser_on
+        [outputS_dummy, ~, ~, outputIT_dummy, cfg_out_dummy] = SpikePETH_either(cfg_dummy, S, sound_times);  % this is a hack to get the background color 'in back'. otherwise it occludes the spikes.
+        line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'w')
+        line([1 1], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'w')
+        set(gca, 'YTick', [])
+        set(gca, 'FontSize', FontSize)
+        title('Dummy PETH', 'FontSize', FontSize)
+        set(gca, 'XTick', [-1 0 1 2])
+        set(gca, 'Ylabel', [])
+        hold on
+        
+        % add line for Ave Firing Rate, esp. when rasters are so dense that it turns black
+        cfg_dummy.dt = 0.05;
+        cfg_dummy.doPlot = 0;
+        cfg_dummy.doRaster = 0;
+        cfg_dummy.doBar = 0;
+        [outputS_dummy, ~, ~, outputIT_dummy, cfg_out_dummy] = SpikePETH_either(cfg_dummy, S, sound_times);
+        m = histc(outputS_dummy, outputIT_dummy);
+        % m = histcounts(outputS, outputIT);
+        yyaxis right
+        plot(outputIT_dummy(1:end-1),m(1:end-1)/cfg_dummy.dt/length(sound_times), 'LineWidth', 4);   % JJS. 11/15/22. This is a hack. Last value of m is always zero (erroneously).
+        
+    else
+        warning('this session lacks shutter sound timestamps.')
+        title('Dummy PETH', 'FontSize', FontSize)
+    end
 else
-    warning('this session lacks shutter sound timestamps.')
+    disp('Laser events, if they exist, skipped')
 end
 
 %% #16 Average Waveform
@@ -327,12 +336,11 @@ p.YAxisLocation = 'right';
 [~, ~, ~, ~, nasal_timestamps_MOVING, temporal_timestamps_MOVING] = isolateManualSaccades();
 [~, ~, nasal_timestamps_REST, temporal_timestamps_REST] = isolateStationarySaccades();
 
+numNasal_moving = length(nasal_timestamps_MOVING); if numNasal_moving == 1; numNasal_moving = 0; end  % if this array is a single NaN, then there are in fact no saccades.
+numNasal_stationary = length(nasal_timestamps_REST); if numNasal_stationary == 1; numNasal_stationary = 0; end
 
-numNasal_moving = length(nasal_timestamps_MOVING);
-numNasal_stationary = length(nasal_timestamps_REST);
-
-numTemporal_moving = length(temporal_timestamps_MOVING);
-numTemporal_stationary = length(temporal_timestamps_REST);
+numTemporal_moving = length(temporal_timestamps_MOVING); if numTemporal_moving == 1; numTemporal_moving = 0; end
+numTemporal_stationary = length(temporal_timestamps_REST); if numTemporal_stationary == 1; numTemporal_stationary = 0; end
 
 %% #7 MOVING SACCADE peth: wide
 subtightplot(6,6,7, [tightX tightY]); hold on
@@ -500,134 +508,151 @@ set(gca, 'Xlim', [0 tvec(end)], 'FontSize', FontSize)
 ylabel('FR (Hz)', 'FontSize', FontSize)
 yyaxis right
 plot(AHV_tsd.tvec, AHV_tsd.data)
-set(gca, 'XTick', [])
+% set(gca, 'XTick', [])
 yyaxis left
 c = axis;
-if ~isnan(laser_on)
-    for iLaser = 1:arraysize
-        rectangle(Position=[laser_on(iLaser), 0, laser_off(iLaser) - laser_on(iLaser), c(4)], FaceColor=[0 1 1], EdgeColor=[0 1 1])
+if doLaser == 1
+    if ~isnan(laser_on)
+        for iLaser = 1:arraysize
+            rectangle(Position=[laser_on(iLaser), 0, laser_off(iLaser) - laser_on(iLaser), c(4)], FaceColor=[0 1 1], EdgeColor=[0 1 1])
+        end
     end
-end
-if exist('sound_times')
-    for iSound = 1:length(sound_times)
-        rectangle(Position=[sound_times(iSound), 0, 1, c(4)], FaceColor=[0 .9 .4], EdgeColor=[0 .9 .4])  % JJS. 11/19/22. For now, shutter sound duration is 1 second.
+    if exist('sound_times')
+        for iSound = 1:length(sound_times)
+            rectangle(Position=[sound_times(iSound), 0, 1, c(4)], FaceColor=[0 .9 .4], EdgeColor=[0 .9 .4])  % JJS. 11/19/22. For now, shutter sound duration is 1 second.
+        end
     end
+    g = plot(Q.tvec, Q.data./cfg_Q.dt, 'LineStyle', '-');
 end
-g = plot(Q.tvec, Q.data./cfg_Q.dt, 'LineStyle', '-');
 % g.FaceColor = h.FaceColor;
 
 %% #19:24 WHEEL SPEED and AHV
 plot8 = subtightplot(6,6,19:24, [tightX tightY]);
 
-yyaxis left
-updownTSD = getQEupdown([]);
-state_tsd = ConvertQEUpDownToState(updownTSD);
-[~, wheel_tsd] = ConvertQEStatesToAngle([], state_tsd);
-[d, speed, cfg_w] = ConvertWheeltoSpeed([], wheel_tsd);
-speed.tvec = speed.tvec - starttime;
-plot(speed.tvec, -speed.data)    % IMPORTANT: there is a sign change here b/c the voltage change in response to the mouse moving forward is negative. When the mouse moves 'forward', the wheel moves 'backward'.
-set(gca, 'Xlim', [0 tvec(end)], 'FontSize', FontSize)
-ylabel('Wheel Speed (cm/s)')
-yyaxis right
-plot(AHV_tsd.tvec, AHV_tsd.data)
-set(gca, 'XTick', [])
-
-yyaxis left
-c = axis; hold on
-if ~isnan(laser_on)
-    for iLaser = 1:arraysize
-        rectangle(Position=[laser_on(iLaser), 0, laser_off(iLaser) - laser_on(iLaser), c(4)], FaceColor=[0 1 1], EdgeColor=[0 1 1])
+encoderCSC = strcat(SSN, '-CSC34.Ncs');
+if exist(encoderCSC)
+    yyaxis left
+    updownTSD = getQEupdown([]);
+    state_tsd = ConvertQEUpDownToState(updownTSD);
+    [~, wheel_tsd] = ConvertQEStatesToAngle([], state_tsd);
+    [d, speed, cfg_w] = ConvertWheeltoSpeed([], wheel_tsd);
+    speed.tvec = speed.tvec - starttime;
+    plot(speed.tvec, -speed.data)    % IMPORTANT: there is a sign change here b/c the voltage change in response to the mouse moving forward is negative. When the mouse moves 'forward', the wheel moves 'backward'.
+    set(gca, 'Xlim', [0 tvec(end)], 'FontSize', FontSize)
+    ylabel('Wheel Speed (cm/s)')
+    yyaxis right
+    plot(AHV_tsd.tvec, AHV_tsd.data)
+    set(gca, 'XTick', [])
+    
+    yyaxis left
+    c = axis; hold on
+    if doLaser
+        if ~isnan(laser_on)
+            for iLaser = 1:arraysize
+                rectangle(Position=[laser_on(iLaser), 0, laser_off(iLaser) - laser_on(iLaser), c(4)], FaceColor=[0 1 1], EdgeColor=[0 1 1])
+            end
+        end
+        if exist('sound_times')
+            for iSound = 1:length(sound_times)
+                rectangle(Position=[sound_times(iSound), 0, 1, c(4)], FaceColor=[0 .9 .4], EdgeColor=[0 .9 .4])  % JJS. 11/19/22. For now, shutter sound duration is 1 second.
+            end
+        end
     end
-end
-if exist('sound_times')
-    for iSound = 1:length(sound_times)
-        rectangle(Position=[sound_times(iSound), 0, 1, c(4)], FaceColor=[0 .9 .4], EdgeColor=[0 .9 .4])  % JJS. 11/19/22. For now, shutter sound duration is 1 second.
-    end
-end
-plot(speed.tvec, -speed.data)
-
-
-%% #17   Wheel speed Tuning Curve
-p = subtightplot(6,6,5, [tightX tightY]); hold on
-% calculate Q matrix
-speed_dt = median(diff(tsdH.tvec));  % tsdH is the pupil position variable
-cfg_Q = [];
-cfg_Q.smooth = 'gauss';
-cfg_Q.gausswin_sd = 0.05;
-cfg_Q.dt = tsdH_dt;
-cfg_Q.tvec_edges = speed.tvec(1): speed_dt: speed.tvec(end);
-F = MakeQfromS(cfg_Q, S); % convert to FR
-F.data = F.data ./ cfg_Q.dt;
-
-speed.data = -speed.data; % we want forward motion to be displayed as a positive velocity
-% find FR corresponding to each AHV sample
-F_idx = nearest_idx3(speed.tvec, F.tvec);
-tsdH_F = F.data(:,F_idx);
-yyaxis right
-
-z = speed.data > speedthresh | speed.data < -speedthresh;
-plot(speed.data(z), tsdH_F(1,z), '.', 'MarkerSize', .5, 'color', [.8 .8 .8]); hold on
-if ~isempty(h) ==1
+    plot(speed.tvec, -speed.data)
+    
+    
+    %% #17   Wheel speed Tuning Curve
+    p = subtightplot(6,6,5, [tightX tightY]); hold on
+    % calculate Q matrix
+    
+    speed_dt = median(diff(tsdH.tvec));  % tsdH is the pupil position variable
+    cfg_Q = [];
+    cfg_Q.smooth = 'gauss';
+    cfg_Q.gausswin_sd = 0.05;
+    cfg_Q.dt = tsdH_dt;
+    cfg_Q.tvec_edges = speed.tvec(1): speed_dt: speed.tvec(end);
+    F = MakeQfromS(cfg_Q, S); % convert to FR
+    F.data = F.data ./ cfg_Q.dt;
+    
+    speed.data = -speed.data; % we want forward motion to be displayed as a positive velocity
+    % find FR corresponding to each AHV sample
+    F_idx = nearest_idx3(speed.tvec, F.tvec);
+    tsdH_F = F.data(:,F_idx);
+    yyaxis right
+    
+    z = speed.data > speedthresh | speed.data < -speedthresh;
+    plot(speed.data(z), tsdH_F(1,z), '.', 'MarkerSize', .5, 'color', [.8 .8 .8]); hold on
+    %     if ~isempty(h) ==1
     h = lsline;
     set(h(1), 'Color', 'k')
     set(h(1), 'LineWidth', 2)
+    %     end
+    %     Fit = polyfit(h(1).XData, h(1).YData, 1);
+    speeddata = speed.data(z)';
+    speeddata(:,2) = ones(length(speeddata), 1);
+    [b,bint,r,rint,stats] = regress(tsdH_F(1,z)', speeddata);
+    c = axis;
+    line([-speedthresh -speedthresh], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'r')
+    line([speedthresh speedthresh], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'r')
+    text(NaN, NaN, strcat('Rsq =', sprintf('%0.2f', stats(1))), 'FontSize', 12, 'Units', 'normalized', 'Position', [.55 .85 0])
+    
+    cfg_tc = [];
+    cfg_tc.nBins = 50;
+    cfg_tc.binEdges = {linspace(-5, 30, 101)};
+    cfg_tc.occ_dt = median(diff(speed.tvec));
+    cfg_tc.minOcc = 1;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
+    tc_speed = TuningCurves(cfg_tc, S, speed);
+    plot(tc_speed.usr.binCenters(tc_speed.occ_hist>occthresh), smoothdata(tc_speed.tc(1,(tc_speed.occ_hist>occthresh))), 'k', 'LineWidth', 3);
+    axis tight
+    ylabel('FR (Hz)', 'FontSize', FontSize)
+    title('Wheel Speed Tuning Curve', 'FontSize', FontSize)
+    yyaxis left
+    set(gca, 'YTick', [])
+    yyaxis right
+    grid on
+    set(gca, 'FontSize', FontSize)
+    p.XAxisLocation = 'top';
+    axis tight
+    
+    %% #31:36 WHEEL speed vs. AHV scatterplot
+    plot6 = subtightplot(6,6,6, [tightX tightY]);
+    
+    X = AHV_tsd.data > ahv_thresh | AHV_tsd.data < -ahv_thresh;
+    % Y = speed.data > speedthresh | speed.data < -speedthresh;
+    
+    Z_idx = nearest_idx3(AHV_tsd.tvec(X), speed.tvec);   % this did not work: Z_idx = nearest_idx3(AHV_tsd.tvec(X), speed.tvec(Y));
+    SPEED = tsd(speed.tvec(Z_idx,:), speed.data(:,Z_idx));
+    plot(AHV_tsd.data(X), SPEED.data, '.', 'MarkerSize', 1);
+    axis tight
+    xlabel('AHV', 'FontSize', FontSize)
+    ylabel('Wheel Speed', 'FontSize', FontSize)
+    plot6.YAxisLocation = 'right';
+    plot6.XAxisLocation = 'top';
+    set(gca, 'FontSize', FontSize)
+    h = lsline;
+    set(h(1), 'Color', 'k')
+    set(h(1), 'LineWidth', 2)
+    c = axis;
+    line([c(1) c(2)], [0 0], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'k')
+    line([-ahv_thresh -ahv_thresh], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'r')
+    line([ahv_thresh ahv_thresh], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'r')
+    
+    SPEEDregress = SPEED.data';
+    SPEEDregress(:,2) = ones(length(SPEED.data), 1);
+    [b,bint,r,rint,stats] = regress(AHV_tsd.data(X)', SPEEDregress);
+    text(NaN, NaN, strcat('Rsq =', sprintf('%0.2f', stats(1))), 'FontSize', 12, 'Units', 'normalized', 'Position', [.05 .85 0])
+    
+else
+    disp('WHEEL Encoder CSC not found')
+    p = subtightplot(6,6,5, [tightX tightY]); hold on
+    title('Wheel Speed Tuning Curve', 'FontSize', FontSize)
+    plot6 = subtightplot(6,6,6, [tightX tightY]);
+    
+    xlabel('AHV', 'FontSize', FontSize)
+    ylabel('Wheel Speed', 'FontSize', FontSize)
+    plot6.YAxisLocation = 'right';
+    plot6.XAxisLocation = 'top';
 end
-%     Fit = polyfit(h(1).XData, h(1).YData, 1);
-speeddata = speed.data(z)';
-speeddata(:,2) = ones(length(speeddata), 1);
-[b,bint,r,rint,stats] = regress(tsdH_F(1,z)', speeddata);
-c = axis;
-line([-speedthresh -speedthresh], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'r')
-line([speedthresh speedthresh], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'r')
-text(NaN, NaN, strcat('Rsq =', sprintf('%0.2f', stats(1))), 'FontSize', 12, 'Units', 'normalized', 'Position', [.55 .85 0])
-
-cfg_tc = [];
-cfg_tc.nBins = 50;
-cfg_tc.binEdges = {linspace(-5, 30, 101)};
-cfg_tc.occ_dt = median(diff(speed.tvec));
-cfg_tc.minOcc = 1;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
-tc_speed = TuningCurves(cfg_tc, S, speed);
-plot(tc_speed.usr.binCenters(tc_speed.occ_hist>occthresh), smoothdata(tc_speed.tc(1,(tc_speed.occ_hist>occthresh))), 'k', 'LineWidth', 3);
-axis tight
-ylabel('FR (Hz)', 'FontSize', FontSize)
-title('Wheel Speed Tuning Curve', 'FontSize', FontSize)
-yyaxis left
-set(gca, 'YTick', [])
-yyaxis right
-grid on
-set(gca, 'FontSize', FontSize)
-p.XAxisLocation = 'top';
-axis tight
-
-%% #31:36 WHEEL speed vs. AHV scatterplot
-plot6 = subtightplot(6,6,6, [tightX tightY]);
-
-X = AHV_tsd.data > ahv_thresh | AHV_tsd.data < -ahv_thresh;
-% Y = speed.data > speedthresh | speed.data < -speedthresh;
-
-Z_idx = nearest_idx3(AHV_tsd.tvec(X), speed.tvec);   % this did not work: Z_idx = nearest_idx3(AHV_tsd.tvec(X), speed.tvec(Y));
-SPEED = tsd(speed.tvec(Z_idx,:), speed.data(:,Z_idx));
-plot(AHV_tsd.data(X), SPEED.data, '.', 'MarkerSize', 1);
-axis tight
-xlabel('AHV', 'FontSize', FontSize)
-ylabel('Wheel Speed', 'FontSize', FontSize)
-plot6.YAxisLocation = 'right';
-plot6.XAxisLocation = 'top';
-set(gca, 'FontSize', FontSize)
-h = lsline;
-set(h(1), 'Color', 'k')
-set(h(1), 'LineWidth', 2)
-c = axis;
-line([c(1) c(2)], [0 0], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'k')
-line([-ahv_thresh -ahv_thresh], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'r')
-line([ahv_thresh ahv_thresh], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'r')
-
-SPEEDregress = SPEED.data';
-SPEEDregress(:,2) = ones(length(SPEED.data), 1);
-[b,bint,r,rint,stats] = regress(AHV_tsd.data(X)', SPEEDregress);
-text(NaN, NaN, strcat('Rsq =', sprintf('%0.2f', stats(1))), 'FontSize', 12, 'Units', 'normalized', 'Position', [.05 .85 0])
-
-
 
 %% #31:36 HORIZONTAL EYE POSITIION and AHV
 plot9 = subtightplot(6,6,31:36, [tightX tightY]);
@@ -658,14 +683,16 @@ if exist(strcat(SSN, '-VT1_proc.mat'))
     
     yyaxis left
     c = axis; hold on
-    if ~isnan(laser_on)
-        for iLaser = 1:arraysize
-            rectangle(Position=[laser_on(iLaser), 0, laser_off(iLaser) - laser_on(iLaser), c(4)], FaceColor=[0 1 1], EdgeColor=[0 1 1])
+    if doLaser
+        if ~isnan(laser_on)
+            for iLaser = 1:arraysize
+                rectangle(Position=[laser_on(iLaser), 0, laser_off(iLaser) - laser_on(iLaser), c(4)], FaceColor=[0 1 1], EdgeColor=[0 1 1])
+            end
         end
-    end
-    if exist('sound_times')
-        for iSound = 1:length(sound_times)
-            rectangle(Position=[sound_times(iSound), 0, 1, c(4)], FaceColor=[0 .9 .4], EdgeColor=[0 .9 .4])  % JJS. 11/19/22. For now, shutter sound duration is 1 second.
+        if exist('sound_times')
+            for iSound = 1:length(sound_times)
+                rectangle(Position=[sound_times(iSound), 0, 1, c(4)], FaceColor=[0 .9 .4], EdgeColor=[0 .9 .4])  % JJS. 11/19/22. For now, shutter sound duration is 1 second.
+            end
         end
     end
     plot(tvec, pupil{1}.com(:,2), 'LineStyle', '-');
@@ -673,51 +700,9 @@ else
     disp('no eyetracking data for this session')
 end
 
-%% #31:36 HORIZONTAL EYE POSITIION and AHV
+%% #18 Session ID
 p = subtightplot(6,6, 18, [tightX tightY]);
 title(newID, 'Color', 'r', 'FontSize', 20)
 set(gca, 'XTick', [])
 set(gca, 'YTick', [])
-
-
-
-
-
 toc
-
-
-% title(Sold.label{iCell}, 'Color', 'r')
-% t = title('this is my title', 'Units', 'normalized', 'Position', [0.5, 0.75, 0]);
-% t.Color = 'r'; t.FontSize = 10; % with this you can change color, font name and size
-
-% %% #4 Upper Right Hand Corner: histo image
-% p = subtightplot(6,6,[5:6 ], [tightX tightY]); hold on   % had also included 11:12 17:18
-% [fc] = FindFiles(strcat(SSN, '*.t'));
-% [~, b, ~] = fileparts(fc);
-% if iscell(b)
-%     cellID = b{iCell};
-% else
-%     cellID = b;
-% end
-% newID = cellID;
-% k = strfind(cellID, '_');
-% newID(k) = '-';
-% [~, filenamejpg, ext] = fileparts(FindFiles(strcat(cellID, '*', 'histology', '.jpg')));
-% filenamejpg = strcat(filenamejpg, ext);
-% [~, filenamepng, ext] = fileparts(FindFiles(strcat(cellID, '*', 'histology', '.png')));
-% filenamepng = strcat(filenamepng, ext);
-% doShow = 1;
-% if ~isempty(filenamejpg)
-%     filename = filenamejpg;
-% elseif ~isempty(filenamepng)
-%     filename = filenamepng;
-% else
-%     doShow = 0;
-%     disp('no histology file found for this neuron')
-% end
-% if doShow == 1
-%     [X,~] = imread(filename);
-%     imshow(X)
-% end
-% title(newID, 'Color', 'r', 'FontSize', 20)
-% set(gca, 'XTick', [])

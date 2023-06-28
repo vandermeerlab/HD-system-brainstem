@@ -82,24 +82,25 @@ this_pupilX = tsd(sd.TVECc, p.pupilX');
 % PCA PETH predictors
 cfg_peth = [];
 % [FRxBinT, FRxBinN, FRxBinTsmooth, FRxBinNsmooth, FRxBinTnorm, FRxBinNnorm, TnormSmooth, NnormSmooth, outputIT, binCenters, ~, cellID, cellname] = makeSaccadeHeatPlot(cfg_peth);
+% [Z] = makeSaccadeHeatPlot(cfg_in, nasalSaccadesToUse, temporalSaccadesToUse, varargin).  This is the current version. 
 pushdir('D:\Jeff\U01\analysis\dot mat files');
 load SaccadePETHs
 popdir;
 
-x1 = FRxBinNsmooth'; x2 = FRxBinTsmooth'; x = cat(2, x1, x2);
+x1 = Z.FRxBinNsmooth'; x2 = Z.FRxBinTsmooth'; x = cat(2, x1, x2);
 [coeff, score] = pca(x);
 
-pca1_kernel = interp1(binCenters, score(:, 1), binCenters(1):cfg_master.dt:binCenters(end));
+pca1_kernel = interp1(Z.binCenters, score(:, 1), Z.binCenters(1): cfg_master.dt: Z.binCenters(end));
 pca1_kernel = pca1_kernel .* gausswin(length(pca1_kernel), 3)';
 p.ts_pca1 = conv2(ts_binarized, pca1_kernel, 'same')';
 p.ns_pca1 = conv2(ns_binarized, pca1_kernel, 'same')';
 
-pca2_kernel = interp1(binCenters, score(:, 2), binCenters(1):cfg_master.dt:binCenters(end));
+pca2_kernel = interp1(Z.binCenters, score(:, 2), Z.binCenters(1): cfg_master.dt: Z.binCenters(end));
 pca2_kernel = pca2_kernel .* gausswin(length(pca2_kernel), 3)';
 p.ts_pca2 = conv2(ts_binarized, pca2_kernel, 'same')';
 p.ns_pca2 = conv2(ns_binarized, pca2_kernel, 'same')';
 
-pca3_kernel = interp1(binCenters, score(:, 3), binCenters(1):cfg_master.dt:binCenters(end));
+pca3_kernel = interp1(Z.binCenters, score(:, 3), Z.binCenters(1): cfg_master.dt: Z.binCenters(end));
 pca3_kernel = pca3_kernel .* gausswin(length(pca3_kernel), 3)';
 p.ts_pca3 = conv2(ts_binarized, pca3_kernel, 'same')';
 p.ns_pca3 = conv2(ns_binarized, pca3_kernel, 'same')';

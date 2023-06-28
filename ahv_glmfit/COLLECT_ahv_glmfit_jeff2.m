@@ -5,8 +5,10 @@ function [cfg_master, out, rsq_all, sacc_gain, ahv_gain, sessUsed] = COLLECT_ahv
 %% set up data path
 cd('C:\Jeff\U01\datatouse');
 cfg = [];
-cfg.rats = {'M039', 'M052', 'M055', 'M079', 'M080', 'M085', 'M086', 'M089', 'M090', 'M094', 'M096', 'M104', 'M105', 'M112', 'M212', 'M222', 'M247', 'M269', 'M271', 'M281', 'M282', 'M284', 'M293'};
-fd = getDataPath(cfg);
+% cfg.rats = {'M039', 'M052', 'M055', 'M079', 'M080', 'M085', 'M086', 'M089', 'M090', 'M094', 'M096', 'M104', 'M105', 'M112', 'M212', 'M222', 'M247', 'M269', 'M271', 'M281', 'M282', 'M284', 'M287', 'M293', 'M362', 'M389', 'M390', 'M391', 'M402'};
+% cfg.rats (above) skips a bunch of animals. Check and see why this is the case. 2023-06-23.
+% fd = getDataPath(cfg);
+fd = FindFiles('*keys.m');
 
 endSess = length(fd);
 %%
@@ -14,6 +16,7 @@ cfg_master = []; % overall params
 cfg_master.doColor = 1;
 cfg_master.FontSize = 10;
 cfg_master.doPlot = 1;
+cfg_master.WriteFig = 1; 
 cfg_master.dt = 0.005;
 cfg_master.maxlag = 200; % bins for use in saccade PETH
 cfg_master.debug = 0;
@@ -28,7 +31,7 @@ skip = 0;  % there are four sessions that return errors when the model that incl
 process_varargin(varargin);
 
 for iS = 1:endSess
-    pushdir(fd{iS});
+    pushdir(fileparts(fd{iS}));
     SSN = HD_GetSSN; disp(SSN);
     if exist(strcat(SSN, '-VT1_proc.mat')) == 2
         if skip == 1
@@ -93,6 +96,8 @@ if cfg_master.doPlot == 1
     cells_per_figure = 3; nFigures = ceil(nCells / cells_per_figure);
     xtight = .08;
     ytight = .04;
+    savedir = ('D:\Jeff\U01\analysis\dot mat files\GLM\GLM subplots');
+    
     for iF = 1:nFigures
         figure;
         start_cell = (iF-1)*cells_per_figure + 1;
@@ -133,6 +138,11 @@ if cfg_master.doPlot == 1
             plot(tc_bin_centers, out(iC).pupil_tc);
             set(gca, 'TickDir', 'out', 'FontSize', cfg_master.FontSize, 'XLim', [-60 60]); xlabel('');
             title(strcat('FULL Rsq = '), num2str(out(iC).pca_sacc_both.rsq)) %
+        end
+        if cfg_master.doPlot
+            pushdir(savedir);
+            WriteFig(num2str(iF))
+            popdir;
         end
     end
 end
