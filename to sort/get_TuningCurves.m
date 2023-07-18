@@ -45,6 +45,6 @@ for iCell = 1:size(TC_all.tc,1)
     TC_norm.tc(iCell,:) = TC_all.tc(iCell,:)./max(TC_all.tc(iCell,:));
 end
 
-[B, I] = max(TC_norm.tc');
+% [B, I] = max(TC_norm.tc');
 
     

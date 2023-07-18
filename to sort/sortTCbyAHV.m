@@ -17,4 +17,9 @@ process_varargin(varargin);
 
 [B, isort] = sort(I);
 
-pcolor(TCs.bins(1,:), 1:length(TCs.tc), TCs.tc(isort, :));
+% pcolor(TCs.bins(1,:), 1:length(TCs.tc), TCs.tc(isort, :));
+imagesc(TCs.bins(1,:), 1:length(TCs.tc), TCs.tc(isort, :));
+
+cmap = parula;
+cmap(1,:) = 0;
+colormap(cmap);
