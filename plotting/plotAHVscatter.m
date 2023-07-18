@@ -1,7 +1,7 @@
-function plotAHVscatter(sd, varargin)
+function plotAHVscatter(cfg_in, sd)
 
-smooth = 1;
-process_varargin(varargin);
+cfg_def.smooth = 1;
+cfg = ProcessConfig2(cfg_def, cfg_in);
 
 %% plot scatterplot
 AHV_dt = median(diff(sd.AHV.tvec));
@@ -29,7 +29,7 @@ for iCell = 1:length(sd.S.t)
     ylabel('Firing Rate (Hz)')
     set(gca, 'Ylim', [0 ymax], 'FontSize', 16)
     
-    if smooth == 1
+    if cfg.smooth == 1
         plot(tc_out.binCenters, smoothdata(tc_out.tc(iCell,:)), 'LineWidth', 5, 'Color', 'k');
     else
         plot(tc_out.binCenters, tc_out.tc(iCell,:), 'LineWidth', 5, 'Color', 'k');
