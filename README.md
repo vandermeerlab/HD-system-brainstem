@@ -66,7 +66,7 @@ Below is a list of important functions for extracting/plotting information about
 
 All of the relevant files for a recording session are in one folder. Once inside that folder, use **sd = LoadSessionData([])** to calculate and gather all of the relevant information into one structure **[sd]** in the matlab workspace. sd will be an input for most functions. 
 
-To show AHV tuning curves for a single session, do **getAHV_TC([],sd)**. See the function help for options other than the defaults. Set 'doPlot'=1 to plot each TC. The default setting will smooth the data. One parameter that you may want to change is minOCC. This value determines the minimum number of samples (each 5 ms) needed in a given AHV bin to include that data. minOcc of 100 requires only 0.5 s of occupancy to include those values. I usually set this to 200 to include at least 1 s of data. But one may want to set it higher. 
+To show AHV tuning curves for a single session, do **getAHV_TC([],sd)**. See the function help for options other than the defaults. 
 
 Due to eye movement tuning (and natural variability) the tuning curve variance can be high. We prefer to plot the raw firing rate data (FR x AHV) and overlay the binned (average) tuning curve. Use **plotAHVscatter([],sd)** to visualize the raw firing rate data and the tuning curve together. See the function help for options other than the defaults.
 
