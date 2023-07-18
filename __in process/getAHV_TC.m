@@ -12,6 +12,10 @@ function [tc_out] = getAHV_TC(cfg_in, sd)
 %               .usr.binCenters
 %               .usr.nBins  - number of bins
 
+% HELP
+% Set 'doPlot'=1 to plot each TC. The default setting will smooth the data. 
+% One parameter that you may want to change is minOCC. This value determines the minimum number of samples (each 5 ms) needed in a given AHV bin to include that data. 
+% minOcc of 100 requires only 0.5 s of occupancy to include those values. I usually set this to 200 to include at least 1 s of data. But one may want to set it higher.
 
 cfg_def = [];
 cfg_def.doPlot = 1;
