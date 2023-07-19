@@ -1,11 +1,12 @@
-function fingerprintPlot(cfg_in, sd)
+function fingerprintPlot(cfg_in, sd, iCell)
 % 2023-07-19. JJS.
 %   This function creates a subplot figure for each individual neuron within a session folder. 
 %   It calculates and displays all of the relevant features for each neuron. If data is absent or not applicable, those parts of the figure will be blank. 
 
 % Inputs:
-%       cfg - variable inputs. If cfg is blank, this function will use default parameters. 
-%       sd  - structure with session data for the given folder. Use sd = LoadSessionData(fd). 
+%       cfg     - variable inputs. If cfg is blank, this function will use default parameters. 
+%       sd      - structure with session data for the given folder. Use sd = LoadSessionData(fd).
+%       iCell   - which neuron to plot (goes in numerical order from TT1)
 % Outputs:
 %       optional write file 
 
@@ -20,34 +21,49 @@ cfg_def.smallfont = 8;      % Font size for the saccade peth legends.
 cfg_def.insetText = 18;     % Font size of the inset text ('CW', 'CCW', or 'nasal', 'temporal') for the first two subplots. 
 cfg_def.speedthresh = 0.3;  % Wheel velocity values that are in between +- cfg.speedthresh (cm/s) are not displayed in the wheel speed TC subplot. These are very low speed values where the mouse is essentially stationary. Including them introduces noise into the regression line. 
 cfg_def.ahv_thresh = 4;     % AHV values that are in between +- cfg.ahv_thresh will be excluded from WHEEL speed vs. AHV scatterplot. These are very low AHV values and introduce noise into the regression line. 
-cfg_def.doLaser = 0;
+cfg_def.doLaser = 0;        % Choose 0 to exclude laser events. Choose 1 to inlude laser events. This is a temporary measure b/c there are bugs in some sessions for laser event time extraction
+cfg_def.FontSize = 13;      % General font size
+cfg_def.histXmin = 0.01;    % Axis size for the HISTISI plot
+cfg_def.histXmax = 0.2;
+cfg_def.LineWidth = 3;      % General line width for plotting 
 
 cfg = ProcessConfig2(cfg_def, cfg_in);
+
+%% Change the .t filename from having an underscore '_' to a dash '-', for ease of use later. Most filenames use a dash '-'.   
+[fc] = FindFiles(strcat(sd.SSN, '*.t'));
+[~, b, ~] = fileparts(fc);
+if iscell(b)
+    cellID = b{iCell};
+else
+    cellID = b;
+end
+newID = cellID;
+k = strfind(cellID, '_');
+newID(k) = '-'; 
 %--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-%% #1 plot scatterplot
+%% #1 Firing Rate x AHV (with Tuning Curve) 
 p = subtightplot(6,6,1, [cfg.tightX cfg.tightY]);
 cfg_Q = [];
 cfg_Q.smooth = 'gauss';
 cfg_Q.gausswin_sd = 0.05;
-cfg_Q.dt = AHV_dt;
-cfg_Q.tvec_edges = AHV_tsd.tvec(1):AHV_dt:AHV_tsd.tvec(end);
-F = MakeQfromS(cfg_Q, S); % convert to FR
-F.data = F.data ./ cfg_Q.dt;
-F_idx = nearest_idx3(AHV_tsd.tvec, F.tvec);
+cfg_Q.dt = sd.AHV_dt;
+cfg_Q.tvec_edges = sd.AHV.tvec(1): sd.AHV_dt: sd.AHV.tvec(end);
+F = MakeQfromS(cfg_Q, sd.S); % convert to FR
+F.data = F.data(iCell,:) ./ cfg_Q.dt;
+F_idx = nearest_idx3(sd.AHV.tvec, F.tvec);
 AHV_F = F.data(:,F_idx);
 ymax = max(AHV_F);
-set(gca, 'TickDir', 'out', 'FontSize', FontSize)
-plot(AHV_tsd.data, AHV_F, '.', 'MarkerSize', .5); hold on
-set(gca, 'Ylim', [0 ymax], 'FontSize', FontSize)
+set(gca, 'TickDir', 'out', 'FontSize', cfg.FontSize)
+plot(sd.AHV.data, AHV_F, '.', 'MarkerSize', .5); hold on
+set(gca, 'Ylim', [0 ymax], 'FontSize', cfg.FontSize)
 
 % Add Tuning Curve
-plot(tc_out.usr.binCenters, smoothdata(tc_out.tc), 'LineWidth', LineWidth, 'Color', 'k');
-ylabel('FR (Hz)', 'FontSize', FontSize)
+cfg_ahv.doPlot = 0; 
+[tc_out] = getAHV_TC(cfg_ahv, sd);
+plot(tc_out.usr.binCenters, smoothdata(tc_out.tc(iCell,:)), 'LineWidth', cfg.LineWidth, 'Color', 'k');
+ylabel('FR (Hz)', 'FontSize', cfg.FontSize)
 set(groot, 'DefaultLegendInterpreter', 'none')
 title('AHV Tuning Curve')
-h = get(gca, 'XLim');
-% text(.75*h(1), 10, 'CW', 'FontSize', 12)
-% text(.5*h(2), 10, 'CCW', 'FontSize', 12)
 text(NaN, NaN, 'CW', 'FontSize', cfg.insetText, 'Units', 'normalized', 'Position', [.25 .85 0])
 text(NaN, NaN, 'CCW', 'FontSize', cfg.insetText, 'Units', 'normalized', 'Position', [.6 .85 0])
 p.XAxisLocation = 'top';
@@ -55,34 +71,31 @@ c = axis;
 line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'k')
 axis tight
 %--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-%% #2 pupil TC
+%% #2 Firing Rate x Pupil Position (with Tuning Curve)
 p = subtightplot(6,6,2, [cfg.tightX cfg.tightY]); hold on
-if exist(strcat(SSN, '-saccades-edited.mat'))
-    load(FindFile('*saccades-edited.mat'), 'tsdH') % tsdH is the horizontal pupil position variable
     % calculate Q matrix
-    tsdH_dt = median(diff(tsdH.tvec));
     cfg_Q = [];
     cfg_Q.smooth = 'gauss';
     cfg_Q.gausswin_sd = 0.05;
-    cfg_Q.dt = tsdH_dt;
-    cfg_Q.tvec_edges = tsdH.tvec(1):tsdH_dt:tsdH.tvec(end);
-    F = MakeQfromS(cfg_Q, S); % convert to FR
-    F.data = F.data ./ cfg_Q.dt;
+    cfg_Q.dt = sd.tsdH_dt;
+    cfg_Q.tvec_edges = sd.tsdH.tvec(1): sd.tsdH_dt: sd.tsdH.tvec(end);
+    F = MakeQfromS(cfg_Q, sd.S); % convert to FR
+    F.data = F.data(iCell,:) ./ cfg_Q.dt;
     
     % find FR corresponding to each AHV sample
-    F_idx = nearest_idx3(tsdH.tvec, F.tvec);
+    F_idx = nearest_idx3(sd.tsdH.tvec, F.tvec);
     tsdH_F = F.data(:,F_idx);
-    plot(tsdH.data, tsdH_F(1,:), '.', 'MarkerSize', .5, 'color', [.8 .8 .8]); hold on
+    plot(sd.tsdH.data, tsdH_F(1,:), '.', 'MarkerSize', .5, 'color', [.8 .8 .8]); hold on
     
-    tsdH.data = tsdH.data'; % change the shape so that it is a "well-formed tsd" for tuning curves
+    tsdH.data = sd.tsdH.data'; % change the shape so that it is a "well-formed tsd" for tuning curves
     cfg_tc = [];
     cfg_tc.nBins = 50;
     cfg_tc.binEdges = {linspace(-60, 60, 101)};
-    cfg_tc.occ_dt = median(diff(tsdH.tvec));
+    cfg_tc.occ_dt = median(diff(sd.tsdH.tvec));
     cfg_tc.minOcc = 10;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
-    tc_pupil = TuningCurves(cfg_tc, S, tsdH);
-    plot(tc_pupil.usr.binCenters(tc_pupil.occ_hist>cfg.occthresh), smoothdata(tc_pupil.tc(1,(tc_pupil.occ_hist>cfg.occthresh))), 'k', 'LineWidth', 3);
-    set(gca, 'FontSize', FontSize)
+    tc_pupil = TuningCurves(cfg_tc, sd.S, sd.tsdH);
+    plot(tc_pupil.usr.binCenters(tc_pupil.occ_hist > cfg.occthresh), smoothdata(tc_pupil.tc(1,(tc_pupil.occ_hist > cfg.occthresh))), 'k', 'LineWidth', 3);
+    set(gca, 'FontSize', cfg.FontSize)
     title('Pupil Position (pixels)')
     % axis tight
     c = axis;
@@ -91,10 +104,8 @@ if exist(strcat(SSN, '-saccades-edited.mat'))
     text(-30, c(4)/2, 'nasal', 'FontSize', cfg.insetText, 'Units', 'normalized', 'Position', [.15 .85 0])
     text(5, c(4)/2, 'temporal', 'FontSize', cfg.insetText, 'Units', 'normalized', 'Position', [.55 .85 0])
     p.XAxisLocation = 'top';
-else
-    warning('cannot find saccade data')
     title('Pupil Position (pixels)')
-end
+
 %--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 %% #3 acf
 p = subtightplot(6,6,3, [cfg.tightX cfg.tightY]);
@@ -104,13 +115,13 @@ cfg_acf.max_t = 0.5;
 cfg_acf.smooth = 1; % set to 1 to compute ccf on SDF, 0 for raw spikes
 cfg_acf.gauss_w = 1; % width of Gaussian convolution window (in s)
 cfg_acf.gauss_sd = 0.005; % SD of Gaussian convolution window (in s)
-set(gca, 'TickDir', 'out', 'FontSize', FontSize)
-[acf, tvec] = ccf(cfg_acf, S.t{1}, S.t{1});
+set(gca, 'TickDir', 'out', 'FontSize', cfg.FontSize)
+[acf, tvec] = ccf(cfg_acf, sd.S.t{1}, sd.S.t{1});
 midpoint = ceil(length(acf)./2);
 acf(midpoint) = 0;
 plot(tvec, acf, 'LineWidth', 1);
 % xlabel('Time (sec)', 'FontSize', FontSize)
-set(gca, 'xtick', [-.5 -.25 0 .25 .5], 'FontSize', FontSize); grid on;
+set(gca, 'xtick', [-.5 -.25 0 .25 .5], 'FontSize', cfg.FontSize); grid on;
 title('Acorr')
 p.XAxisLocation = 'top';
 %--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -122,16 +133,28 @@ cfg_acf.max_t = 0.05;
 cfg_acf.smooth = 1; % set to 1 to compute ccf on SDF, 0 for raw spikes
 cfg_acf.gauss_w = 1; % width of Gaussian convolution window (in s)
 cfg_acf.gauss_sd = 0.005; % SD of Gaussian convolution window (in s)
-set(gca, 'TickDir', 'out', 'FontSize', FontSize)
-[acf, tvec] = ccf(cfg_acf, S.t{1}, S.t{1});
+set(gca, 'TickDir', 'out', 'FontSize', cfg.FontSize)
+[acf, tvec] = ccf(cfg_acf, sd.S.t{1}, sd.S.t{1});
 midpoint = ceil(length(acf)./2);
 acf(midpoint) = 0;
 plot(tvec, acf, 'LineWidth', 1);
 % xlabel('Time (sec)', 'FontSize', FontSize)
-set(gca, 'xtick', [-.05 0 .05], 'FontSize', FontSize); grid on;
+set(gca, 'xtick', [-.05 0 .05], 'FontSize', cfg.FontSize); grid on;
 title('Acorr')
 p.XAxisLocation = 'top';
 %---------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
 %% #10 HistISI
 p = subtightplot(6,6,10, [cfg.tightX cfg.tightY]); hold on
 [h, n] = HistISIsubplot(S.t{1});

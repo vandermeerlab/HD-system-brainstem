@@ -148,6 +148,8 @@ if EYE
             sd.nasalSaccades = nasalSaccades;
             sd.nasalAmplitudes = nasalAmplitudes;
             sd.tsdH = tsdH;
+            sd.tsdH.data = sd.tsdH.data'; % TuningCurves() requires this format whereby tvec and data have opposite orientations (1 x n and n x 1, instead of 1 x n and 1 x n). 2023-07-19.
+            sd.tsdH_dt = median(diff(tsdH.tvec));
             sd.tsdV = tsdV;
         end
     catch

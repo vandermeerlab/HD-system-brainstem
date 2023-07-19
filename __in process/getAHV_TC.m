@@ -33,9 +33,9 @@ if cfg_tc.doPlot
     for iCell = 1:length(sd.S.t)
         % Add Tuning Curve
         if cfg_tc.smooth
-            plot(tc_out.binCenters, smoothdata(tc_out.tc(iCell,:)), 'LineWidth', 3, 'Color', 'k');
+            plot(tc_out.usr.binCenters, smoothdata(tc_out.tc(iCell,:)), 'LineWidth', 3, 'Color', 'k'); 
         else
-            plot(tc_out.binCenters, tc_out.tc(iCell,:), 'LineWidth', 3, 'Color', 'k');
+            plot(tc_out.usr.binCenters, tc_out.tc(iCell,:), 'LineWidth', 3, 'Color', 'k');
         end
         xlabel('AHV (degrees/sec)')
         ylabel('FR (Hz)')
