@@ -122,6 +122,7 @@ if AHV
     tic; AHV = dxdt(orientationtouserange, orientationtousedata, 'window', window, 'postsmoothing', postsmoothing); toc;
     AHV = -AHV; % THIS STEP IS NECESSARY BECAUSE dxdt GIVES VALUES THAT ARE CORRECT, BUT WITH A SIGN FLIP.
     sd.AHV = tsd(orientationtouserange, AHV);
+    sd.AHV_dt = median(diff(sd.AHV.tvec));
     if CheckAHV ==1
         figure;
         plot(sd.AHV.tvec, sd.AHV.data);

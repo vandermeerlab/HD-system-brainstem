@@ -7,7 +7,7 @@ function [tc_wheel] = getWheel_TC(cfg_in, sd)
 doPlot = 1;
 cfg_def.FontSize = 16;
 cfg_def.speedthresh = 0.3; % cm / sec  [minimum wheel speed for TC]
-occthresh = 0.5;  % seconds [minimum occupancy for each speed bin]
+cfg_def.occthresh = 0.5;  % seconds [minimum occupancy for each speed bin]
 cfg = ProcessConfig2(cfg_def, cfg_in);
 
 
@@ -56,7 +56,7 @@ if doPlot == 1
         line([cfg.speedthresh cfg.speedthresh], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'r')
         %         text(NaN, NaN, strcat('Rsq =', sprintf('%0.2f', stats(1))), 'FontSize', 12, 'Units', 'normalized', 'Position', [.55 .85 0])
         
-        plot(tc_wheel.binCenters(tc_wheel.occ_hist > occthresh), smoothdata(tc_wheel.tc(iCell,(tc_wheel.occ_hist > occthresh))), 'k', 'LineWidth', 3);
+        plot(tc_wheel.binCenters(tc_wheel.occ_hist > cfg.occthresh), smoothdata(tc_wheel.tc(iCell,(tc_wheel.occ_hist > cfg.occthresh))), 'k', 'LineWidth', 3);
         axis tight
         ylabel('FR (Hz)', 'FontSize', cfg.FontSize)
         xlabel('Speed (cm/s)', 'FontSize', cfg.FontSize)
