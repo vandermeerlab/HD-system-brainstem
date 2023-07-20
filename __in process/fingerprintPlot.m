@@ -1,35 +1,35 @@
 function fingerprintPlot(cfg_in, sd, iCell)
 % 2023-07-19. JJS.
-%   This function creates a subplot figure for each individual neuron within a session folder. 
-%   It calculates and displays all of the relevant features for each neuron. If data is absent or not applicable, those parts of the figure will be blank. 
+%   This function creates a subplot figure for each individual neuron within a session folder.
+%   It calculates and displays all of the relevant features for each neuron. If data is absent or not applicable, those parts of the figure will be blank.
 
 % Inputs:
-%       cfg     - variable inputs. If cfg is blank, this function will use default parameters. 
+%       cfg     - variable inputs. If cfg is blank, this function will use default parameters.
 %       sd      - structure with session data for the given folder. Use sd = LoadSessionData(fd).
 %       iCell   - which neuron to plot (goes in numerical order from TT1)
 % Outputs:
-%       optional write file 
+%       optional write file
 
-clf;    % clear previous figure, if present 
+clf;    % clear previous figure, if present
 tic;    % keep track of how long this function takes
 %% Initialize Parameters
 cfg_def = [];
 cfg_def.tightX = .025;      % related to subtightplot.  X and Y = 'gap'- a two elements vector [vertical,horizontal] defining the gap between neighbouring axes.
 cfg_def.tightY = .02;       % see comment above
-cfg_def.occthresh = 0.5;    % Occupancy threhsold for including data in pupil position tuning curve 
-cfg_def.smallfont = 8;      % Font size for the saccade peth legends. 
-cfg_def.insetText = 18;     % Font size of the inset text ('CW', 'CCW', or 'nasal', 'temporal') for the first two subplots. 
-cfg_def.speedthresh = 0.3;  % Wheel velocity values that are in between +- cfg.speedthresh (cm/s) are not displayed in the wheel speed TC subplot. These are very low speed values where the mouse is essentially stationary. Including them introduces noise into the regression line. 
-cfg_def.ahv_thresh = 4;     % AHV values that are in between +- cfg.ahv_thresh will be excluded from WHEEL speed vs. AHV scatterplot. These are very low AHV values and introduce noise into the regression line. 
+cfg_def.occthresh = 0.5;    % Occupancy threhsold for including data in pupil position tuning curve
+cfg_def.smallfont = 8;      % Font size for the saccade peth legends.
+cfg_def.insetText = 18;     % Font size of the inset text ('CW', 'CCW', or 'nasal', 'temporal') for the first two subplots.
+cfg_def.speedthresh = 0.3;  % Wheel velocity values that are in between +- cfg.speedthresh (cm/s) are not displayed in the wheel speed TC subplot. These are very low speed values where the mouse is essentially stationary. Including them introduces noise into the regression line.
+cfg_def.ahv_thresh = 4;     % AHV values that are in between +- cfg.ahv_thresh will be excluded from WHEEL speed vs. AHV scatterplot. These are very low AHV values and introduce noise into the regression line.
 cfg_def.doLaser = 0;        % Choose 0 to exclude laser events. Choose 1 to inlude laser events. This is a temporary measure b/c there are bugs in some sessions for laser event time extraction
 cfg_def.FontSize = 13;      % General font size
 cfg_def.histXmin = 0.01;    % Axis size for the HISTISI plot
 cfg_def.histXmax = 0.2;
-cfg_def.LineWidth = 3;      % General line width for plotting 
+cfg_def.LineWidth = 3;      % General line width for plotting
 
 cfg = ProcessConfig2(cfg_def, cfg_in);
 
-%% Change the .t filename from having an underscore '_' to a dash '-', for ease of use later. Most filenames use a dash '-'.   
+%% Change the .t filename from having an underscore '_' to a dash '-', for ease of use later. Most filenames use a dash '-'.
 [fc] = FindFiles(strcat(sd.SSN, '*.t'));
 [~, b, ~] = fileparts(fc);
 if iscell(b)
@@ -39,15 +39,15 @@ else
 end
 newID = cellID;
 k = strfind(cellID, '_');
-newID(k) = '-'; 
-%--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-%% #1 Firing Rate x AHV (with Tuning Curve) 
+newID(k) = '-';
+
+%% #1 Firing Rate x AHV (with Tuning Curve)
 p = subtightplot(6,6,1, [cfg.tightX cfg.tightY]);
 cfg_Q = [];
 cfg_Q.smooth = 'gauss';
 cfg_Q.gausswin_sd = 0.05;
-cfg_Q.dt = sd.AHV_dt;
-cfg_Q.tvec_edges = sd.AHV.tvec(1): sd.AHV_dt: sd.AHV.tvec(end);
+cfg_Q.dt = sd.AHV.dt;
+cfg_Q.tvec_edges = sd.AHV.tvec(1): sd.AHV.dt: sd.AHV.tvec(end);
 F = MakeQfromS(cfg_Q, sd.S); % convert to FR
 F.data = F.data(iCell,:) ./ cfg_Q.dt;
 F_idx = nearest_idx3(sd.AHV.tvec, F.tvec);
@@ -58,7 +58,7 @@ plot(sd.AHV.data, AHV_F, '.', 'MarkerSize', .5); hold on
 set(gca, 'Ylim', [0 ymax], 'FontSize', cfg.FontSize)
 
 % Add Tuning Curve
-cfg_ahv.doPlot = 0; 
+cfg_ahv.doPlot = 0;
 [tc_out] = getAHV_TC(cfg_ahv, sd);
 plot(tc_out.usr.binCenters, smoothdata(tc_out.tc(iCell,:)), 'LineWidth', cfg.LineWidth, 'Color', 'k');
 ylabel('FR (Hz)', 'FontSize', cfg.FontSize)
@@ -73,39 +73,39 @@ axis tight
 %--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 %% #2 Firing Rate x Pupil Position (with Tuning Curve)
 p = subtightplot(6,6,2, [cfg.tightX cfg.tightY]); hold on
-    % calculate Q matrix
-    cfg_Q = [];
-    cfg_Q.smooth = 'gauss';
-    cfg_Q.gausswin_sd = 0.05;
-    cfg_Q.dt = sd.tsdH_dt;
-    cfg_Q.tvec_edges = sd.tsdH.tvec(1): sd.tsdH_dt: sd.tsdH.tvec(end);
-    F = MakeQfromS(cfg_Q, sd.S); % convert to FR
-    F.data = F.data(iCell,:) ./ cfg_Q.dt;
-    
-    % find FR corresponding to each AHV sample
-    F_idx = nearest_idx3(sd.tsdH.tvec, F.tvec);
-    tsdH_F = F.data(:,F_idx);
-    plot(sd.tsdH.data, tsdH_F(1,:), '.', 'MarkerSize', .5, 'color', [.8 .8 .8]); hold on
-    
-    tsdH.data = sd.tsdH.data'; % change the shape so that it is a "well-formed tsd" for tuning curves
-    cfg_tc = [];
-    cfg_tc.nBins = 50;
-    cfg_tc.binEdges = {linspace(-60, 60, 101)};
-    cfg_tc.occ_dt = median(diff(sd.tsdH.tvec));
-    cfg_tc.minOcc = 10;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
-    tc_pupil = TuningCurves(cfg_tc, sd.S, sd.tsdH);
-    plot(tc_pupil.usr.binCenters(tc_pupil.occ_hist > cfg.occthresh), smoothdata(tc_pupil.tc(1,(tc_pupil.occ_hist > cfg.occthresh))), 'k', 'LineWidth', 3);
-    set(gca, 'FontSize', cfg.FontSize)
-    title('Pupil Position (pixels)')
-    % axis tight
-    c = axis;
-    axis([-45 45 c(3) c(4)])
-    line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'k')
-    text(-30, c(4)/2, 'nasal', 'FontSize', cfg.insetText, 'Units', 'normalized', 'Position', [.15 .85 0])
-    text(5, c(4)/2, 'temporal', 'FontSize', cfg.insetText, 'Units', 'normalized', 'Position', [.55 .85 0])
-    p.XAxisLocation = 'top';
-    title('Pupil Position (pixels)')
+% calculate Q matrix
+cfg_Q = [];
+cfg_Q.smooth = 'gauss';
+cfg_Q.gausswin_sd = 0.05;
+cfg_Q.dt = sd.tsdH_dt;
+cfg_Q.tvec_edges = sd.tsdH.tvec(1): sd.tsdH_dt: sd.tsdH.tvec(end);
+F = MakeQfromS(cfg_Q, sd.S); % convert to FR
+F.data = F.data(iCell,:) ./ cfg_Q.dt;
 
+% find FR corresponding to each AHV sample
+F_idx = nearest_idx3(sd.tsdH.tvec, F.tvec);
+tsdH_F = F.data(:,F_idx);
+plot(sd.tsdH.data, tsdH_F(1,:), '.', 'MarkerSize', .5, 'color', [.8 .8 .8]); hold on
+
+tsdH.data = sd.tsdH.data'; % change the shape so that it is a "well-formed tsd" for tuning curves
+cfg_tc = [];
+cfg_tc.nBins = 50;
+cfg_tc.binEdges = {linspace(-60, 60, 101)};
+cfg_tc.occ_dt = median(diff(sd.tsdH.tvec));
+cfg_tc.minOcc = 10;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
+tc_pupil = TuningCurves(cfg_tc, sd.S, sd.tsdH);
+plot(tc_pupil.usr.binCenters(tc_pupil.occ_hist > cfg.occthresh), smoothdata(tc_pupil.tc(1,(tc_pupil.occ_hist > cfg.occthresh))), 'k', 'LineWidth', 3);
+set(gca, 'FontSize', cfg.FontSize)
+title('Pupil Position (pixels)')
+% axis tight
+c = axis;
+axis([-45 45 c(3) c(4)])
+line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'k')
+text(-30, c(4)/2, 'nasal', 'FontSize', cfg.insetText, 'Units', 'normalized', 'Position', [.15 .85 0])
+text(5, c(4)/2, 'temporal', 'FontSize', cfg.insetText, 'Units', 'normalized', 'Position', [.55 .85 0])
+p.XAxisLocation = 'top';
+title('Pupil Position (pixels)')
+clear F
 %--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 %% #3 acf
 p = subtightplot(6,6,3, [cfg.tightX cfg.tightY]);
@@ -143,13 +143,126 @@ set(gca, 'xtick', [-.05 0 .05], 'FontSize', cfg.FontSize); grid on;
 title('Acorr')
 p.XAxisLocation = 'top';
 %---------------------------------------------------------------------------------------------------------------------------------------------------
+%% #5   Wheel speed Tuning Curve
+p = subtightplot(6,6,5, [cfg.tightX cfg.tightY]); hold on
+ylabel('FR (Hz)', 'FontSize', cfg.FontSize)
+title('Wheel Speed Tuning Curve', 'FontSize', cfg.FontSize)
 
+WheelencoderCSC = strcat(sd.SSN, '-CSC34.Ncs');  % check to see if this session has running wheel data
+if exist(WheelencoderCSC)
+    % calculate Q matrix
+    cfg_Q = [];
+    cfg_Q.smooth = 'gauss';
+    cfg_Q.gausswin_sd = 0.05;
+    cfg_Q.dt = sd.speed.dt;
+    cfg_Q.tvec_edges = sd.speed.tvec(1): sd.speed.dt: sd.speed.tvec(end);
+    F = MakeQfromS(cfg_Q, sd.S); % convert to FR
+    F.data = F.data(iCell,:) ./ cfg_Q.dt;
+    
+    % find FR corresponding to each AHV sample
+    F_idx = nearest_idx3(sd.speed.tvec, F.tvec);
+    tsdH_F = F.data(:,F_idx);
+    yyaxis right
+    
+    % Plot the raw speed data
+    z = sd.speed.data > cfg.speedthresh | sd.speed.data < -cfg.speedthresh;  % remove data at very low speeds
+    plot(sd.speed.data(z), tsdH_F(1,z), '.', 'MarkerSize', .5, 'color', [.8 .8 .8]); hold on
+    h = lsline;
+    set(h(1), 'Color', 'k')
+    set(h(1), 'LineWidth', 2)
+    
+    % Plot a regression line, overlaid
+    speeddata = sd.speed.data(z)';
+    speeddata(:,2) = ones(length(speeddata), 1);
+    [~,~,~,~,stats] = regress(tsdH_F(1,z)', speeddata);
+    c = axis;
+    line([-cfg.speedthresh -cfg.speedthresh], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'r')
+    line([cfg.speedthresh cfg.speedthresh], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'r')
+    text(NaN, NaN, strcat('Rsq =', sprintf('%0.2f', stats(1))), 'FontSize', 12, 'Units', 'normalized', 'Position', [.55 .85 0])
+    
+    % Plot the tuning curve, overlaid
+    cfg_tc = [];
+    cfg_tc.nBins = 50;
+    cfg_tc.binEdges = {linspace(-5, 30, 101)};
+    cfg_tc.occ_dt = median(diff(sd.speed.tvec));
+    cfg_tc.minOcc = 1;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
+    tc_speed = TuningCurves(cfg_tc, sd.S, sd.speed);
+    plot(tc_speed.usr.binCenters(tc_speed.occ_hist > cfg.occthresh), smoothdata(tc_speed.tc(1,(tc_speed.occ_hist > cfg.occthresh))), 'k', 'LineWidth', 3);
+    axis tight
+    yyaxis left
+    set(gca, 'YTick', [])
+    yyaxis right
+    grid on
+    set(gca, 'FontSize', cfg.FontSize)
+    p.XAxisLocation = 'top';
+    axis tight
+end
 
+%% #6  WHEEL speed vs. AHV scatterplot
+plot6 = subtightplot(6,6,6, [cfg.tightX cfg.tightY]);
+xlabel('AHV', 'FontSize', cfg.FontSize)
+ylabel('Wheel Speed', 'FontSize', cfg.FontSize)
+title('Wheel Speed Tuning Curve', 'FontSize', cfg.FontSize)
 
+if exist(WheelencoderCSC)              % see if this session has wheel speed data
+    X = sd.AHV.data > cfg.ahv_thresh | sd.AHV.data < -cfg.ahv_thresh;  % remove the wheel data where AHV is close to zero (i.e., platform is stationary)
+    Z_idx = nearest_idx3(sd.AHV.tvec(X), sd.speed.tvec);
+    SPEED = tsd(sd.speed.tvec(Z_idx,:), sd.speed.data(:,Z_idx));
+    plot(sd.AHV.data(X), SPEED.data, '.', 'MarkerSize', 1);
+    axis tight
+    xlabel('AHV', 'FontSize', cfg.FontSize)
+    ylabel('Wheel Speed', 'FontSize', cfg.FontSize)
+    % Plot a regression line and the threshold lines
+    h = lsline;
+    set(h(1), 'Color', 'k')
+    set(h(1), 'LineWidth', 2)
+    c = axis;
+    line([c(1) c(2)], [0 0], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'k')
+    line([-cfg.ahv_thresh -cfg.ahv_thresh], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'r')
+    line([cfg.ahv_thresh cfg.ahv_thresh], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'r')
+    % She the r value as text
+    SPEEDregress = SPEED.data';
+    SPEEDregress(:,2) = ones(length(SPEED.data), 1);
+    [~,~,~,~,stats] = regress(sd.AHV.data(X)', SPEEDregress);
+    text(NaN, NaN, strcat('Rsq =', sprintf('%0.2f', stats(1))), 'FontSize', 12, 'Units', 'normalized', 'Position', [.05 .85 0])
+    plot6.YAxisLocation = 'right';
+    plot6.XAxisLocation = 'top';
+    set(gca, 'FontSize', cfg.FontSize)
+end
+%% GET SACCADE INFO
+[~, ~, ~, ~, nasal_timestamps_MOVING, temporal_timestamps_MOVING] = isolateManualSaccades();
+[~, ~, nasal_timestamps_REST, temporal_timestamps_REST] = isolateStationarySaccades();
 
+numNasal_moving = length(nasal_timestamps_MOVING); if numNasal_moving == 1; numNasal_moving = 0; end  % if this array is a single NaN, then there are in fact no saccades.
+numNasal_stationary = length(nasal_timestamps_REST); if numNasal_stationary == 1; numNasal_stationary = 0; end
 
+numTemporal_moving = length(temporal_timestamps_MOVING); if numTemporal_moving == 1; numTemporal_moving = 0; end
+numTemporal_stationary = length(temporal_timestamps_REST); if numTemporal_stationary == 1; numTemporal_stationary = 0; end
+%% #7 MOVING SACCADE peth: wide
 
+subtightplot(6,6,7, [cfg.tightX cfg.tightY]); hold on
+cfg_1.doPlot = 0;
+cfg_1.window = [-2 2];
+cfg_1.dt = 0.05;
+[outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, S, nasal_timestamps_MOVING);
+[mn1, edges] = histcounts(outputS_n, outputIT_n);
+plot(edges(1:end-1), mn1/cfg_1.dt/length(nasal_timestamps_MOVING), 'LineWidth', LineWidth); % this is a hack. should replace binedgges with bincenters
 
+hold on
+[outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, S, temporal_timestamps_MOVING);
+[mt1, edges] = histcounts(outputS_t, outputIT_t);
+plot(edges(1:end-1), mt1/cfg_1.dt/length(temporal_timestamps_MOVING), 'LineWidth', LineWidth);
+c = axis;
+line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '-')
+set(gca, 'FontSize', FontSize)
+legend('nasal', 'temporal', '', 'FontSize', cfg.smallfont)
+% set(gca, 'XTick', [])
+set(gca, 'XTick', [-2 2])
+ylabel('FR (Hz)', 'FontSize', FontSize)
+
+% text(NaN, NaN, sprintf('Lratio %.2f \n', CluSep.Lratio), 'FontSize', 10, 'Units', 'normalized', 'Position', [.2 .85 0])
+text(NaN, NaN, strcat('#temp.=', sprintf('%0.0f', numTemporal_moving)), 'FontSize', 16, 'Units', 'normalized', 'Position', [.02 .95 0])
+text(NaN, NaN, strcat('#nasal=', sprintf('%0.0f', numNasal_moving)), 'FontSize', 16, 'Units', 'normalized', 'Position', [.02 .80 0])
 
 
 
@@ -306,41 +419,8 @@ axis tight
 p.YAxisLocation = 'right';
 
 
-%% GET SACCADE INFO
-[~, ~, ~, ~, nasal_timestamps_MOVING, temporal_timestamps_MOVING] = isolateManualSaccades();
-[~, ~, nasal_timestamps_REST, temporal_timestamps_REST] = isolateStationarySaccades();
 
-numNasal_moving = length(nasal_timestamps_MOVING); if numNasal_moving == 1; numNasal_moving = 0; end  % if this array is a single NaN, then there are in fact no saccades.
-numNasal_stationary = length(nasal_timestamps_REST); if numNasal_stationary == 1; numNasal_stationary = 0; end
 
-numTemporal_moving = length(temporal_timestamps_MOVING); if numTemporal_moving == 1; numTemporal_moving = 0; end
-numTemporal_stationary = length(temporal_timestamps_REST); if numTemporal_stationary == 1; numTemporal_stationary = 0; end
-
-%% #7 MOVING SACCADE peth: wide
-subtightplot(6,6,7, [cfg.tightX cfg.tightY]); hold on
-% t = title('Evoked Saccade PETH', 'FontSize', FontSize, 'Units', 'normalized', 'Position', [.5 .1 0]);
-cfg_1.doPlot = 0;
-cfg_1.window = [-2 2];
-cfg_1.dt = 0.05;
-[outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, S, nasal_timestamps_MOVING);
-[mn1, edges] = histcounts(outputS_n, outputIT_n);
-plot(edges(1:end-1), mn1/cfg_1.dt/length(nasal_timestamps_MOVING), 'LineWidth', LineWidth); % this is a hack. should replace binedgges with bincenters
-
-hold on
-[outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, S, temporal_timestamps_MOVING);
-[mt1, edges] = histcounts(outputS_t, outputIT_t);
-plot(edges(1:end-1), mt1/cfg_1.dt/length(temporal_timestamps_MOVING), 'LineWidth', LineWidth);
-c = axis;
-line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '-')
-set(gca, 'FontSize', FontSize)
-legend('nasal', 'temporal', '', 'FontSize', cfg.smallfont)
-% set(gca, 'XTick', [])
-set(gca, 'XTick', [-2 2])
-ylabel('FR (Hz)', 'FontSize', FontSize)
-
-% text(NaN, NaN, sprintf('Lratio %.2f \n', CluSep.Lratio), 'FontSize', 10, 'Units', 'normalized', 'Position', [.2 .85 0])
-text(NaN, NaN, strcat('#temp.=', sprintf('%0.0f', numTemporal_moving)), 'FontSize', 16, 'Units', 'normalized', 'Position', [.02 .95 0])
-text(NaN, NaN, strcat('#nasal=', sprintf('%0.0f', numNasal_moving)), 'FontSize', 16, 'Units', 'normalized', 'Position', [.02 .80 0])
 
 
 %% #8 Stationary SACCADE peth: wide
@@ -510,7 +590,7 @@ if exist(encoderCSC)
     state_tsd = ConvertQEUpDownToState(updownTSD);
     [~, wheel_tsd] = ConvertQEStatesToAngle([], state_tsd);
     [d, speed, cfg_w] = ConvertWheeltoSpeed([], wheel_tsd);
-    speed.tvec = speed.tvec - starttime;
+    speed.tvec = speed.tvec - sd.starttime;
     plot(speed.tvec, -speed.data)    % IMPORTANT: there is a sign change here b/c the voltage change in response to the mouse moving forward is negative. When the mouse moves 'forward', the wheel moves 'backward'.
     set(gca, 'Xlim', [0 tvec(end)], 'FontSize', FontSize)
     ylabel('Wheel Speed (cm/s)')
@@ -533,100 +613,8 @@ if exist(encoderCSC)
         end
     end
     plot(speed.tvec, -speed.data)
-    
-    
-    %% #17   Wheel speed Tuning Curve
-    p = subtightplot(6,6,5, [cfg.tightX cfg.tightY]); hold on
-    % calculate Q matrix
-    
-    speed_dt = median(diff(tsdH.tvec));  % tsdH is the pupil position variable
-    cfg_Q = [];
-    cfg_Q.smooth = 'gauss';
-    cfg_Q.gausswin_sd = 0.05;
-    cfg_Q.dt = tsdH_dt;
-    cfg_Q.tvec_edges = speed.tvec(1): speed_dt: speed.tvec(end);
-    F = MakeQfromS(cfg_Q, S); % convert to FR
-    F.data = F.data ./ cfg_Q.dt;
-    
-    speed.data = -speed.data; % we want forward motion to be displayed as a positive velocity
-    % find FR corresponding to each AHV sample
-    F_idx = nearest_idx3(speed.tvec, F.tvec);
-    tsdH_F = F.data(:,F_idx);
-    yyaxis right
-    
-    z = speed.data > cfg.speedthresh | speed.data < -cfg.speedthresh;
-    plot(speed.data(z), tsdH_F(1,z), '.', 'MarkerSize', .5, 'color', [.8 .8 .8]); hold on
-    %     if ~isempty(h) ==1
-    h = lsline;
-    set(h(1), 'Color', 'k')
-    set(h(1), 'LineWidth', 2)
-    %     end
-    %     Fit = polyfit(h(1).XData, h(1).YData, 1);
-    speeddata = speed.data(z)';
-    speeddata(:,2) = ones(length(speeddata), 1);
-    [b,bint,r,rint,stats] = regress(tsdH_F(1,z)', speeddata);
-    c = axis;
-    line([-cfg.speedthresh -cfg.speedthresh], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'r')
-    line([cfg.speedthresh cfg.speedthresh], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'r')
-    text(NaN, NaN, strcat('Rsq =', sprintf('%0.2f', stats(1))), 'FontSize', 12, 'Units', 'normalized', 'Position', [.55 .85 0])
-    
-    cfg_tc = [];
-    cfg_tc.nBins = 50;
-    cfg_tc.binEdges = {linspace(-5, 30, 101)};
-    cfg_tc.occ_dt = median(diff(speed.tvec));
-    cfg_tc.minOcc = 1;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
-    tc_speed = TuningCurves(cfg_tc, S, speed);
-    plot(tc_speed.usr.binCenters(tc_speed.occ_hist>cfg.occthresh), smoothdata(tc_speed.tc(1,(tc_speed.occ_hist>cfg.occthresh))), 'k', 'LineWidth', 3);
-    axis tight
-    ylabel('FR (Hz)', 'FontSize', FontSize)
-    title('Wheel Speed Tuning Curve', 'FontSize', FontSize)
-    yyaxis left
-    set(gca, 'YTick', [])
-    yyaxis right
-    grid on
-    set(gca, 'FontSize', FontSize)
-    p.XAxisLocation = 'top';
-    axis tight
-    
-    %% #31:36 WHEEL speed vs. AHV scatterplot
-    plot6 = subtightplot(6,6,6, [cfg.tightX cfg.tightY]);
-    
-    X = AHV_tsd.data > cfg.ahv_thresh | AHV_tsd.data < -cfg.ahv_thresh;
-    % Y = speed.data > cfg.speedthresh | speed.data < -cfg.speedthresh;
-    
-    Z_idx = nearest_idx3(AHV_tsd.tvec(X), speed.tvec);   % this did not work: Z_idx = nearest_idx3(AHV_tsd.tvec(X), speed.tvec(Y));
-    SPEED = tsd(speed.tvec(Z_idx,:), speed.data(:,Z_idx));
-    plot(AHV_tsd.data(X), SPEED.data, '.', 'MarkerSize', 1);
-    axis tight
-    xlabel('AHV', 'FontSize', FontSize)
-    ylabel('Wheel Speed', 'FontSize', FontSize)
-    plot6.YAxisLocation = 'right';
-    plot6.XAxisLocation = 'top';
-    set(gca, 'FontSize', FontSize)
-    h = lsline;
-    set(h(1), 'Color', 'k')
-    set(h(1), 'LineWidth', 2)
-    c = axis;
-    line([c(1) c(2)], [0 0], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'k')
-    line([-cfg.ahv_thresh -cfg.ahv_thresh], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'r')
-    line([cfg.ahv_thresh cfg.ahv_thresh], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'r')
-    
-    SPEEDregress = SPEED.data';
-    SPEEDregress(:,2) = ones(length(SPEED.data), 1);
-    [b,bint,r,rint,stats] = regress(AHV_tsd.data(X)', SPEEDregress);
-    text(NaN, NaN, strcat('Rsq =', sprintf('%0.2f', stats(1))), 'FontSize', 12, 'Units', 'normalized', 'Position', [.05 .85 0])
-    
-else
-    disp('WHEEL Encoder CSC not found')
-    p = subtightplot(6,6,5, [cfg.tightX cfg.tightY]); hold on
-    title('Wheel Speed Tuning Curve', 'FontSize', FontSize)
-    plot6 = subtightplot(6,6,6, [cfg.tightX cfg.tightY]);
-    
-    xlabel('AHV', 'FontSize', FontSize)
-    ylabel('Wheel Speed', 'FontSize', FontSize)
-    plot6.YAxisLocation = 'right';
-    plot6.XAxisLocation = 'top';
 end
+
 
 %% #31:36 HORIZONTAL EYE POSITIION and AHV
 plot9 = subtightplot(6,6,31:36, [cfg.tightX cfg.tightY]);
@@ -636,7 +624,7 @@ if exist(strcat(SSN, '-VT1_proc.mat'))
     [a, b, c] = fileparts(FindFile('*VT1.smi'));
     fn = strcat(b,c);
     tvec_raw = read_smi(fn);
-    tvec = tvec_raw - starttime;
+    tvec = tvec_raw - sd.starttime;
     if strcmp(SSN, 'M281-2021-12-23')              % exception for this session where cheetah crashed and .smi is shorter than pupilH
         tvec = .02*(1:length( pupil{1}.com));
         tvec = tvec';

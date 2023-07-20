@@ -122,7 +122,7 @@ if AHV
     tic; AHV = dxdt(orientationtouserange, orientationtousedata, 'window', window, 'postsmoothing', postsmoothing); toc;
     AHV = -AHV; % THIS STEP IS NECESSARY BECAUSE dxdt GIVES VALUES THAT ARE CORRECT, BUT WITH A SIGN FLIP.
     sd.AHV = tsd(orientationtouserange, AHV);
-    sd.AHV_dt = median(diff(sd.AHV.tvec));
+    sd.AHV.dt = median(diff(sd.AHV.tvec));
     if CheckAHV ==1
         figure;
         plot(sd.AHV.tvec, sd.AHV.data);
@@ -155,6 +155,14 @@ if EYE
     catch
         warning('cannot find saccade data')
     end
+% Separate MOVING vs. SPONTANEOUS saccades
+[~, ~, ~, ~, sd.nasal_timestamps_MOVING, sd.temporal_timestamps_MOVING] = isolateManualSaccades();
+[~, ~, sd.nasal_timestamps_REST, sd.temporal_timestamps_REST] = isolateStationarySaccades();
+
+sd.numNasal_moving = length(nasal_timestamps_MOVING); if sd.numNasal_moving == 1; sd.numNasal_moving = 0; end  % if this array is a single NaN, then there are in fact no saccades.
+sd.numNasal_stationary = length(nasal_timestamps_REST); if sd.numNasal_stationary == 1; sd.numNasal_stationary = 0; end % if this array is a single NaN, then there are in fact no saccades.
+sd.numTemporal_moving = length(temporal_timestamps_MOVING); if sd.numTemporal_moving == 1; sd.numTemporal_moving = 0; end % if this array is a single NaN, then there are in fact no saccades.
+sd.numTemporal_stationary = length(temporal_timestamps_REST); if sd.numTemporal_stationary == 1; sd.numTemporal_stationary = 0; end % if this array is a single NaN, then there are in fact no saccades.
 end
 
 %----------------------------
@@ -165,13 +173,15 @@ if exist(encoderCSC)
     updownTSD = getQEupdown([]);
     state_tsd = ConvertQEUpDownToState(updownTSD);
     [angle_tsd, wheel_tsd] = ConvertQEStatesToAngle([], state_tsd); %#ok<*ASGLU>
-    [d, speed, cfg] = ConvertWheeltoSpeed([], wheel_tsd);
+    [d, speed, cfg] = ConvertWheeltoSpeed([], wheel_tsd);  % speed the wheel (in centimeters per second)
     
     d.tvec = d.tvec - starttime;
+    speed.data = -speed.data;           % we want forward motion to be displayed as a positive velocity. This requires a sign reversal.  
     speed.tvec = speed.tvec - starttime;
+    speed.dt = median(diff(speed.tvec)); 
     
     sd.d = d; % total distance travelled on the wheel (in centimenters)
-    sd.speed = speed;  % speed the wheel (in centimeters per second)
+    sd.speed = speed;  
 end
 %----------------------------
 % PLATFORM ROTATION PERIODS
@@ -190,7 +200,25 @@ end
 if dirpushed
     popdir;
 end
+
+
 toc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 %% alternate way of find start and stop recording times
