@@ -15,7 +15,8 @@ addpath(genpath('D:\My_Documents\GitHub\HD-system-brainstem')); % replace with y
 
 Several example sessions are available for download in [this google drive folder](https://drive.google.com/drive/folders/11RaD-QtlHRowaEffT6OR2wNw98RGl02i?usp=sharing). One session has prototypical AHV cells. One session has prototypical eye movement modulated cells. One sessions has an opto-tagged cell. 
 
-![exp_setup](https://github.com/vandermeerlab/HD-system-brainstem/assets/1922878/9f287ab6-96c7-4a5f-9599-ed52003354cf)
+![exp_setup](https://github.com/vandermeerlab/HD-system-brainstem/assets/1922878/25ac3863-7612-477f-a943-fb0cd27e1097)
+
 
 Experiments were carried out with head-fixed mice on a running wheel. The platform situated below the mice could be rotated like a lazy susan so that the mice experienced periods of sinusoidal rotation at varying speeds. The platform speed is referred to as angular head velocity (AHV). 
 
