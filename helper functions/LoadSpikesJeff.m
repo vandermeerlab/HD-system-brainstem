@@ -1,6 +1,6 @@
-function [S] = LoadSpikesJeff
+function [S] = LoadSpikesJeff(cfg)
 
-cfg = [];
+% cfg = [];
 cfg.uint = '64';
 % spikefiles = FindFiles('*.t');
 % cfg.fc = {spikefiles{iCell}};

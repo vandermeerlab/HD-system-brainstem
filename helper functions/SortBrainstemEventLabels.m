@@ -5,6 +5,20 @@ function [start_time, stop_time, laser_on, laser_off, bit0, bit4, arraysize] = S
 % evt = struct;
 events_ts = LoadEvents([]);
 SSN = HD_GetSSN;
+
+if length(events_ts.label) == 2
+    start_time = NaN;  
+    stop_time = NaN;   
+    laser_on = NaN;   
+    laser_off = NaN;   
+    bit0 = NaN;   
+    bit4 = NaN;   
+    arraysize = NaN;  
+    disp(SSN)
+    disp('no laser events found')
+    return
+end
+
 bit0 = 0;
 bit4 = 0;
 

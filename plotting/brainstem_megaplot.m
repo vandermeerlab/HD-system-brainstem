@@ -21,7 +21,7 @@ smallfont = 8;
 insetText = 18;
 speedthresh = 0.3;
 ahv_thresh = 4;
-doLaser = 0;
+doLaser = 1;
 process_varargin(varargin)
 % get sessionID and tetrodeID
 SSN = HD_GetSSN; disp(SSN);
@@ -45,9 +45,9 @@ subtractStartTime = 1;
 % Load Spikes
 cfg = [];
 cfg.uint = '64';
-spikefiles = FindFiles('*.t');
+spikefiles = FindFiles('*.t'); 
 cfg.fc = {spikefiles{iCell}};
-Sold = LoadSpikes(cfg);
+Sold = LoadSpikes(cfg);  % only use the spike train indicated in the function input
 
 if subtractStartTime == 1 % New cheetah versions have timestamps
     if exist('events_ts.mat') == 2
@@ -201,8 +201,8 @@ p = subtightplot(6,6,15, [tightX tightY]); hold on
 % -----------------------------------------------------------------------------------------------------------------------------------------------------
 % Get the correct timestamps for the different session events
 if doLaser == 1
-    [start_time, stop_time, laser_on, laser_off, bit0, bit4, arraysize] = SortBrainstemEventLabels;
-    % [start_time, stop_time, laser_on, laser_off, bit0, bit4] = SortBrainstemEventLabels2;
+%     [start_time, stop_time, laser_on, laser_off, bit0, bit4, arraysize] = SortBrainstemEventLabels;
+    [start_time, stop_time, laser_on, laser_off, bit0, bit4, arraysize] = SortBrainstemEventLabels2;
     
     if ~isnan(laser_on)
         %     dur = mode(laser_off(1:arraysize) - laser_on(1:arraysize));
@@ -217,7 +217,7 @@ if doLaser == 1
         [~, ~, ~, ~, ~] = SpikePETH_either(cfg_laser, S, laser_on); hold on
         c = axis;
         rectangle(Position = [0, 0, dur, c(4)], FaceColor=[0 1 1], EdgeColor=[0 1 1])    % change the 3rd entry in rectangle to the diff of laser_off and laser_on
-        [outputS, ~, ~, outputIT, cfg] = SpikePETH_either(cfg_laser, S, laser_on);  % this is a hack to get the background color 'in back'. otherwise it occludes the spikes.
+        [~, ~, ~, ~, ~] = SpikePETH_either(cfg_laser, S, laser_on);  % this is a hack to get the background color 'in back'. otherwise it occludes the spikes.
         line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'w')
         line([1 1], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'w')
         set(gca, 'YTick', [])
@@ -232,7 +232,7 @@ if doLaser == 1
         cfg_laser.doPlot = 0;
         cfg_laser.doRaster = 0;
         cfg_laser.doBar = 0;
-        [outputS_laser, ~, ~, outputIT_laser, cfg_out_laser] = SpikePETH_either(cfg_laser, S, laser_on);
+        [outputS_laser, ~, ~, outputIT_laser, ~] = SpikePETH_either(cfg_laser, S, laser_on);
         m = histc(outputS_laser, outputIT_laser);
         yyaxis right
         plot(outputIT_laser(1:end-1),m(1:end-1)/cfg_laser.dt/length(laser_on), 'LineWidth', 4);   % JJS. 11/15/22. This is a hack. Last value of m is always zero (erroneously).
@@ -259,7 +259,7 @@ if doLaser == 1
         [~, ~, ~, ~, ~] = SpikePETH_either(cfg_dummy, S, sound_times); hold on
         c = axis;
         rectangle(Position = [0, 0, dur, c(4)], FaceColor=[0 .9 .4], EdgeColor=[0 .9 .4])    % change the 3rd entry in rectangle to the diff of laser_off and laser_on
-        [outputS_dummy, ~, ~, outputIT_dummy, cfg_out_dummy] = SpikePETH_either(cfg_dummy, S, sound_times);  % this is a hack to get the background color 'in back'. otherwise it occludes the spikes.
+        [~, ~, ~, ~, ~] = SpikePETH_either(cfg_dummy, S, sound_times);  % this is a hack to get the background color 'in back'. otherwise it occludes the spikes.
         line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'w')
         line([1 1], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'w')
         set(gca, 'YTick', [])
@@ -274,7 +274,7 @@ if doLaser == 1
         cfg_dummy.doPlot = 0;
         cfg_dummy.doRaster = 0;
         cfg_dummy.doBar = 0;
-        [outputS_dummy, ~, ~, outputIT_dummy, cfg_out_dummy] = SpikePETH_either(cfg_dummy, S, sound_times);
+        [outputS_dummy, ~, ~, outputIT_dummy, ~] = SpikePETH_either(cfg_dummy, S, sound_times);
         m = histc(outputS_dummy, outputIT_dummy);
         % m = histcounts(outputS, outputIT);
         yyaxis right

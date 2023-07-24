@@ -1,10 +1,23 @@
-function [start_time, stop_time, laser_on, laser_off, bit0, bit4] = SortBrainstemEventLabels2
+function [start_time, stop_time, laser_on, laser_off, bit0, bit4, arraysize] = SortBrainstemEventLabels2
 
 % 2022-10-25. JJS.
 % Get the correct timestamps for the different session events
 % evt = struct;
 events_ts = LoadEvents([]);
 SSN = HD_GetSSN;
+
+if length(events_ts.label) == 2
+    start_time = NaN;  
+    stop_time = NaN;   
+    laser_on = NaN;   
+    laser_off = NaN;   
+    bit0 = NaN;   
+    bit4 = NaN;   
+    arraysize = NaN;  
+    disp(SSN)
+    disp('no laser events found')
+    return
+end
 bit0 = 0;
 bit4 = 0;
 
@@ -46,6 +59,12 @@ if ~isempty(bitFour_label)
     bitFour = events_ts.t{bitFour_label} - start_time;
 end
 
+%% check to see if this is right. 2023-07-21.
+if ~isempty(bitFour_label) && ~isempty(bitZero_label)
+    laser_on = bitFour;
+    laser_off = bitZero;
+end
+
 %% weird sessions with different TTL values
 % these sessions are 'M094_2020_12_28', 'M096_2021_01_05', 'M112_2021_02_10'.
 % Different values b/c of something I did with the master 8 settings. They have no opto cells. Will be ignored.
@@ -53,13 +72,13 @@ wrapper = @(events_ts) strcmp(events_ts, 'TTL Input on AcqSystem1_0 board 0 port
 A = cellfun(wrapper, events_ts.label);
 bitEight_label = find(A); % index which label corresponds to (0x0008)
 if ~isempty(bitEight_label)
-    bitEight = events_ts.t{bitEight_label};
+    bitEight = events_ts.t{bitEight_label} - start_time;
 end
 wrapper = @(events_ts) strcmp(events_ts, 'TTL Input on AcqSystem1_0 board 0 port 2 value (0x0010).');  % the few sessions with these values have no opto cells
 A = cellfun(wrapper, events_ts.label);
 bitTen_label = find(A); % index which label corresponds to (0x0008)
 if ~isempty(bitTen_label)
-    bitTen = events_ts.t{bitTen_label};
+    bitTen = events_ts.t{bitTen_label} - start_time;
 end
 
 if ~exist('laser_on') && ~exist('bitZero')
@@ -67,15 +86,17 @@ if ~exist('laser_on') && ~exist('bitZero')
     laser_off = NaN;
     bit0 = NaN;
     bit4 = NaN;
+    arraysize = NaN;
     return
 end
 
-%%
+%% Is there something wrong with these sessions?
 if exist('bitEight')==1 %#ok<*EXIST>
     laser_on = NaN;
     laser_off = NaN; %#ok<*NASGU>
     bit0 = NaN;
     bit4 = NaN;
+    arraysize = NaN;
     return
 end
 if exist('bitTen')==1
@@ -83,14 +104,17 @@ if exist('bitTen')==1
     laser_off = NaN;
     bit0 = NaN;
     bit4 = NaN;
+    arraysize = NaN;
     return
 end
 
+%%
 if strcmp(SSN, 'M281-2021-12-23') == 1    % very specific exception to this one session that crashed during a laser stim
     laser_on = laser_on(1:24);
     stop_time = NaN;
     bit0 = NaN;
     bit4 = NaN;
+    arraysize = NaN;
 end
 if strcmp(SSN, 'M402-2022-11-02-1') == 1
     bitZero = bitZero(2:end);  % first value is whack
@@ -107,6 +131,10 @@ end
 if exist('laser_on')
     laser_off = bitZero;
 end
+
+% 2023-07-21. 
+arraysize = min(length(laser_on), length(laser_off));
+
 %% I'm not sure if I actually need this part
 % if exist('laser_on')
 %     laser_off = bitZero;

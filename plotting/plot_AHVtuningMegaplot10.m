@@ -199,8 +199,7 @@ p = subtightplot(6,6,15, [tightX tightY]); hold on
 % -----------------------------------------------------------------------------------------------------------------------------------------------------
 % Get the correct timestamps for the different session events
 % [start_time, stop_time, laser_on, laser_off, bit0, bit4] = SortBrainstemEventLabels;
-[start_time, stop_time, laser_on, laser_off, bit0, bit4] = SortBrainstemEventLabels2;
-
+[~, ~, laser_on, laser_off, arraysize, ~] = SortBrainstemEventLabels3;
 
 if ~isnan(laser_on)
 %     dur = mode(laser_off(1:arraysize) - laser_on(1:arraysize));

@@ -21,7 +21,7 @@ cfg_def.smallfont = 8;      % Font size for the saccade peth legends.
 cfg_def.insetText = 18;     % Font size of the inset text ('CW', 'CCW', or 'nasal', 'temporal') for the first two subplots.
 cfg_def.speedthresh = 0.3;  % Wheel velocity values that are in between +- cfg.speedthresh (cm/s) are not displayed in the wheel speed TC subplot. These are very low speed values where the mouse is essentially stationary. Including them introduces noise into the regression line.
 cfg_def.ahv_thresh = 4;     % AHV values that are in between +- cfg.ahv_thresh will be excluded from WHEEL speed vs. AHV scatterplot. These are very low AHV values and introduce noise into the regression line.
-cfg_def.doLaser = 0;        % Choose 0 to exclude laser events. Choose 1 to inlude laser events. This is a temporary measure b/c there are bugs in some sessions for laser event time extraction
+cfg_def.doLaser = 1;        % Choose 0 to exclude laser events. Choose 1 to inlude laser events. This is a temporary measure b/c there are bugs in some sessions for laser event time extraction
 cfg_def.FontSize = 13;      % General font size
 cfg_def.histXmin = 0.01;    % Axis size for the HISTISI plot
 cfg_def.histXmax = 0.2;
@@ -229,44 +229,79 @@ if exist(WheelencoderCSC)              % see if this session has wheel speed dat
     plot6.XAxisLocation = 'top';
     set(gca, 'FontSize', cfg.FontSize)
 end
-%% GET SACCADE INFO
-[~, ~, ~, ~, nasal_timestamps_MOVING, temporal_timestamps_MOVING] = isolateManualSaccades();
-[~, ~, nasal_timestamps_REST, temporal_timestamps_REST] = isolateStationarySaccades();
-
-numNasal_moving = length(nasal_timestamps_MOVING); if numNasal_moving == 1; numNasal_moving = 0; end  % if this array is a single NaN, then there are in fact no saccades.
-numNasal_stationary = length(nasal_timestamps_REST); if numNasal_stationary == 1; numNasal_stationary = 0; end
-
-numTemporal_moving = length(temporal_timestamps_MOVING); if numTemporal_moving == 1; numTemporal_moving = 0; end
-numTemporal_stationary = length(temporal_timestamps_REST); if numTemporal_stationary == 1; numTemporal_stationary = 0; end
 %% #7 MOVING SACCADE peth: wide
+% isolate the spike train for the single neuron indicated in the function input. This is so that restrict() can operate within spikePETH()
+spikefiles = FindFiles('*.t');
+cfg.fc = {spikefiles{iCell}}; % limit to one neuron
+S = LoadSpikesJeff(cfg);  % using this loader to subtract out starttime from unix time
 
 subtightplot(6,6,7, [cfg.tightX cfg.tightY]); hold on
 cfg_1.doPlot = 0;
 cfg_1.window = [-2 2];
 cfg_1.dt = 0.05;
-[outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, S, nasal_timestamps_MOVING);
+[outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, S, sd.nasal_timestamps_MOVING);
 [mn1, edges] = histcounts(outputS_n, outputIT_n);
-plot(edges(1:end-1), mn1/cfg_1.dt/length(nasal_timestamps_MOVING), 'LineWidth', LineWidth); % this is a hack. should replace binedgges with bincenters
-
+plot(edges(1:end-1), mn1/cfg_1.dt/length(sd.nasal_timestamps_MOVING), 'LineWidth', cfg.LineWidth); % this is a hack. should replace binedgges with bincenters
 hold on
-[outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, S, temporal_timestamps_MOVING);
+[outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, S, sd.temporal_timestamps_MOVING);
 [mt1, edges] = histcounts(outputS_t, outputIT_t);
-plot(edges(1:end-1), mt1/cfg_1.dt/length(temporal_timestamps_MOVING), 'LineWidth', LineWidth);
+plot(edges(1:end-1), mt1/cfg_1.dt/length(sd.temporal_timestamps_MOVING), 'LineWidth', cfg.LineWidth);
 c = axis;
 line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '-')
-set(gca, 'FontSize', FontSize)
+set(gca, 'FontSize', cfg.FontSize)
 legend('nasal', 'temporal', '', 'FontSize', cfg.smallfont)
-% set(gca, 'XTick', [])
 set(gca, 'XTick', [-2 2])
-ylabel('FR (Hz)', 'FontSize', FontSize)
+ylabel('FR (Hz)', 'FontSize', cfg.FontSize)
 
 % text(NaN, NaN, sprintf('Lratio %.2f \n', CluSep.Lratio), 'FontSize', 10, 'Units', 'normalized', 'Position', [.2 .85 0])
-text(NaN, NaN, strcat('#temp.=', sprintf('%0.0f', numTemporal_moving)), 'FontSize', 16, 'Units', 'normalized', 'Position', [.02 .95 0])
-text(NaN, NaN, strcat('#nasal=', sprintf('%0.0f', numNasal_moving)), 'FontSize', 16, 'Units', 'normalized', 'Position', [.02 .80 0])
+text(NaN, NaN, strcat('#temp.=', sprintf('%0.0f', sd.numTemporal_moving)), 'FontSize', 16, 'Units', 'normalized', 'Position', [.02 .95 0])
+text(NaN, NaN, strcat('#nasal=', sprintf('%0.0f', sd.numNasal_moving)), 'FontSize', 16, 'Units', 'normalized', 'Position', [.02 .80 0])
 
+%% #8 Stationary SACCADE peth: wide
+subtightplot(6,6,8, [cfg.tightX cfg.tightY]); hold on
+if ~isempty(sd.nasal_timestamps_REST) && ~isempty(sd.temporal_timestamps_REST)   % There are some sessions with zero spontaneous (platform stationary) saccades
+    cfg_1.doPlot = 0;
+    cfg_1.window = [-2 2];
+    cfg_1.dt = 0.005;
+    [outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, S, sd.nasal_timestamps_REST);
+    [mn2, edges] = histcounts(outputS_n, outputIT_n);
+    plot(edges(1:end-1), mn2/cfg_1.dt/length(sd.nasal_timestamps_MOVING), 'LineWidth', cfg.LineWidth);
+    amax = max(mn2/cfg_1.dt/length(sd.nasal_timestamps_MOVING));
+    
+    hold on
+    [outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, S, sd.temporal_timestamps_REST);
+    [mt2, edges] = histcounts(outputS_t, outputIT_t);
+    plot(edges(1:end-1), smoothdata(mt2/cfg_1.dt/length(sd.temporal_timestamps_MOVING)), 'LineWidth', cfg.LineWidth);
+    bmax = max(smoothdata(mt2/cfg_1.dt/length(sd.temporal_timestamps_MOVING)));
+    allmax = max([amax bmax]);
+    c = axis;
+    line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '-')
+    legend('nasal', 'temporal', '', 'FontSize', cfg.smallfont)
+    set(gca, 'FontSize', cfg.FontSize)
+    % set(gca, 'XTick', [])
+    set(gca, 'XTick', [-2 2])
+    axis([c(1) c(2) c(3) allmax])
+end
+text(NaN, NaN, strcat('#temp.=', sprintf('%0.0f', sd.numTemporal_stationary)), 'FontSize', 16, 'Units', 'normalized', 'Position', [.02 .95 0])
+text(NaN, NaN, strcat('#nasal=', sprintf('%0.0f', sd.numNasal_stationary)), 'FontSize', 16, 'Units', 'normalized', 'Position', [.02 .80 0])
 
-
-
+%% #9 AHV PETH
+subtightplot(6,6,9, [cfg.tightX cfg.tightY]); hold on
+cfg_peth.window = [-2 2];
+cfg_peth.mode = 'interp';
+cfg_peth.dt = median(diff(sd.AHV.tvec));
+out_nasal = TSDpeth(cfg_peth, sd.AHV, sd.nasal_timestamps_MOVING);
+out_temporal = TSDpeth(cfg_peth, sd.AHV, sd.temporal_timestamps_MOVING);
+plot(out_nasal, 'LineWidth', cfg.LineWidth); hold on
+plot(out_temporal, 'LineWidth', cfg.LineWidth);
+set(gca, 'FontSize', cfg.FontSize)
+axis tight
+c = axis;
+axis([-2 2 c(3) c(4)])
+line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '-')
+legend('nasal', 'temporal', '', 'FontSize', cfg.smallfont)
+set(gca, 'XTick', [-2 2])
+title('AHV PETH', 'Units', 'normalized', 'Position', [0.5, 0.5, 0], 'FontSize', cfg.FontSize);
 
 %% #10 HistISI
 p = subtightplot(6,6,10, [cfg.tightX cfg.tightY]); hold on
@@ -276,25 +311,89 @@ c = axis;
 [~, i] = max(h);
 line([n(i) n(i)], [0 c(4)], 'color', 'k');
 grid on
-set(gca, 'TickDir', 'out', 'XLim', [histXmin histXmax], 'FontSize', FontSize)
-% xlabel('Time (sec)', 'FontSize', FontSize)
-% title('HistISI')
-t = title('HIST ISI', 'Units', 'normalized', 'Position', [0.5, 0.5, 0], 'FontSize', FontSize);
-% p.XAxisLocation = 'top';
+set(gca, 'TickDir', 'out', 'XLim', [cfg.histXmin cfg.histXmax], 'FontSize', cfg.FontSize)
+title('HIST ISI', 'Units', 'normalized', 'Position', [0.5, 0.5, 0], 'FontSize', cfg.FontSize);
 set(gca, 'XTick', [])
+
+%% #10 laser-triggered EYE movement
+subtightplot(6,6,11, [cfg.tightX cfg.tightY]); hold on
+% out: tsd with PETH
+% cfg options:
+%
+% cfg_def.window = [-2 2]; % start and end times of window (in s)
+% cfg_def.dt = []; % time step, specify this for 'interp' mode
+% cfg_def.mode = 'raw'; % 'raw' or 'interp'; if 'interp', need to specify cfg_def.dt
+% cfg_def.interp_mode = 'linear';
+
+cfg_eye.window = [-2 2];
+cfg_eye.dt = .1;
+title('Laser-Aligned Eye Movement')
+% out = TSDpeth(cfg_eye, tsdH, laser_on);
+
+%% #11 BLANK
+
+%% #12 BLANK
+
+%% #13 MOVING SACCADE peth: narrow
+subtightplot(6,6,13, [cfg.tightX cfg.tightY]); hold on
+if ~isempty(sd.nasal_timestamps_MOVING) && ~isempty(sd.temporal_timestamps_MOVING)
+    cfg_1.doPlot = 0;
+    cfg_1.window = [-.2 .2];
+    cfg_1.dt = 0.01;
+    [outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, S, sd.nasal_timestamps_MOVING);
+    [mn3, edges] = histcounts(outputS_n, outputIT_n);
+    plot(edges(1:end-1), mn3/cfg_1.dt/length(sd.nasal_timestamps_MOVING), 'LineWidth', cfg.LineWidth);
+    amax = max( mn3/cfg_1.dt/length(sd.nasal_timestamps_MOVING));
+    set(gca, 'FontSize', cfg.FontSize)
+    
+    hold on
+    [outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, S, sd.temporal_timestamps_MOVING);
+    [mt3, edges] = histcounts(outputS_t, outputIT_t);
+    plot(edges(1:end-1), mt3/cfg_1.dt/length(sd.temporal_timestamps_MOVING), 'LineWidth', cfg.LineWidth);
+    bmax = max(mt3/cfg_1.dt/length(sd.temporal_timestamps_MOVING));
+    allmax = max([amax bmax]);
+    title('Sacc. peth MOVING')
+    ylabel('FR (Hz)', 'FontSize', cfg.FontSize)
+    set(gca, 'FontSize', cfg.FontSize)
+    c = axis;
+    line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '-')
+    axis([c(1) c(2) c(3) allmax])
+end
+
+%% #14 Stationary SACCADE peth: narrow
+subtightplot(6,6,14, [cfg.tightX cfg.tightY]); hold on
+
+if ~isempty(sd.nasal_timestamps_REST) && ~isempty(sd.temporal_timestamps_REST)
+    cfg_1.doPlot = 0;
+    cfg_1.window = [-.2 .2];
+    cfg_1.dt = 0.01;
+    [outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, S, sd.nasal_timestamps_REST);
+    [mn4, edges] = histcounts(outputS_n, outputIT_n);
+    plot(edges(1:end-1), mn4/cfg_1.dt/length(sd.nasal_timestamps_MOVING), 'LineWidth', cfg.LineWidth);
+    amax = max(mn4/cfg_1.dt/length(sd.nasal_timestamps_MOVING));
+    hold on
+    [outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, S, sd.temporal_timestamps_REST);
+    [mt4, edges] = histcounts(outputS_t, outputIT_t);
+    plot(edges(1:end-1), mt4/cfg_1.dt/length(sd.temporal_timestamps_MOVING), 'LineWidth', cfg.LineWidth);
+    bmax = max(mt4/cfg_1.dt/length(sd.temporal_timestamps_MOVING));
+    allmax = max([amax bmax]);
+    title('Sacc. STATIONARY')
+    set(gca, 'FontSize', cfg.FontSize)
+    xlabel('time peri saccade (s)')
+    c = axis;
+    line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '-')
+    axis([c(1) c(2) c(3) allmax])
+end
 
 %% #15 Laser PETH
 p = subtightplot(6,6,15, [cfg.tightX cfg.tightY]); hold on
 % -----------------------------------------------------------------------------------------------------------------------------------------------------
 % Get the correct timestamps for the different session events
 if cfg.doLaser == 1
-    [start_time, stop_time, laser_on, laser_off, bit0, bit4, arraysize] = SortBrainstemEventLabels;
-    % [start_time, stop_time, laser_on, laser_off, bit0, bit4] = SortBrainstemEventLabels2;
+    [~, ~, laser_on, laser_off, arraysize, ~] = SortBrainstemEventLabels3;
+    dur = mode(laser_off - laser_on);
     
-    if ~isnan(laser_on)
-        %     dur = mode(laser_off(1:arraysize) - laser_on(1:arraysize));
-        dur = mode(laser_off - laser_on);
-        
+    if ~isnan(laser_on)     
         cfg_laser.window = [-1.1 2];
         cfg_laser.dt = 0.01;
         cfg_laser.binsize = cfg_laser.dt; % used for gaussian kernal.  select a small bin size for good time resolution
@@ -304,12 +403,12 @@ if cfg.doLaser == 1
         [~, ~, ~, ~, ~] = SpikePETH_either(cfg_laser, S, laser_on); hold on
         c = axis;
         rectangle(Position = [0, 0, dur, c(4)], FaceColor=[0 1 1], EdgeColor=[0 1 1])    % change the 3rd entry in rectangle to the diff of laser_off and laser_on
-        [outputS, ~, ~, outputIT, cfg] = SpikePETH_either(cfg_laser, S, laser_on);  % this is a hack to get the background color 'in back'. otherwise it occludes the spikes.
+        [~, ~, ~, ~, ~] = SpikePETH_either(cfg_laser, S, laser_on);  % repeating spikepeth here is a hack to get the background color 'in back'. otherwise it occludes the spikes.
         line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'w')
         line([1 1], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'w')
         set(gca, 'YTick', [])
-        set(gca, 'FontSize', FontSize)
-        title('Laser PETH', 'FontSize', FontSize)
+        set(gca, 'FontSize', cfg.FontSize)
+        title('Laser PETH', 'FontSize', cfg.FontSize)
         set(gca, 'XTick', [-1 0 1 2])
         hold on
         % add line for Ave Firing Rate, esp. when rasters are so dense that it turns black
@@ -319,22 +418,25 @@ if cfg.doLaser == 1
         cfg_laser.doPlot = 0;
         cfg_laser.doRaster = 0;
         cfg_laser.doBar = 0;
-        [outputS_laser, ~, ~, outputIT_laser, cfg_out_laser] = SpikePETH_either(cfg_laser, S, laser_on);
+        [outputS_laser, ~, ~, outputIT_laser, ~] = SpikePETH_either(cfg_laser, S, laser_on);
         m = histc(outputS_laser, outputIT_laser);
         yyaxis right
         plot(outputIT_laser(1:end-1),m(1:end-1)/cfg_laser.dt/length(laser_on), 'LineWidth', 4);   % JJS. 11/15/22. This is a hack. Last value of m is always zero (erroneously).
     else
         disp('laser events not found')
-        title('Laser PETH', 'FontSize', FontSize)
+        title('Laser PETH', 'FontSize', cfg.FontSize)
     end
-    %% #16 DUMMY Peth
-    p = subtightplot(6,6,16, [cfg.tightX cfg.tightY]); hold on
-    
+end
+
+%% #16 DUMMY Peth
+p = subtightplot(6,6,16, [cfg.tightX cfg.tightY]); hold on
+if cfg.doLaser == 1
+    events_ts = LoadEvents([]); %#ok<*NASGU>
     wrapper = @(events_ts) strcmp(events_ts, 'ShutterSound On');
-    A = cellfun(wrapper, events_ts.label);
+    A = cellfun(wrapper, sd.Events.label);
     sound_label = find(A); % index which label corresponds to 'ShutterSound On'
     if ~isempty(sound_label)
-        sound_times = events_ts.t{sound_label};
+        sound_times = sd.Events.t{sound_label};
         sound_times = sound_times - start_time;
         
         cfg_dummy.window = [-1.1 2];
@@ -346,12 +448,12 @@ if cfg.doLaser == 1
         [~, ~, ~, ~, ~] = SpikePETH_either(cfg_dummy, S, sound_times); hold on
         c = axis;
         rectangle(Position = [0, 0, dur, c(4)], FaceColor=[0 .9 .4], EdgeColor=[0 .9 .4])    % change the 3rd entry in rectangle to the diff of laser_off and laser_on
-        [outputS_dummy, ~, ~, outputIT_dummy, cfg_out_dummy] = SpikePETH_either(cfg_dummy, S, sound_times);  % this is a hack to get the background color 'in back'. otherwise it occludes the spikes.
+        [~, ~, ~, ~, ~] = SpikePETH_either(cfg_dummy, S, sound_times);  % this is a hack to get the background color 'in back'. otherwise it occludes the spikes.
         line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'w')
         line([1 1], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'w')
         set(gca, 'YTick', [])
-        set(gca, 'FontSize', FontSize)
-        title('Dummy PETH', 'FontSize', FontSize)
+        set(gca, 'FontSize', cfg.FontSize)
+        title('Dummy PETH', 'FontSize', cfg.FontSize)
         set(gca, 'XTick', [-1 0 1 2])
         set(gca, 'Ylabel', [])
         hold on
@@ -361,21 +463,22 @@ if cfg.doLaser == 1
         cfg_dummy.doPlot = 0;
         cfg_dummy.doRaster = 0;
         cfg_dummy.doBar = 0;
-        [outputS_dummy, ~, ~, outputIT_dummy, cfg_out_dummy] = SpikePETH_either(cfg_dummy, S, sound_times);
-        m = histc(outputS_dummy, outputIT_dummy);
+        [outputS_dummy, ~, ~, outputIT_dummy, ~] = SpikePETH_either(cfg_dummy, S, sound_times);
+        m = histc(outputS_dummy, outputIT_dummy); %#ok<*HISTC>
         % m = histcounts(outputS, outputIT);
         yyaxis right
         plot(outputIT_dummy(1:end-1),m(1:end-1)/cfg_dummy.dt/length(sound_times), 'LineWidth', 4);   % JJS. 11/15/22. This is a hack. Last value of m is always zero (erroneously).
-        
     else
         warning('this session lacks shutter sound timestamps.')
-        title('Dummy PETH', 'FontSize', FontSize)
+        title('Dummy PETH', 'FontSize', cfg.FontSize)
+        set(gca, 'XTick', [])
+        set(gca, 'YTick', [])
     end
 else
     disp('Laser events, if they exist, skipped')
 end
 
-%% #16 Average Waveform
+%% #17 Average Waveform
 p = subtightplot(6,6,17, [cfg.tightX cfg.tightY]); hold on
 % title('Average Waveform', 'FontSize', FontSize)
 waveName = strcat(newID, '-wv.mat');
@@ -414,154 +517,57 @@ else
     disp('no wave file found. skipping average waveform')
 end
 set(gca, 'XTick', [])
-set(gca, 'FontSize', FontSize)
+set(gca, 'FontSize', cfg.FontSize)
 axis tight
 p.YAxisLocation = 'right';
 
+%% #18 Session ID
+subtightplot(6,6, 18, [cfg.tightX cfg.tightY]);
+title(newID, 'Color', 'r', 'FontSize', 20)
+set(gca, 'XTick', [])
+set(gca, 'YTick', [])
 
+%% #19:24 WHEEL SPEED and AHV
+plot19 = subtightplot(6,6,19:24, [cfg.tightX cfg.tightY]);
 
-
-
-
-%% #8 Stationary SACCADE peth: wide
-subtightplot(6,6,8, [cfg.tightX cfg.tightY]); hold on
-if ~isempty(nasal_timestamps_REST) && ~isempty(temporal_timestamps_REST)
-    cfg_1.doPlot = 0;
-    cfg_1.window = [-2 2];
-    cfg_1.dt = 0.005;
-    [outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, S, nasal_timestamps_REST);
-    [mn2, edges] = histcounts(outputS_n, outputIT_n);
-    plot(edges(1:end-1), mn2/cfg_1.dt/length(nasal_timestamps_MOVING), 'LineWidth', LineWidth);
-    amax = max(mn2/cfg_1.dt/length(nasal_timestamps_MOVING));
+if exist(WheelencoderCSC)
+    yyaxis left
+    plot(sd.speed.tvec, sd.speed.data, 'Color', 'm')    
+    set(gca, 'Xlim', [0 sd.speed.tvec(end)], 'FontSize', cfg.FontSize)
+    ylabel('Wheel Speed (cm/s)', 'Color', 'm')
+    yyaxis right
+    plot(sd.AHV.tvec, sd.AHV.data)
+    set(gca, 'XTick', [])
+    ylabel('AHV')
     
-    hold on
-    [outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, S, temporal_timestamps_REST);
-    [mt2, edges] = histcounts(outputS_t, outputIT_t);
-    plot(edges(1:end-1), smoothdata(mt2/cfg_1.dt/length(temporal_timestamps_MOVING)), 'LineWidth', LineWidth);
-    bmax = max(smoothdata(mt2/cfg_1.dt/length(temporal_timestamps_MOVING)));
-    allmax = max([amax bmax]);
-    c = axis;
-    line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '-')
-    legend('nasal', 'temporal', '', 'FontSize', cfg.smallfont)
-    set(gca, 'FontSize', FontSize)
-    % set(gca, 'XTick', [])
-    set(gca, 'XTick', [-2 2])
-    axis([c(1) c(2) c(3) allmax])
-end
-text(NaN, NaN, strcat('#temp.=', sprintf('%0.0f', numTemporal_stationary)), 'FontSize', 16, 'Units', 'normalized', 'Position', [.02 .95 0])
-text(NaN, NaN, strcat('#nasal=', sprintf('%0.0f', numNasal_stationary)), 'FontSize', 16, 'Units', 'normalized', 'Position', [.02 .80 0])
-
-%% #13 MOVING SACCADE peth: narrow
-subtightplot(6,6,13, [cfg.tightX cfg.tightY]); hold on
-
-if ~isempty(nasal_timestamps_MOVING) && ~isempty(temporal_timestamps_MOVING)
-    cfg_1.doPlot = 0;
-    cfg_1.window = [-.2 .2];
-    cfg_1.dt = 0.01;
-    [outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, S, nasal_timestamps_MOVING);
-    [mn3, edges] = histcounts(outputS_n, outputIT_n);
-    plot(edges(1:end-1), mn3/cfg_1.dt/length(nasal_timestamps_MOVING), 'LineWidth', LineWidth);
-    amax = max( mn3/cfg_1.dt/length(nasal_timestamps_MOVING));
-    set(gca, 'FontSize', FontSize)
-    
-    hold on
-    [outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, S, temporal_timestamps_MOVING);
-    [mt3, edges] = histcounts(outputS_t, outputIT_t);
-    plot(edges(1:end-1), mt3/cfg_1.dt/length(temporal_timestamps_MOVING), 'LineWidth', LineWidth);
-    bmax = max(mt3/cfg_1.dt/length(temporal_timestamps_MOVING));
-    allmax = max([amax bmax]);
-    title('Sacc. peth MOVING')
-    ylabel('FR (Hz)', 'FontSize', FontSize)
-    set(gca, 'FontSize', FontSize)
-    c = axis;
-    line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '-')
-    axis([c(1) c(2) c(3) allmax])
+    yyaxis left
+    c = axis; hold on
+    if cfg.doLaser
+        if ~isnan(laser_on)
+            for iLaser = 1:arraysize
+                rectangle(Position=[laser_on(iLaser), 0, laser_off(iLaser) - laser_on(iLaser), c(4)], FaceColor=[0 1 1], EdgeColor=[0 1 1])
+            end
+        end
+        if exist('sound_times')
+            for iSound = 1:length(sound_times)
+                rectangle(Position=[sound_times(iSound), 0, 1, c(4)], FaceColor=[0 .9 .4], EdgeColor=[0 .9 .4])  % JJS. 11/19/22. For now, shutter sound duration is 1 second.
+            end
+        end
+    end
 end
 
-%% #14 Stationary SACCADE peth: narrow
-subtightplot(6,6,14, [cfg.tightX cfg.tightY]); hold on
-
-if ~isempty(nasal_timestamps_REST) && ~isempty(temporal_timestamps_REST)
-    cfg_1.doPlot = 0;
-    cfg_1.window = [-.2 .2];
-    cfg_1.dt = 0.01;
-    [outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, S, nasal_timestamps_REST);
-    [mn4, edges] = histcounts(outputS_n, outputIT_n);
-    plot(edges(1:end-1), mn4/cfg_1.dt/length(nasal_timestamps_MOVING), 'LineWidth', LineWidth);
-    amax = max(mn4/cfg_1.dt/length(nasal_timestamps_MOVING));
-    hold on
-    [outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, S, temporal_timestamps_REST);
-    [mt4, edges] = histcounts(outputS_t, outputIT_t);
-    plot(edges(1:end-1), mt4/cfg_1.dt/length(temporal_timestamps_MOVING), 'LineWidth', LineWidth);
-    bmax = max(mt4/cfg_1.dt/length(temporal_timestamps_MOVING));
-    allmax = max([amax bmax]);
-    title('Sacc. STATIONARY')
-    set(gca, 'FontSize', FontSize)
-    xlabel('time peri saccade (s)')
-    c = axis;
-    line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '-')
-    axis([c(1) c(2) c(3) allmax])
-end
-
-%% #9 AHV PETH
-subtightplot(6,6,9, [cfg.tightX cfg.tightY]); hold on
-cfg_peth.window = [-2 2];
-cfg_peth.mode = 'interp';
-cfg_peth.dt = median(diff(AHV_tsd.tvec));
-out_nasal = TSDpeth(cfg_peth, AHV_tsd, nasal_timestamps_MOVING);
-out_temporal = TSDpeth(cfg_peth, AHV_tsd, temporal_timestamps_MOVING);
-plot(out_nasal, 'LineWidth', LineWidth); hold on
-plot(out_temporal, 'LineWidth', LineWidth);
-%                 ylabel('AHV (deg/s)')
-set(gca, 'FontSize', FontSize)
-axis tight
-c = axis;
-axis([-2 2 c(3) c(4)])
-line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '-')
-legend('nasal', 'temporal', '', 'FontSize', cfg.smallfont)
-set(gca, 'XTick', [-2 2])
-t = title('AHV PETH', 'Units', 'normalized', 'Position', [0.5, 0.5, 0], 'FontSize', FontSize);
-% ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-%% #10 laser-triggered EYE movement
-subtightplot(6,6,11, [cfg.tightX cfg.tightY]); hold on
-% out: tsd with PETH
-% cfg options:
-%
-% cfg_def.window = [-2 2]; % start and end times of window (in s)
-% cfg_def.dt = []; % time step, specify this for 'interp' mode
-% cfg_def.mode = 'raw'; % 'raw' or 'interp'; if 'interp', need to specify cfg_def.dt
-% cfg_def.interp_mode = 'linear';
-
-cfg_eye.window = [-2 2];
-cfg_eye.dt = .1;
-% out = TSDpeth(cfg_eye, tsdH, laser_on);
-
-
-
-% -------------------------------------------------------------------------------------------------------------------------------------------------------------------
-% -------------------------------------------------------------------------------------------------------------------------------------------------------------------
-% -------------------------------------------------------------------------------------------------------------------------------------------------------------------
-% -------------------------------------------------------------------------------------------------------------------------------------------------------------------
-% -------------------------------------------------------------------------------------------------------------------------------------------------------------------
-% -------------------------------------------------------------------------------------------------------------------------------------------------------------------
-% -------------------------------------------------------------------------------------------------------------------------------------------------------------------
-% -------------------------------------------------------------------------------------------------------------------------------------------------------------------
-% -------------------------------------------------------------------------------------------------------------------------------------------------------------------
-% -------------------------------------------------------------------------------------------------------------------------------------------------------------------
-% -------------------------------------------------------------------------------------------------------------------------------------------------------------------
-% -------------------------------------------------------------------------------------------------------------------------------------------------------------------
-% -------------------------------------------------------------------------------------------------------------------------------------------------------------------
 %%  #25:30 FIRING RATE and AHV
-plot7 = subtightplot(6,6,25:30, [cfg.tightX cfg.tightY]); hold on
+plot25 = subtightplot(6,6,25:30, [cfg.tightX cfg.tightY]); hold on
 cfg_Q = []; cfg_Q.dt = 0.001; cfg_Q.gausswin_sd = 0.05;cfg_Q.smooth = 'gauss';
 Q = MakeQfromS(cfg_Q, S);
 tvec = Q.tvec - Q.tvec(1);
 yyaxis left
 h = plot(Q.tvec, Q.data./cfg_Q.dt);
-set(gca, 'Xlim', [0 tvec(end)], 'FontSize', FontSize)
-ylabel('FR (Hz)', 'FontSize', FontSize)
+set(gca, 'Xlim', [0 tvec(end)], 'FontSize', cfg.FontSize)
+ylabel('FR (Hz)', 'FontSize', cfg.FontSize)
 yyaxis right
-plot(AHV_tsd.tvec, AHV_tsd.data)
+plot(sd.AHV.tvec, sd.AHV.data)
+ylabel('AHV')
 % set(gca, 'XTick', [])
 yyaxis left
 c = axis;
@@ -580,68 +586,31 @@ if cfg.doLaser == 1
 end
 % g.FaceColor = h.FaceColor;
 
-%% #19:24 WHEEL SPEED and AHV
-plot8 = subtightplot(6,6,19:24, [cfg.tightX cfg.tightY]);
-
-encoderCSC = strcat(SSN, '-CSC34.Ncs');
-if exist(encoderCSC)
-    yyaxis left
-    updownTSD = getQEupdown([]);
-    state_tsd = ConvertQEUpDownToState(updownTSD);
-    [~, wheel_tsd] = ConvertQEStatesToAngle([], state_tsd);
-    [d, speed, cfg_w] = ConvertWheeltoSpeed([], wheel_tsd);
-    speed.tvec = speed.tvec - sd.starttime;
-    plot(speed.tvec, -speed.data)    % IMPORTANT: there is a sign change here b/c the voltage change in response to the mouse moving forward is negative. When the mouse moves 'forward', the wheel moves 'backward'.
-    set(gca, 'Xlim', [0 tvec(end)], 'FontSize', FontSize)
-    ylabel('Wheel Speed (cm/s)')
-    yyaxis right
-    plot(AHV_tsd.tvec, AHV_tsd.data)
-    set(gca, 'XTick', [])
-    
-    yyaxis left
-    c = axis; hold on
-    if cfg.doLaser
-        if ~isnan(laser_on)
-            for iLaser = 1:arraysize
-                rectangle(Position=[laser_on(iLaser), 0, laser_off(iLaser) - laser_on(iLaser), c(4)], FaceColor=[0 1 1], EdgeColor=[0 1 1])
-            end
-        end
-        if exist('sound_times')
-            for iSound = 1:length(sound_times)
-                rectangle(Position=[sound_times(iSound), 0, 1, c(4)], FaceColor=[0 .9 .4], EdgeColor=[0 .9 .4])  % JJS. 11/19/22. For now, shutter sound duration is 1 second.
-            end
-        end
-    end
-    plot(speed.tvec, -speed.data)
-end
-
-
 %% #31:36 HORIZONTAL EYE POSITIION and AHV
-plot9 = subtightplot(6,6,31:36, [cfg.tightX cfg.tightY]);
-SSN = HD_GetSSN;
-if exist(strcat(SSN, '-VT1_proc.mat'))
-    load(strcat(SSN, '-VT1_proc.mat'), 'pupil');         % load the output of facemap
-    [a, b, c] = fileparts(FindFile('*VT1.smi'));
+plot31 = subtightplot(6,6,31:36, [cfg.tightX cfg.tightY]);
+if exist(strcat(sd.SSN, '-VT1_proc.mat'))
+    load(strcat(sd.SSN, '-VT1_proc.mat'), 'pupil');         % load the output of facemap
+    [~, b, c] = fileparts(FindFile('*VT1.smi'));
     fn = strcat(b,c);
     tvec_raw = read_smi(fn);
     tvec = tvec_raw - sd.starttime;
-    if strcmp(SSN, 'M281-2021-12-23')              % exception for this session where cheetah crashed and .smi is shorter than pupilH
+    if strcmp(sd.SSN, 'M281-2021-12-23')              % exception for this session where cheetah crashed and .smi is shorter than pupilH
         tvec = .02*(1:length( pupil{1}.com));
         tvec = tvec';
     end
     yyaxis left
-    plot(tvec, pupil{1}.com(:,2));         % pupil{1}.com(:,2)  is the horizontal eye position from facemap
-    ylabel('Horiz. Eye Pos. (pixels)', 'FontSize', FontSize)
-    xlabel('Time (sec)', 'FontSize', FontSize)
-    set(gca, 'FontSize', FontSize)
+    plot(tvec, pupil{1}.com(:,2), 'Color', 'k');         % pupil{1}.com(:,2)  is the horizontal eye position from facemap
+    ylabel('Horiz. Eye Pos. (pixels)', 'FontSize', cfg.FontSize, 'Color', 'k')
+    xlabel('Time (sec)', 'FontSize', cfg.FontSize)
+    set(gca, 'FontSize', cfg.FontSize)
     
     yyaxis right
-    plot(AHV_tsd.tvec, AHV_tsd.data)
+    plot(sd.AHV.tvec, sd.AHV.data)
     ylabel('AHV (deg./sec)')
     c = axis;
-    axis([c(1) AHV_tsd.tvec(end) c(3) c(4)]);
+    axis([c(1) sd.AHV.tvec(end) c(3) c(4)]);
     %%
-    linkaxes([plot7 plot8 plot9], 'x');
+    linkaxes([plot19 plot25 plot31], 'x');
     
     yyaxis left
     c = axis; hold on
@@ -657,19 +626,11 @@ if exist(strcat(SSN, '-VT1_proc.mat'))
             end
         end
     end
-    plot(tvec, pupil{1}.com(:,2), 'LineStyle', '-');
 else
     disp('no eyetracking data for this session')
 end
 
-%% #18 Session ID
-p = subtightplot(6,6, 18, [cfg.tightX cfg.tightY]);
-title(newID, 'Color', 'r', 'FontSize', 20)
-set(gca, 'XTick', [])
-set(gca, 'YTick', [])
+
 toc
-
-
-
 end
 

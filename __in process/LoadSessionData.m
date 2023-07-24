@@ -159,10 +159,10 @@ if EYE
 [~, ~, ~, ~, sd.nasal_timestamps_MOVING, sd.temporal_timestamps_MOVING] = isolateManualSaccades();
 [~, ~, sd.nasal_timestamps_REST, sd.temporal_timestamps_REST] = isolateStationarySaccades();
 
-sd.numNasal_moving = length(nasal_timestamps_MOVING); if sd.numNasal_moving == 1; sd.numNasal_moving = 0; end  % if this array is a single NaN, then there are in fact no saccades.
-sd.numNasal_stationary = length(nasal_timestamps_REST); if sd.numNasal_stationary == 1; sd.numNasal_stationary = 0; end % if this array is a single NaN, then there are in fact no saccades.
-sd.numTemporal_moving = length(temporal_timestamps_MOVING); if sd.numTemporal_moving == 1; sd.numTemporal_moving = 0; end % if this array is a single NaN, then there are in fact no saccades.
-sd.numTemporal_stationary = length(temporal_timestamps_REST); if sd.numTemporal_stationary == 1; sd.numTemporal_stationary = 0; end % if this array is a single NaN, then there are in fact no saccades.
+sd.numNasal_moving = length(sd.nasal_timestamps_MOVING); if sd.numNasal_moving == 1; sd.numNasal_moving = 0; end  % if this array is a single NaN, then there are in fact no saccades.
+sd.numNasal_stationary = length(sd.nasal_timestamps_REST); if sd.numNasal_stationary == 1; sd.numNasal_stationary = 0; end % if this array is a single NaN, then there are in fact no saccades.
+sd.numTemporal_moving = length(sd.temporal_timestamps_MOVING); if sd.numTemporal_moving == 1; sd.numTemporal_moving = 0; end % if this array is a single NaN, then there are in fact no saccades.
+sd.numTemporal_stationary = length(sd.temporal_timestamps_REST); if sd.numTemporal_stationary == 1; sd.numTemporal_stationary = 0; end % if this array is a single NaN, then there are in fact no saccades.
 end
 
 %----------------------------
