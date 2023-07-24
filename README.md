@@ -1,36 +1,33 @@
 # HD-system-brainstem
 Code for analyzing data from recordings in mouse brainstem head direction circuit. 
 
-Makes extensive use of the vandermeerlab codebase. Use this commit: https://github.com/vandermeerlab/vandermeerlab/tree/e4ff8327ee8b7b65a856499f25bad2c7d57524dc
+Makes extensive use of the vandermeerlab codebase. Use [this commit](https://github.com/vandermeerlab/vandermeerlab/tree/e4ff8327ee8b7b65a856499f25bad2c7d57524dc).
 
-Execute these lines when you begin analysis to set up the correct Matlab path for analysis. 
+Execute these lines when you begin analysis to set up the correct MATLAB path for analysis. 
 
+```
 %% set up
 restoredefaultpath;
 clear classes;
 addpath(genpath('D:\My_Documents\GitHub\vandermeerlab\code-matlab\shared')); % replace with your path
 addpath(genpath('D:\My_Documents\GitHub\HD-system-brainstem')); % replace with your path
+```
+
+Several example sessions are available for download in [this google drive folder](https://drive.google.com/drive/folders/11RaD-QtlHRowaEffT6OR2wNw98RGl02i?usp=sharing). One session has prototypical AHV cells. One session has prototypical eye movement modulated cells. One sessions has an opto-tagged cell. 
+
+![exp_setup](https://github.com/vandermeerlab/HD-system-brainstem/assets/1922878/25ac3863-7612-477f-a943-fb0cd27e1097)
 
 
-Several example sessions are available for download in a google drive folder: 
-https://drive.google.com/drive/folders/11RaD-QtlHRowaEffT6OR2wNw98RGl02i?usp=sharing
-One session has prototypical AHV cells. One session has prototypical eye movement modulated cells. One sessions has an opto-tagged cell. 
+Experiments were carried out with head-fixed mice on a running wheel. The platform situated below the mice could be rotated like a lazy susan so that the mice experienced periods of sinusoidal rotation at varying speeds. The platform speed is referred to as angular head velocity (AHV). 
 
-
-![recording setup](https://user-images.githubusercontent.com/16581827/235463777-083eddcd-3555-46cc-8685-165e3a747383.JPG)
-
-
-
-Experiments were carried out with headfixed mice on a running wheel. The platform situated below the mice could be rotated like a lazy susan so that the mice experienced periods of sinusoidal rotation at varying speeds. The platform speed is referred to as angular head velocity (AHV). 
-
-A camera and infrared light source were situated near the left eye to record eye movement data. The video data were analyzed with Facemap https://github.com/MouseLand/facemap to extract a time series of pupil position. Velocity was calculated (from position) and thresholded to get candidate saccade event times. These candidate events were screened by the experimenter to exclude events that appeared to be false positives and to include missed events. Pupil position coordinates are in units of camera pixels (x,y). The technically difficult process of calibrating and measurement needed to obtain degrees of visual angle was not conducted. 
+A camera and infrared light source were situated near the left eye to record eye movement data. The video data were analyzed with [Facemap](https://github.com/MouseLand/facemap) to extract a time series of pupil position. Velocity was calculated (from position) and thresholded to get candidate saccade event times. These candidate events were screened by the experimenter to exclude events that appeared to be false positives and to include missed events. Pupil position coordinates are in units of camera pixels (x,y). The technically difficult process of calibrating and measurement needed to obtain degrees of visual angle was not conducted. 
 
 ![sample eye trace](https://user-images.githubusercontent.com/16581827/235464246-c8276ff3-332f-431e-b532-2ef623d9a3a3.JPG)
 
 
 16 channel silicon probes from Neuronexus were advanced through a craniotomy to reach brainstem targets in the earliest part of the HD circuit; namely, nucleus prepositus (NPH), Gigantocellular nucleus (Gi) -- just below NPH, and supragenual nucleus (SGN). 
 
-In some sessions, transgenic mice with viral injections into the dorsal tegmental nucleus (DTN) recieved pulses of blue laser light with combined optical silicon probes. The purpose of the injection + laser was to identify photoresponsive cells projecting to DTN (i.e., optotagging). Because the shutter that operates the laser makes an audible sound, a "dummy" sound stimulus was added in later sessions to control for neurons that might be response to sound or a surprising stimulus. 
+In some sessions, transgenic mice with viral injections into the dorsal tegmental nucleus (DTN) recieved pulses of blue laser light with combined optical silicon probes. The purpose of the injection + laser was to identify photoresponsive cells projecting to DTN (i.e., optotagging). Because the shutter that operates the laser makes an audible sound, a "dummy" sound stimulus was added in later sessions to control for neurons that might be responsive to sound or a surprising stimulus. 
 
 Below is a list of important files/file types for each session. 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -44,7 +41,7 @@ All files start with the mouse SSN. The SSN is the mouse identity and the date o
 
 **.smi** 		-  This file contains information about the time of each camera frame. It is used to align data in the mp4 file.
 
-**proc.mat**		-  This file contains the eye tracking (plus some extras) information that is extracted from the mp4 the Facemap piece of software. Some manual input from the experimenter is required.  https://github.com/MouseLand/facemap
+**proc.mat**		-  This file contains the eye tracking (plus some extras) information that is extracted from the mp4 by the [Facemap](https://github.com/MouseLand/facemap) software. Some manual input from the experimenter is required. 
 
 **-saccades-edited.mat**		-  After the mostly automated processing with Facemap, the x,y pupil position data is then thresholded to identify saccade times and amplitudes. There is a manual curation step for removing false positives and adding false negatives. The amount of manual tuning depends on the quality of the eyetracking. 
 		variables are ...nasalSaccades (timestamps)		nasalAmplitudes (amplitude, in pixels)			temporalSaccades (timestamps)		                      temporalAmplitudes (amplitude, in pixels)		
@@ -90,7 +87,9 @@ Efforts were made during surgery to cement the headbar in place so that it was l
 
 
 
-Use [blank] function to plot all of the relevant information in one figure with subplots. 
+Use fingerprintPlot() to plot all of the relevant information in one figure with subplots. 
+
+![M390-2023-01-31-1-TT01_1](https://github.com/vandermeerlab/HD-system-brainstem/assets/16581827/64167fed-f5a2-4389-8b72-1c5cb0cc605c)
 
 
 
