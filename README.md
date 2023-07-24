@@ -87,7 +87,9 @@ Efforts were made during surgery to cement the headbar in place so that it was l
 
 
 
-Use [blank] function to plot all of the relevant information in one figure with subplots. 
+Use fingerprintPlot() to plot all of the relevant information in one figure with subplots. 
+
+![M390-2023-01-31-1-TT01_1](https://github.com/vandermeerlab/HD-system-brainstem/assets/16581827/64167fed-f5a2-4389-8b72-1c5cb0cc605c)
 
 
 
