@@ -10,13 +10,13 @@ if isempty(endSess) ==1
 end
 for iSess = startSess:endSess
     pushdir(fileparts(fd{iSess}));
-    SSN = HD_GetSSN; disp(SSN);
-    S = LoadSpikesJeff;
-    for iCell = 1:length(S.t)
-        brainstem_megaplot(iCell)
+%     SSN = HD_GetSSN; disp(SSN);
+    sd = LoadSessionData([]);
+    for iCell = 1:length(sd.S.t)
+        fingerprintPlot([], sd, iCell)
         set(gcf, 'Position', get(0, 'Screensize'));
-        pushdir('D:\Jeff\U01\presentations\GRC conference 2023\megaplots');
-        WriteFig(strcat(SSN, '-megaplot', num2str(iCell)))
+        pushdir('D:\Jeff\U01\analysis\figs\megaplots');
+        WriteFig(strcat(sd.SSN, '-megaplot', num2str(iCell)))
         disp('figure saved')
         popdir;
     end

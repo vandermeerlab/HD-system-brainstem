@@ -128,6 +128,7 @@ for iEvent = 1:arraysize
     idiff(iEvent) = laser_off(iEvent) - laser_on(iEvent);
     try
         assert((idiff(iEvent)) < 1.01 &&  (idiff(iEvent) > 0.99)); % all laser intervals should be one second long. Check that they are indeed 1 second intervals.
+        %                                                            Two sessions that don't fit this rule are M212-2021-07-21 and M212-07-22. They have 0.5 sec laser pulses. Also M271 sessions. 
     catch
         disp(iEvent)
         warning('laser duration is not correct')

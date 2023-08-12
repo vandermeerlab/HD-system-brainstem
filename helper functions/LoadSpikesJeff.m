@@ -8,16 +8,13 @@ S = LoadSpikes(cfg);
 
 % New cheetah versions have timestamps that are in Unix Epoch Time
 events_ts = LoadEvents([]);
-index = strfind(events_ts.label, 'Starting Recording');
-if index{1} == 1;
-    for iC = 1:length(S.t)
-        S.t{iC} = S.t{iC} - events_ts.t{1}(1);  % subtract the very first time stamp to convert from Unix time to 'start at zero' time.
-    end
-elseif index{2} == 1;
-    for iC = 1:length(S.t)
-        S.t{iC} = S.t{iC} - events_ts.t{2}(1);  % subtract the very first time stamp to convert from Unix time to 'start at zero' time.
-    end
-else
-    warning('could not find start record time')
+
+wrapper = @(events_ts) strcmp(events_ts, 'Starting Recording');
+A = cellfun(wrapper, events_ts.label);
+Startindex = find(A); % index which label says 'Start Recording'
+starttime = events_ts.t{Startindex}(1); % use the very first start record time
+
+for iC = 1:length(S.t)
+    S.t{iC} = S.t{iC} - starttime;  % subtract the very first time stamp to convert from Unix time to 'start at zero' time.
 end
 
