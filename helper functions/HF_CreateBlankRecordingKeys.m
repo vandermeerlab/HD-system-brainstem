@@ -17,6 +17,13 @@ for iSess = startSess:endSess;
     
     fout = cat(2,SSN,'_keys.m');
     fout = regexprep(fout,'-','_');
+    
+    does_exist = exist(fout);
+    if does_exist == 2
+        disp('keys file already exists. Check this file to see if you want to overwrite it.')
+        return
+    end
+    
     fid = fopen(fout,'w');
     %populate keys.m
     fprintf(fid,'ExpKeys.Behavior = ''%s'';\n','HF Task');               % What is the task? Headfixed, freely moving, etc. 
