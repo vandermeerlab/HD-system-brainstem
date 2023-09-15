@@ -47,10 +47,9 @@ for iSess = startSess:endSess;
     %     fprintf(fid,'ExpKeys.DepthFromSkull = %d;\n',NaN); % Estimated depth from skull surface. Based on stereotax values.
     %     fprintf(fid,'ExpKeys.Notes = %d;\n', NaN);
     %%
-    fprintf(fid,'ExpKeys.Behavior = ''%s'';\n','HF Task');  
-    fprintf(fid,'ExpKeys.notes = ''%s'';\n',''); 
-                                %''%s'';\n','');
-    
+    fprintf(fid,'ExpKeys.notes = ''%s'';\n','');
+
+    fprintf(fid,'eventLabels = ''%s'';\n','{}'); % list of strings that indicates the identity of each event code. Could include 'optical stimulation', 'lights out recording', etc.
     %     ExpKeys.eventLabels = {};         % list of strings that indicates the identity of each event code. Could include 'optical stimulation', 'lights out recording', etc.
     %
     %
