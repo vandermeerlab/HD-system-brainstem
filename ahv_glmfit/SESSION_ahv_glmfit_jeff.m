@@ -15,10 +15,9 @@ cfg_def.tc_binEdges = -150:10:150; % for AHV TC
 cfg_def.pupil_tc_binEdges = -80:5:80; % for pupilX TC
 cfg_def.skip_amp = 1;  % skip calculating saccade amplitude as part of the model
 cfg_def.plotAllPoints = 1;   % plot all of the points in the tuning curve scatterplot and all of the points in the pupil position plot
+cfg_def.intermediate_file_path = ''; % needed for SaccadePETH.mat file, define this in function call
 
-cfg = ProcessConfig2(cfg_def, cfg_in);
-
-cfg_master = cfg;
+cfg_master = ProcessConfig2(cfg_def, cfg_in);
 cfg_master.gausswin = gausswin(1./cfg_master.dt, 20); cfg_master.gausswin = cfg_master.gausswin ./ sum(cfg_master.gausswin);
 
 %% load data
@@ -83,9 +82,7 @@ this_pupilX = tsd(sd.TVECc, p.pupilX');
 cfg_peth = [];
 % [FRxBinT, FRxBinN, FRxBinTsmooth, FRxBinNsmooth, FRxBinTnorm, FRxBinNnorm, TnormSmooth, NnormSmooth, outputIT, binCenters, ~, cellID, cellname] = makeSaccadeHeatPlot(cfg_peth);
 % [Z] = makeSaccadeHeatPlot(cfg_in, nasalSaccadesToUse, temporalSaccadesToUse, varargin).  This is the current version. 
-pushdir('D:\Jeff\U01\analysis\dot mat files');
-load SaccadePETHs
-popdir;
+pushdir(cfg_master.intermediate_file_path); load SaccadePETHs; popdir;
 
 x1 = Z.FRxBinNsmooth'; x2 = Z.FRxBinTsmooth'; x = cat(2, x1, x2);
 [coeff, score] = pca(x);
