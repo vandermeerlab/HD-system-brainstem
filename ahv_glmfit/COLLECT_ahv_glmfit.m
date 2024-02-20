@@ -1,8 +1,11 @@
 %% collect data from all sessions
 %% set up data path
-cd('C:\data');
+cd('C:\data\U01\datatouse');
 cfg = [];
-cfg.rats = {'M085', 'M089', 'M090'};
+%cfg.rats = {'M085', 'M089', 'M090'}; % only specific folders
+f = dir; f = f(3:end); f = f([f.isdir]); % grab all folder names
+cfg.rats = {f.name};
+
 fd = getDataPath(cfg);
 
 %%
@@ -18,7 +21,11 @@ out = [];
 for iS = 1:length(fd)
    pushdir(fd{iS});
    
+   %try
    out = cat(2, out, SESSION_ahv_glmfit(cfg_master));
+   %catch
+   %    disp('Session skipped.')
+   %end
    
    popdir;
 end

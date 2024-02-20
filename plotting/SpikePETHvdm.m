@@ -14,7 +14,7 @@ function [outputS, outputT, outputGau, outputIT, cfg] = SpikePETHvdm(cfg_in, S,t
 %           -
 % based on spikePETH by MvdM
 % modified by EC to match mvdmlab codebase- 2017-05-01%% set defaults
-doPlot = 1;
+cfg_def.doPlot = 1;
 cfg_def.window = [-1 2];
 % cfg_def.dt = 0.00025;
 cfg_def.dt = 0.01;
@@ -82,7 +82,7 @@ if isempty(outputT)
     return
 end
 %% display
-if doPlot ==1
+if cfg.doPlot ==1
     clf% spike raster
     subplot(2,1,1);
     % 	imagesc(window,[1 nT], outputID);

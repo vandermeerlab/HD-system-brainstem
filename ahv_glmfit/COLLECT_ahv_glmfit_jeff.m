@@ -1,13 +1,8 @@
-function [cfg_master, out, rsq_all, sacc_gain, ahv_gain, peth_bin_centers, sessUsed] = COLLECT_ahv_glmfit_jeff(varargin)
-
-%% collect data from all sessions
-%% set up data path
-cd('C:\Jeff\U01\datatouse');
+%% collector script to run GLM fits on all sessions, collect and plot the results
+% set up list of sessions: run from top-level data folder, e.g. cd('C:\data\U01\datatouse');
 cfg = [];
-cfg.doPlot = 1;
-cfg.doColor = 1; 
-cfg.FontSize = 10;
-cfg.rats = {'M039', 'M052', 'M055', 'M079', 'M080', 'M085', 'M086', 'M089', 'M090', 'M094', 'M096', 'M104', 'M105', 'M112', 'M212', 'M269', 'M271', 'M293'};
+%cfg.rats = {'M039', 'M052', 'M055', 'M079', 'M080', 'M085', 'M086', 'M089', 'M090', 'M094', 'M096', 'M104', 'M105', 'M112', 'M212', 'M269', 'M271', 'M293'};
+cfg.rats = {'M052'};
 fd = getDataPath(cfg);
 
 endSess = length(fd);
@@ -18,13 +13,17 @@ cfg_master.maxlag = 200; % bins for use in saccade PETH
 cfg_master.debug = 0;
 cfg_master.tc_binEdges = -150:10:150;
 cfg_master.pupil_tc_binEdges = -80:5:80; % for pupilX TC
+cfg_master.doPlot = 1;
+cfg_master.doColor = 1; 
+cfg_master.FontSize = 10;
+cfg_master.intermediate_file_path = 'C:\data\U01\datatouse\intermediate_files';
 
 out = [];
 sessUsed = {};
 sessCounter = 0;
 skip = 0;  % there are four sessions that return errors when the model that includes saccade amplitude is used.
 
-process_varargin(varargin);
+%process_varargin(varargin);
 
 for iS = 1:endSess
     pushdir(fd{iS});
@@ -75,7 +74,7 @@ if cfg_master.doPlot == 1
     xlabel('full model R^2'); ylabel('count');
     
     subplot(221)           % Scatterplot of gain from AHV or EYE  
-    if cfg.doColor == 1; cmap = colormap(jet(round(100*max(rsq_all)))); else cmap = zeros(100,3); end
+    if cfg_master.doColor == 1; cmap = colormap(jet(round(100*max(rsq_all)))); else cmap = zeros(100,3); end
     for iC = 1:nCells
         h = text(ahv_gain(iC), sacc_gain(iC), num2str(iC));
         iColor = round(100*rsq_all(iC)); if iColor <= 0; iColor = 1; end
