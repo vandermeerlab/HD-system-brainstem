@@ -1,4 +1,4 @@
-function getSlowPhaseTC2(cfg_in, sd, iCell)
+function getSlowPhaseWIP(cfg_in, sd, iCell)
 % JJS. 2024-03-12.
 % Calculate and plot the AHV tuning curve
 % input:   sd - session data structure with spike trains S and tsd of angular head velocity
