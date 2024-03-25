@@ -1,6 +1,6 @@
-function getSlowPhaseWIP(cfg_in, sd, iCell)
+function [numSpikesRemoved] = getSlowPhaseWIP(cfg_in, sd, iCell)
 % JJS. 2024-03-12.
-% Calculate and plot the AHV tuning curve
+% Calculate and plot tuning curves for important variables during slow phase eye movements only. 
 % input:   sd - session data structure with spike trains S and tsd of angular head velocity
 % output:  tc_out - a structure
 %               .usr.tc - nCells x mBins
@@ -17,8 +17,8 @@ function getSlowPhaseWIP(cfg_in, sd, iCell)
 % One parameter that you may want to change is minOCC. This value determines the minimum number of samples (each 5 ms) needed in a given AHV bin to include that data.
 % minOcc of 100 requires only 0.5 s of occupancy to include those values. I usually set this to 200 to include at least 1 s of data. But one may want to set it higher.
 % JJS. 2024-03-15. This version restricts the spike train first and then does all operations with that restricted version. 
-
-
+% 2024-03-22. Changed so that firing rate F is only computed once. Function now reports occ_dt, how many samples are removed, etc. Checks mean firing rate for Q and TCs.
+format short
 cfg_def = [];
 cfg_def.doPlot = 1;
 cfg_def.smooth = 0;
@@ -26,79 +26,99 @@ cfg_def.nBins = 100;
 cfg_def.binEdges = {linspace(-200, 200, 101)};
 cfg_def.occ_dt = median(diff(sd.AHV.tvec));
 cfg_def.minOcc = 200;  % remember that Occ is measured in samples, not in seconds. Usually 5ms per sample, b/c the platform encoder sampling rate is 200Hz,
-cfg_def.saccade_pre = .1;
-cfg_def.saccade_post = .05;
+cfg_def.saccade_pre = .2;  % how many seconds to cut out before the saccade.
+cfg_def.saccade_post = .1; % how many seconds to cut out after the saccade. 
 cfg_def.LineWidth = 3;
 cfg_def.FontSize = 20;
 cfg_def.insetText = 18;
-cfg_def.tightX = .025;
-cfg_def.tightY = .025;
+cfg_def.tightX = .075;
+cfg_def.tightY = .045;
 cfg_out = ProcessConfig2(cfg_def, cfg_in);
 
-if exist(strcat(sd.SSN, '-saccades-edited.mat')) == 2
+if exist(strcat(sd.SSN, '-saccades-edited.mat'),'file') == 2
     load(strcat(sd.SSN, '-saccades-edited.mat')) % this will load the edited (curated) saccade timestamps and the pupil trace time series (position and velocity)
 else
     error('saccade mat file not found')
 end
-sd = LoadSessionData([]);
-myCell = SelectTS([], sd.S, iCell); % myCell.t{1}(keep{1}==1)=NaN;   % not sure if this line works 
+sd = LoadSessionData([]); % initialize the variables for this session
+myCell = SelectTS([], sd.S, iCell); % choose a single neuron to work with
+meanFRoverall = length(myCell.t{1,1})/sd.SessLength; 
 
-timestouse = ~isnan(combinedSaccades);
-combinedSaccadesToUse = combinedSaccades(timestouse);
-[in, keep] = restrict(myCell, combinedSaccadesToUse - cfg_out.saccade_pre, combinedSaccadesToUse + cfg_out.saccade_post);  
-keepers = keep{1,1} == 0;  % invert the output so that logical values of 1 indicate data that was not restricted (i.e. everything but peri-saccade times)
+timestouse = ~isnan(combinedSaccades); % create a logical with not NaN saccade times
+combinedSaccadesToUse = combinedSaccades(timestouse); % select only non-NaN saccade values to use
+[~, keep] = restrict(myCell, combinedSaccadesToUse - cfg_out.saccade_pre, combinedSaccadesToUse + cfg_out.saccade_post);  % get the indices for times around the moment of saccade
 myCellr = myCell;
-myCellr.t{1,1}(keep{1,1}==1) = [];
-
-
-%% Mask out the time periods around saccades (quick phase data)
-[in,keep] = restrict(sd.AHV, combinedSaccadesToUse - cfg_out.saccade_pre, combinedSaccadesToUse + cfg_out.saccade_post);  % AHV
-keepers = keep == 0;  % invert the output so that logical values of 1 indicate data that was not restricted (i.e. everything but peri-saccade times)
+myCellr.t{1,1}(keep{1,1}==1) = [];  % remove the values that are within the saccade window 
+disp(strcat('Total SPIKES = ' , num2str(length(sd.S.t{iCell}))))
+numSpikesRemoved = sum((keep{1,1}==1)); disp(strcat('num SPIKES removed =', num2str(numSpikesRemoved)))
+disp(strcat('Fraction = ', num2str(numSpikesRemoved/length(sd.S.t{iCell}),3)))
+fprintf(1, '\n');
+%% Limit the behavioral data to everything but the quick phase periods (the logical 'keepers')
+% AHV
+[~,keepAHV] = restrict(sd.AHV, combinedSaccadesToUse - cfg_out.saccade_pre, combinedSaccadesToUse + cfg_out.saccade_post);  % AHV
+keepersAHV = keepAHV == 0;  % invert the output so that logical values of 1 indicate data that was not restricted (i.e. everything but peri-saccade times)
 AHVr = sd.AHV;
-AHVr.tvec = sd.AHV.tvec(keepers);
-AHVr.data = sd.AHV.data(keepers);
-
-[in,keep] = restrict(diffH, combinedSaccadesToUse - cfg_out.saccade_pre, combinedSaccadesToUse + cfg_out.saccade_post);  % Pupil Velocity
-keepers = keep == 0;  % invert the output so that logical values of 1 indicate data that was not restricted (i.e. everything but peri-saccade times)
+AHVr.tvec = sd.AHV.tvec(keepersAHV);
+AHVr.data = sd.AHV.data(keepersAHV);
+AHV_samplingrate = 1/median(diff(AHVr.tvec)); disp(strcat('AHV sampling rate = ', num2str(round(AHV_samplingrate))))
+fprintf(1, '\n');
+AHVsamplesRemoved = sum(keepAHV); 
+% EYE VELOCITY
+[~,keepEV] = restrict(diffH, combinedSaccadesToUse - cfg_out.saccade_pre, combinedSaccadesToUse + cfg_out.saccade_post);  
+keepersEV = keepEV == 0;  % invert the output so that logical values of 1 indicate data that was not restricted (i.e. everything but peri-saccade times)
 diffHr = diffH;
-diffHr.tvec = diffH.tvec(keepers);
-diffHr.data = diffH.data(keepers);
-
+diffHr.tvec = diffH.tvec(keepersEV);
+diffHr.data = diffH.data(keepersEV);
+diffH_samplingrate = 1/median(diff(diffHr.tvec)); disp(strcat('Eye velocity sampling rate = ', num2str(round(diffH_samplingrate))))
+fprintf(1, '\n');
+EVsamplesRemoved = sum(keepEV); 
+% HEAD DIRECTION
+[~,keepHD] = restrict(sd.orientation, combinedSaccadesToUse - cfg_out.saccade_pre, combinedSaccadesToUse + cfg_out.saccade_post);  
+keepersHD = keepHD == 0;  % invert the output so that logical values of 1 indicate data that was not restricted (i.e. everything but peri-saccade times)
+orientationR = sd.orientation;
+orientationR.tvec = orientationR.tvec(keepersHD);
+orientationR.data = orientationR.data(keepersHD);
+disp(strcat('Head direction sampling rate = ', num2str(round(sd.orientationsamplingrate)))) 
+fprintf(1, '\n');
+HDsamplesRemoved = sum(keepHD); 
+% EYE POSITION
 if size(tsdH.tvec) == size(tsdH.data) %#ok<NODEF>
     tsdH.data = tsdH.data';
 end
-[in,keep] = restrict(tsdH, combinedSaccadesToUse - cfg_out.saccade_pre, combinedSaccadesToUse + cfg_out.saccade_post);   % Pupil Position
-keepers = keep == 0;  % invert the output so that logical values of 1 indicate data that was not restricted (i.e. everything but peri-saccade times)
+[~,keepEP] = restrict(tsdH, combinedSaccadesToUse - cfg_out.saccade_pre, combinedSaccadesToUse + cfg_out.saccade_post);   
+keepersEP = keepEP == 0;  % invert the output so that logical values of 1 indicate data that was not restricted (i.e. everything but peri-saccade times)
 tsdHr = tsdH;
-tsdHr.tvec = tsdHr.tvec(keepers);
-tsdHr.data = tsdHr.data(keepers);
+tsdHr.tvec = tsdHr.tvec(keepersEP);
+tsdHr.data = tsdHr.data(keepersEP);
+tsdH_samplingrate = 1/median(diff(tsdH.tvec)); disp(strcat('Eye position sampling rate = ', num2str(tsdH_samplingrate)))
+fprintf(1, '\n');
+EPsamplesRemoved = sum(keepEP); 
 
-[~, orientation, samplingrate, dt] = GetOrientationValues([]);
-[in,keep] = restrict(orientation, combinedSaccadesToUse - cfg_out.saccade_pre, combinedSaccadesToUse + cfg_out.saccade_post);   % Pupil Position
-keepers = keep == 0;  % invert the output so that logical values of 1 indicate data that was not restricted (i.e. everything but peri-saccade times)
-orientationR = orientation;
-orientationR.tvec = orientationR.tvec(keepers);
-orientationR.data = orientationR.data(keepers);
+disp(strcat('AHV samples Removed = ', num2str(AHVsamplesRemoved)))
+disp(strcat('HD samples Removed = ', num2str(HDsamplesRemoved)))
+fprintf(1, '\n');
+disp(strcat('EV samples Removed = ', num2str(EVsamplesRemoved)))
+disp(strcat('EP samples Removed = ', num2str(EPsamplesRemoved)))
+fprintf(1, '\n');
 
 %% get AHV Tuning Curve
-cfg_tc = [];
-cfg_tc.nBins = 100;
-cfg_tc.binEdges = {linspace(-200, 200, 101)};
-cfg_tc.occ_dt = median(diff(AHVr.tvec));
-cfg_tc.minOcc = 100;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
-% tc_out = TuningCurves(cfg_tc, myCell, AHV_tsd);
-tc_outR = TuningCurves(cfg_tc, myCellr, AHVr);
+cfg_tcAHV = [];
+cfg_tcAHV.nBins = 100;
+cfg_tcAHV.binEdges = {linspace(-200, 200, 101)};
+cfg_tcAHV.minOcc = 100;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
+cfg_tcAHV.occ_dt = median(diff(AHVr.tvec));
+tc_outAHV = TuningCurves(cfg_tcAHV, myCellr, AHVr);
 
 %--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 %% #1 AHV tuning curve
 % calculate raw firing rates 
 clf; hold on;
 % subplot(2,2,1)
-p = subtightplot(4,2,1, [cfg_out.tightX cfg_out.tightY]);
+subtightplot(4,2,1, [cfg_out.tightX cfg_out.tightY]);
 cfg_Q = [];
 cfg_Q.smooth = 'gauss';
 cfg_Q.gausswin_sd = 0.05;
-cfg_Q.dt = cfg_tc.occ_dt;
+cfg_Q.dt = cfg_tcAHV.occ_dt;
 cfg_Q.tvec_edges = AHVr.tvec(1) : cfg_Q.dt : AHVr.tvec(end);
 F = MakeQfromS(cfg_Q, myCell); % convert to FR
 F.data = F.data ./ cfg_Q.dt;
@@ -109,39 +129,30 @@ set(gca, 'TickDir', 'out', 'FontSize', cfg_out.FontSize)
 plot(AHVr.data, AHV_F, '.', 'MarkerSize', .5); hold on
 set(gca, 'Ylim', [0 ymax], 'FontSize', cfg_out.FontSize)
 
-% Add Tuning Curve
+% add the Tuning Curve
 if cfg_out.smooth
-    plot(tc_outR.binCenters, smoothdata(tc_outR.tc), 'LineWidth', cfg_out.LineWidth, 'Color', 'k');
+    plot(tc_outAHV.binCenters, smoothdata(tc_outAHV.tc), 'LineWidth', cfg_out.LineWidth, 'Color', 'k');
 else
-    plot(tc_outR.binCenters, tc_outR.tc, 'LineWidth', 3, 'Color', 'k');
+    plot(tc_outAHV.binCenters, tc_outAHV.tc, 'LineWidth', 3, 'Color', 'k');
 end
 xlabel('AHV (deg/s)', 'FontSize', cfg_out.FontSize)
 ylabel('FR (Hz)', 'FontSize', cfg_out.FontSize)
 set(groot, 'DefaultLegendInterpreter', 'none')
 title('Slow Phase Only')
-h = get(gca, 'XLim');
 text(NaN, NaN, 'CW', 'FontSize', cfg_out.insetText, 'Units', 'normalized', 'Position', [.25 .85 0])
 text(NaN, NaN, 'CCW', 'FontSize', cfg_out.insetText, 'Units', 'normalized', 'Position', [.6 .85 0])
-p.XAxisLocation = 'top';
 c = axis;
 line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'k')
 
 %% #2 Eye Velocity Tuning Curve
 % Calculate pupil velocity firing rates
-p = subtightplot(4,2,2, [cfg_out.tightX cfg_out.tightY]);
+subtightplot(4,2,2, [cfg_out.tightX cfg_out.tightY]);
 hold on
-cfg_Q = [];
-cfg_Q.smooth = 'gauss';
-cfg_Q.gausswin_sd = 0.05;
-cfg_Q.dt = sd.tsdH_dt;
-cfg_Q.tvec_edges = diffHr.tvec(1): cfg_Q.dt: diffHr.tvec(end);
-F = MakeQfromS(cfg_Q, myCell); % convert to FR
-F.data = F.data ./ cfg_Q.dt;
-
 % find FR corresponding to each pupil position sample
-F_idx = nearest_idx3(diffHr.tvec, F.tvec);
-tsdH_F = F.data(:,F_idx);
-plot(diffHr.data, tsdH_F(1,:), '.', 'MarkerSize', 2);   %  'color', [.8 .8 .8]
+F_idxEV = nearest_idx3(diffHr.tvec, F.tvec);
+EV_F = F.data(:,F_idxEV);
+ymaxEV = max(EV_F);
+plot(diffHr.data, EV_F(1,:), '.', 'MarkerSize', 2);   %  'color', [.8 .8 .8]
 if size(diffHr.tvec) == size(diffHr.data)
     diffHr.tvec = diffHr.tvec'; % change the shape so that it is a "well-formed tsd" for tuning curves
 end
@@ -154,65 +165,52 @@ axis([-45 45 c(3) c(4)])
 line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'k')
 text(-30, c(4)/2, 'nasal', 'FontSize', cfg_out.insetText, 'Units', 'normalized', 'Position', [.15 .85 0])
 text(30, c(4)/2, 'temporal', 'FontSize', cfg_out.insetText, 'Units', 'normalized', 'Position', [.75 .85 0])
-p.XAxisLocation = 'top';
-% title('Pupil V (pixels)')
 xlabel('Eye Velocity (pixels/s)', 'FontSize', cfg_out.FontSize)
 ylabel('FR (Hz)', 'FontSize', cfg_out.FontSize)
 set(gca, 'FontSize', cfg_out.FontSize)
-title(sd.SSN)
-clear F
+title(sd.fn{iCell,1})
 
-% calculate pupil velocity Tuning Curve
+% add the Tuning Curve
 cfg_V = [];
 cfg_V.nBins = 100;
-cfg_V.binEdges = {linspace(-35, 35, 51)};
-cfg_V.occ_dt = median(diff(diffHr.tvec));
-cfg_V.minOcc = 50;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
-% tc_out = TuningCurves(cfg_tc, myCell, diffH);
-tc_velR = TuningCurves(cfg_V, myCellr, diffHr);
+cfg_V.binEdges = {linspace(-25, 25, 100)};
+cfg_V.occ_dt = median(diff(diffHr.tvec)); 
+cfg_V.minOcc = 25;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
+tc_velEV = TuningCurves(cfg_V, myCellr, diffHr);
 
 if cfg_out.smooth
-    plot(smoothdata(tc_velR.binCenters), tc_velR.tc, 'LineWidth', 3, 'Color', 'k');
+    plot(smoothdata(tc_velEV.binCenters), tc_velEV.tc, 'LineWidth', 3, 'Color', 'k');
 else
-    plot(tc_velR.binCenters, tc_velR.tc, 'LineWidth', 3, 'Color', 'k');
+    plot(tc_velEV.binCenters, tc_velEV.tc, 'LineWidth', 3, 'Color', 'k');
 end
-R = max(tc_velR.tc);
 c = axis;
-axis([-20 20 c(3) R + 10]); c = axis;
+axis([-10 10 c(3) max(F.data)]); c = axis;
 line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'k')
 
-%% Head Direction Tuning Curve
+%% #3 Head Direction Tuning Curve
 % Calculate head direction firing rates
 % subplot(2,2,3)
-p = subtightplot(4,2,3, [cfg_out.tightX cfg_out.tightY]);
+subtightplot(4,2,3, [cfg_out.tightX cfg_out.tightY]);
 % calculate raw firing rates 
 hold on;
-cfg_Q = [];
-cfg_Q.smooth = 'gauss';
-cfg_Q.gausswin_sd = 0.05;
-cfg_Q.dt = cfg_tc.occ_dt;
-cfg_Q.tvec_edges = orientationR.tvec(1) : cfg_Q.dt : orientationR.tvec(end);
-F = MakeQfromS(cfg_Q, myCell); % convert to FR
-F.data = F.data ./ cfg_Q.dt;
-F_idx = nearest_idx3(orientationR.tvec, F.tvec);
-AHV_F = F.data(:,F_idx);
-ymax = max(AHV_F);
+F_idxHD = nearest_idx3(orientationR.tvec, F.tvec);
+HD_F = F.data(:,F_idxHD);
+ymaxHD = max(HD_F);
 set(gca, 'TickDir', 'out', 'FontSize', cfg_out.FontSize)
-plot(orientationR.data, AHV_F, '.', 'MarkerSize', .5); hold on
-set(gca, 'Ylim', [0 ymax], 'FontSize', cfg_out.FontSize)
+plot(orientationR.data, HD_F, '.', 'MarkerSize', .5); hold on
+set(gca, 'Ylim', [0 ymaxHD], 'FontSize', cfg_out.FontSize)
 
-% calculate head direction Tuning Curve
-cfg_tc = [];
-cfg_tc.nBins = 50;
-cfg_tc.binEdges = {linspace(-200, 200, 51)};
-cfg_tc.occ_dt = median(diff(orientationR.tvec));
-cfg_tc.minOcc = 100;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
-% tc_out = TuningCurves(cfg_tc, myCell, diffH);
-tc_outR = TuningCurves(cfg_tc, myCellr, orientationR);
+% add the Tuning Curve
+cfg_tcHD = [];
+cfg_tcHD.nBins = 50;
+cfg_tcHD.binEdges = {linspace(-200, 200, 51)};
+cfg_tcHD.occ_dt = median(diff(orientationR.tvec)); 
+cfg_tcHD.minOcc = 100;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
+tc_outHD = TuningCurves(cfg_tcHD, myCellr, orientationR);
 if cfg_out.smooth
-    plot(tc_outR.binCenters, smoothdata(tc_outR.tc), 'LineWidth', cfg_out.LineWidth, 'Color', 'k');
+    plot(tc_outHD.binCenters, smoothdata(tc_outHD.tc), 'LineWidth', cfg_out.LineWidth, 'Color', 'k');
 else
-    plot(tc_outR.binCenters, tc_outR.tc, 'LineWidth', 3, 'Color', 'k');
+    plot(tc_outHD.binCenters, tc_outHD.tc, 'LineWidth', 3, 'Color', 'k');
 end
 xlabel('Head Direction (deg)', 'FontSize', cfg_out.FontSize)
 ylabel('FR (Hz)', 'FontSize', cfg_out.FontSize)
@@ -222,69 +220,111 @@ set(gca, 'FontSize', cfg_out.FontSize)
 c = axis;
 line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'k')
 
-%% Eye Position Tuning Curve
+%% #4 Eye Position Tuning Curve
 % Calculate eye position firing rates
 % subplot(2,2,4)
-p = subtightplot(4,2,4, [cfg_out.tightX cfg_out.tightY]);
+subtightplot(4,2,4, [cfg_out.tightX cfg_out.tightY]);
 % calculate raw firing rates 
 hold on;
-cfg_Q = [];
-cfg_Q.smooth = 'gauss';
-cfg_Q.gausswin_sd = 0.05;
-cfg_Q.dt = cfg_tc.occ_dt;
-cfg_Q.tvec_edges = tsdHr.tvec(1) : cfg_Q.dt : tsdHr.tvec(end);
-F = MakeQfromS(cfg_Q, myCell); % convert to FR
-F.data = F.data ./ cfg_Q.dt;
-F_idx = nearest_idx3(tsdHr.tvec, F.tvec);
-AHV_F = F.data(:,F_idx);
-ymax = max(AHV_F);
+F_idxEP = nearest_idx3(tsdHr.tvec, F.tvec);
+EP_F = F.data(:,F_idxEP);
+ymaxEP = max(EP_F);
 set(gca, 'TickDir', 'out', 'FontSize', cfg_out.FontSize)
-plot(tsdHr.data, AHV_F, '.', 'MarkerSize', .5); hold on
-set(gca, 'Ylim', [0 ymax], 'FontSize', cfg_out.FontSize)
+plot(tsdHr.data, EP_F, '.', 'MarkerSize', .5); hold on
+set(gca, 'Ylim', [0 ymaxEP], 'FontSize', cfg_out.FontSize)
 
 % Add Tuning Curve
-cfg_tc = [];
-cfg_tc.nBins = 20;
-cfg_tc.binEdges = {linspace(-40, 40, 21)};
-cfg_tc.occ_dt = median(diff(tsdHr.tvec));
-cfg_tc.minOcc = 50;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
-% tc_out = TuningCurves(cfg_tc, myCell, diffH);
-tc_outR = TuningCurves(cfg_tc, myCellr, tsdHr);
+cfg_tcEP = [];
+cfg_tcEP.nBins = 20;
+cfg_tcEP.binEdges = {linspace(-40, 40, 21)};
+cfg_tcEP.occ_dt = median(diff(tsdHr.tvec)); 
+cfg_tcEP.minOcc = 50;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
+tc_outEP = TuningCurves(cfg_tcEP, myCellr, tsdHr);
 if cfg_out.smooth
-    plot(tc_outR.binCenters, smoothdata(tc_outR.tc), 'LineWidth', cfg_out.LineWidth, 'Color', 'k');
+    plot(tc_outEP.binCenters, smoothdata(tc_outEP.tc), 'LineWidth', cfg_out.LineWidth, 'Color', 'k');
 else
-    plot(tc_outR.binCenters, tc_outR.tc, 'LineWidth', 3, 'Color', 'k');
+    plot(tc_outEP.binCenters, tc_outEP.tc, 'LineWidth', 3, 'Color', 'k');
 end
 xlabel('Eye Position (pixels)', 'FontSize', cfg_out.FontSize)
 ylabel('FR (Hz)', 'FontSize', cfg_out.FontSize)
 set(groot, 'DefaultLegendInterpreter', 'none')
-% text(.75*h(1), 10, 'CW', 'FontSize', 12)
-% text(.5*h(2), 10, 'CCW', 'FontSize', 12)
 text(NaN, NaN, 'nasal', 'FontSize', cfg_out.insetText, 'Units', 'normalized', 'Position', [.25 .85 0])
 text(NaN, NaN, 'temporal', 'FontSize', cfg_out.insetText, 'Units', 'normalized', 'Position', [.6 .85 0])
 c = axis;
 line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'k')
 axis tight
 
-% p = subtightplot(4,2,5:6, [cfg_out.tightX cfg_out.tightY]);
-% plot(AHVr.tvec, AHVr.data, '.')
-% nasalSaccades = nasalSaccades(~isnan(nasalSaccades));
-% temporalSaccades = temporalSaccades(~isnan(temporalSaccades));
-% xline(nasalSaccades, 'Color', 'g')
-% xline(temporalSaccades, 'Color', 'r')
-% set(gca, 'FontSize', cfg_out.FontSize)
-clear keepers
-p = subtightplot(4,2,[5 7], [cfg_out.tightX cfg_out.tightY]);
-
-
-
-[outputS, ~, ~, outputIT, cfg_spikes] = SpikePETHvdm([], myCellr, combinedSaccadesToUse);
+%% #5  Plot the spikePETH 
+subtightplot(4,2,[5 7], [cfg_out.tightX cfg_out.tightY]);
+[~, ~, ~, ~, ~] = SpikePETHvdm([], myCellr, combinedSaccadesToUse);
 set(gca, 'FontSize', cfg_out.FontSize)
+xlabel('time peri Saccade (s)')
 
 
+%% Display occ_dt
+disp(strcat('occ_dt for AHV = ', num2str(cfg_tcAHV.occ_dt,3)))
+disp(strcat('occ_dt for HD = ', num2str(cfg_tcHD.occ_dt,3)))
+disp(strcat('occ_dt for EV = ', num2str(cfg_V.occ_dt,3)))
+disp(strcat('occ_dt for EP = ', num2str(cfg_tcEP.occ_dt,3)))
+fprintf(1, '\n');
 
+%% #6 Plot the Firing Rate Scatterplot and Tuning Curve for Unrestricted AHV data 
+% calculate raw firing rates 
+subtightplot(4,2,[6 8], [cfg_out.tightX cfg_out.tightY]); hold on
+cfg_Qu = [];
+cfg_Qu.smooth = 'gauss';
+cfg_Qu.gausswin_sd = 0.05;
+cfg_Qu.dt = median(diff(AHV_tsd.tvec));
+cfg_Qu.tvec_edges = AHV_tsd.tvec(1) : cfg_Q.dt : AHV_tsd.tvec(end);
+Fu = MakeQfromS(cfg_Qu, myCell); % convert to FR
+Fu.data = Fu.data ./ cfg_Qu.dt;
+F_idxu = nearest_idx3(AHV_tsd.tvec, Fu.tvec);
+AHV_Fu = F.data(:,F_idxu);
+ymaxu = max(AHV_Fu);
+set(gca, 'TickDir', 'out', 'FontSize', cfg_out.FontSize)
+plot(AHVr.data, AHV_F, '.', 'MarkerSize', .5); hold on
+set(gca, 'Ylim', [0 ymaxu], 'FontSize', cfg_out.FontSize)
 
+% get AHV Tuning Curve
+cfg_tcAHVu = [];
+cfg_tcAHVu.nBins = 100;
+cfg_tcAHVu.binEdges = {linspace(-200, 200, 101)};
+cfg_tcAHVu.minOcc = 100;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
+cfg_tcAHVu.occ_dt = median(diff(AHV_tsd.tvec));
+tc_outAHVu = TuningCurves(cfg_tcAHVu, myCell, AHV_tsd);
+% plot the Tuning Curve
+if cfg_out.smooth
+    plot(tc_outAHV.binCenters, smoothdata(tc_outAHV.tc), 'LineWidth', cfg_out.LineWidth, 'Color', 'k');
+else
+    plot(tc_outAHV.binCenters, tc_outAHV.tc, 'LineWidth', 3, 'Color', 'k');
+end
+xlabel('AHV (deg/s)', 'FontSize', cfg_out.FontSize)
+ylabel('FR (Hz)', 'FontSize', cfg_out.FontSize)
+set(groot, 'DefaultLegendInterpreter', 'none')
+text(NaN, NaN, 'CW', 'FontSize', cfg_out.insetText, 'Units', 'normalized', 'Position', [.25 .85 0])
+text(NaN, NaN, 'CCW', 'FontSize', cfg_out.insetText, 'Units', 'normalized', 'Position', [.6 .85 0])
+c = axis;
+line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'k')
+text(150, 20, 'All Data', 'FontSize', 20)
 
-% disp('press any key')
-% pause
-% clf
+%% Display the mean firing rates
+fprintf(1, '\n');
+disp(strcat('Overall FR = ', num2str(meanFRoverall,4), '_Hz')) % note: change this to sprintf
+disp(strcat('Q matrix mean F = ', num2str(nanmean(F.data),4), '_Hz')) % note: change this to sprintf
+fprintf(1, '\n');
+disp(strcat('mean AHV_F = ', num2str(nanmean(AHV_F),4), '_Hz')) % note: change this to sprintf
+disp(strcat('mean AHV tc = ', num2str(nanmean(tc_outAHV.tc./tc_outAHV.occ_hist),4), '_Hz')) % note: change this to sprintf
+fprintf(1, '\n');
+disp(strcat('mean EV_F = ', num2str(nanmean(EV_F),4), '_Hz')) % note: change this to sprintf
+disp(strcat('mean EV tc = ', num2str(nanmean(tc_velEV.tc./tc_velEV.occ_hist),4), '_Hz')) % note: change this to sprintf
+fprintf(1, '\n');
+disp(strcat('mean HD_F = ', num2str(nanmean(HD_F),4), '_Hz')) % note: change this to sprintf
+disp(strcat('mean HD tc = ', num2str(nanmean(tc_outHD.tc./tc_outHD.occ_hist),4), '_Hz')) % note: change this to sprintf
+fprintf(1, '\n');
+disp(strcat('mean EP_F = ', num2str(nanmean(EP_F),4), '_Hz')) % note: change this to sprintf
+disp(strcat('mean EP tc = ', num2str(nanmean(tc_outEP.tc./tc_outEP.occ_hist),4), '_Hz')) % note: change this to sprintf
+fprintf(1, '\n');
+disp(strcat('mean AHV all FR = ', num2str(nanmean(AHV_Fu),4), '_Hz')) % note: change this to sprintf
+disp(strcat('mean AHV all tc = ', num2str(nanmean(tc_outAHVu.tc./tc_outAHVu.occ_hist),4), '_Hz')) % note: change this to sprintf
+
+end

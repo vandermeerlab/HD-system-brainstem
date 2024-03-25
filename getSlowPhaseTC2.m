@@ -102,8 +102,8 @@ cfg_Q.dt = cfg_tc.occ_dt;
 cfg_Q.tvec_edges = AHVr.tvec(1) : cfg_Q.dt : AHVr.tvec(end);
 F = MakeQfromS(cfg_Q, myCell); % convert to FR
 F.data = F.data ./ cfg_Q.dt;
-F_idx = nearest_idx3(AHVr.tvec, F.tvec);
-AHV_F = F.data(:,F_idx);
+F_idxAHV = nearest_idx3(AHVr.tvec, F.tvec);
+AHV_F = F.data(:,F_idxAHV);
 ymax = max(AHV_F);
 set(gca, 'TickDir', 'out', 'FontSize', cfg_out.FontSize)
 plot(AHVr.data, AHV_F, '.', 'MarkerSize', .5); hold on
@@ -130,17 +130,17 @@ line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color
 % Calculate pupil velocity firing rates
 p = subtightplot(4,2,2, [cfg_out.tightX cfg_out.tightY]);
 hold on
-cfg_Q = [];
-cfg_Q.smooth = 'gauss';
-cfg_Q.gausswin_sd = 0.05;
-cfg_Q.dt = sd.tsdH_dt;
-cfg_Q.tvec_edges = diffHr.tvec(1): cfg_Q.dt: diffHr.tvec(end);
-F = MakeQfromS(cfg_Q, myCell); % convert to FR
-F.data = F.data ./ cfg_Q.dt;
+% cfg_V = [];   % this is already computed above 
+% cfg_V.smooth = 'gauss';
+% cfg_V.gausswin_sd = 0.05;
+% cfg_V.dt = sd.tsdH_dt;
+% cfg_V.tvec_edges = diffHr.tvec(1): cfg_V.dt: diffHr.tvec(end);
+% F = MakeQfromS(cfg_V, myCell); % convert to FR
+% F.data = F.data ./ cfg_V.dt;
 
 % find FR corresponding to each pupil position sample
-F_idx = nearest_idx3(diffHr.tvec, F.tvec);
-tsdH_F = F.data(:,F_idx);
+F_idxVel = nearest_idx3(diffHr.tvec, F.tvec);
+tsdH_F = F.data(:,F_idxVel);
 plot(diffHr.data, tsdH_F(1,:), '.', 'MarkerSize', 2);   %  'color', [.8 .8 .8]
 if size(diffHr.tvec) == size(diffHr.data)
     diffHr.tvec = diffHr.tvec'; % change the shape so that it is a "well-formed tsd" for tuning curves
@@ -160,16 +160,18 @@ xlabel('Eye Velocity (pixels/s)', 'FontSize', cfg_out.FontSize)
 ylabel('FR (Hz)', 'FontSize', cfg_out.FontSize)
 set(gca, 'FontSize', cfg_out.FontSize)
 title(sd.SSN)
-clear F
 
 % calculate pupil velocity Tuning Curve
 cfg_V = [];
 cfg_V.nBins = 100;
-cfg_V.binEdges = {linspace(-35, 35, 51)};
-cfg_V.occ_dt = median(diff(diffHr.tvec));
+cfg_V.binEdges = {linspace(-35, 35, 100)};
+% cfg_V.occ_dt = median(diff(diffHr.tvec));
+cfg_V.occ_dt = .01;
 cfg_V.minOcc = 50;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
 % tc_out = TuningCurves(cfg_tc, myCell, diffH);
 tc_velR = TuningCurves(cfg_V, myCellr, diffHr);
+c = axis;
+axis([-6 6 c(3) max(F.data)])
 
 if cfg_out.smooth
     plot(smoothdata(tc_velR.binCenters), tc_velR.tc, 'LineWidth', 3, 'Color', 'k');
@@ -181,21 +183,21 @@ c = axis;
 axis([-20 20 c(3) R + 10]); c = axis;
 line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'k')
 
-%% Head Direction Tuning Curve
+%% #3 Head Direction Tuning Curve
 % Calculate head direction firing rates
 % subplot(2,2,3)
 p = subtightplot(4,2,3, [cfg_out.tightX cfg_out.tightY]);
 % calculate raw firing rates 
 hold on;
-cfg_Q = [];
-cfg_Q.smooth = 'gauss';
-cfg_Q.gausswin_sd = 0.05;
-cfg_Q.dt = cfg_tc.occ_dt;
-cfg_Q.tvec_edges = orientationR.tvec(1) : cfg_Q.dt : orientationR.tvec(end);
-F = MakeQfromS(cfg_Q, myCell); % convert to FR
-F.data = F.data ./ cfg_Q.dt;
-F_idx = nearest_idx3(orientationR.tvec, F.tvec);
-AHV_F = F.data(:,F_idx);
+% cfg_Q = []; % this is already calculated above 
+% cfg_Q.smooth = 'gauss';
+% cfg_Q.gausswin_sd = 0.05;
+% cfg_Q.dt = cfg_tc.occ_dt;
+% cfg_Q.tvec_edges = orientationR.tvec(1) : cfg_Q.dt : orientationR.tvec(end);
+% F = MakeQfromS(cfg_Q, myCell); % convert to FR
+% F.data = F.data ./ cfg_Q.dt;
+F_idxHD = nearest_idx3(orientationR.tvec, F.tvec);
+AHV_F = F.data(:,F_idxHD);
 ymax = max(AHV_F);
 set(gca, 'TickDir', 'out', 'FontSize', cfg_out.FontSize)
 plot(orientationR.data, AHV_F, '.', 'MarkerSize', .5); hold on
@@ -222,21 +224,21 @@ set(gca, 'FontSize', cfg_out.FontSize)
 c = axis;
 line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'k')
 
-%% Eye Position Tuning Curve
+%% #4 Eye Position Tuning Curve
 % Calculate eye position firing rates
 % subplot(2,2,4)
 p = subtightplot(4,2,4, [cfg_out.tightX cfg_out.tightY]);
 % calculate raw firing rates 
 hold on;
-cfg_Q = [];
-cfg_Q.smooth = 'gauss';
-cfg_Q.gausswin_sd = 0.05;
-cfg_Q.dt = cfg_tc.occ_dt;
-cfg_Q.tvec_edges = tsdHr.tvec(1) : cfg_Q.dt : tsdHr.tvec(end);
-F = MakeQfromS(cfg_Q, myCell); % convert to FR
-F.data = F.data ./ cfg_Q.dt;
-F_idx = nearest_idx3(tsdHr.tvec, F.tvec);
-AHV_F = F.data(:,F_idx);
+% cfg_Q = [];  % this is already calculated above 
+% cfg_Q.smooth = 'gauss';
+% cfg_Q.gausswin_sd = 0.05;
+% cfg_Q.dt = cfg_tc.occ_dt;
+% cfg_Q.tvec_edges = tsdHr.tvec(1) : cfg_Q.dt : tsdHr.tvec(end);
+% F = MakeQfromS(cfg_Q, myCell); % convert to FR
+% F.data = F.data ./ cfg_Q.dt;
+F_idxEP = nearest_idx3(tsdHr.tvec, F.tvec);
+AHV_F = F.data(:,F_idxEP);
 ymax = max(AHV_F);
 set(gca, 'TickDir', 'out', 'FontSize', cfg_out.FontSize)
 plot(tsdHr.data, AHV_F, '.', 'MarkerSize', .5); hold on

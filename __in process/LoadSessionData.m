@@ -16,8 +16,8 @@ function sd = LoadSessionData(fd, varargin)
 %           sd.wheel -
 %           sd.ExpKeys - structure with the elements loaded from LoadExpKeys. Should include start time [1x1], stop time [1x1], laser ON ts, Laser OFF ts, any manual entries, such as for DARK recording, optokinetic stim.
 %           sd.cfg - contains config parameters that were used to generate the variables above
-tic
-subtractStartTime = 1;
+
+% subtractStartTime = 1; % New cheetah versions have timestamps that are in Unix Epoch Time. Not sure if some of my oldest sessions are on an earlier cheetah version where this is not necessary (i.e. starts at time = 0)
 CheckOrientation = 0;
 CheckAHV = 0;
 Keys = true; %1 = load keys.m, 0 = don't
@@ -37,7 +37,7 @@ else
 end
 assert(exist(fd, 'dir')==7, 'Cannot find directory %s.', fd);
 
-SSN = HD_GetSSN; disp(SSN);
+SSN = HD_GetSSN;
 sd.SSN = SSN;
 % -----------------------
 % KEYS
@@ -61,13 +61,19 @@ if Events
     events_ts = LoadEvents([]);
     sd.Events = events_ts;
 end
-if subtractStartTime == 1 % New cheetah versions have timestamps
-    wrapper = @(events_ts) strcmp(events_ts, 'Starting Recording');
-    A = cellfun(wrapper, sd.Events.label);
-    Startindex = find(A); % index which label says 'Start Recording'
-    starttime = sd.Events.t{Startindex}(1); % use the very first start record time
-    sd.starttime = starttime;
-end
+% New cheetah versions have timestamps that are in Unix Epoch Time, so you have to subtract the start time.
+
+wrapperA = @(events_ts) strcmp(events_ts, 'Starting Recording');
+A = cellfun(wrapperA, events_ts.label);
+wrapperB = @(events_ts) strcmp(events_ts, 'Stopping Recording');
+B = cellfun(wrapperB, events_ts.label);
+Startindex = find(A); % index which label says 'Start Recording'
+starttime = events_ts.t{1, Startindex}; % use the very first start record time
+Endindex = find(B);
+endtime = events_ts.t{1, Endindex};
+sd.starttime = starttime;
+sd.endtime = endtime;
+sd.SessLength = sd.endtime - sd.starttime;
 %-------------------------
 % SPIKES
 %-------------------------
@@ -81,12 +87,6 @@ if Spikes ==1
     end
     sd.fc = cfg.fc;
     S = LoadSpikes(cfg);
-    % New cheetah versions have timestamps that are in Unix Epoch Time
-    
-    wrapper = @(events_ts) strcmp(events_ts, 'Starting Recording');
-    A = cellfun(wrapper, events_ts.label);
-    Startindex = find(A); % index which label says 'Start Recording'
-    starttime = events_ts.t{Startindex}(1); % use the very first start record time
     % Start Recording should be in the first or second .label position.
     for iC = 1:length(S.t)
         S.t{iC} = S.t{iC} - starttime;  % subtract the very first time stamp to convert from Unix time to 'start at zero' time.
@@ -111,6 +111,9 @@ if AHV
     subsample_factor = 10;
     orientationtousedata = downsample(orientation.data, subsample_factor);
     orientationtouserange = downsample(orientation.tvec, subsample_factor);
+    orientationtouse = tsd(orientationtouserange, orientationtousedata);
+    sd.orientation = orientationtouse;
+    sd.orientationsamplingrate = samplingrate/subsample_factor;
     
     if CheckOrientation ==1
         figure;
@@ -119,7 +122,7 @@ if AHV
         ylabel('Heading Direction (deg)')
     end
     window = 0.1; postsmoothing = .05;
-    tic; AHV = dxdt(orientationtouserange, orientationtousedata, 'window', window, 'postsmoothing', postsmoothing); toc;
+    AHV = dxdt(orientationtouserange, orientationtousedata, 'window', window, 'postsmoothing', postsmoothing);
     AHV = -AHV; % THIS STEP IS NECESSARY BECAUSE dxdt GIVES VALUES THAT ARE CORRECT, BUT WITH A SIGN FLIP.
     sd.AHV = tsd(orientationtouserange, AHV);
     sd.AHV.dt = median(diff(sd.AHV.tvec));
@@ -155,33 +158,33 @@ if EYE
     catch
         warning('cannot find saccade data')
     end
-% Separate MOVING vs. SPONTANEOUS saccades
-[~, ~, ~, ~, sd.nasal_timestamps_MOVING, sd.temporal_timestamps_MOVING] = isolateManualSaccades();
-[~, ~, sd.nasal_timestamps_REST, sd.temporal_timestamps_REST] = isolateStationarySaccades();
-
-sd.numNasal_moving = length(sd.nasal_timestamps_MOVING); if sd.numNasal_moving == 1; sd.numNasal_moving = 0; end  % if this array is a single NaN, then there are in fact no saccades.
-sd.numNasal_stationary = length(sd.nasal_timestamps_REST); if sd.numNasal_stationary == 1; sd.numNasal_stationary = 0; end % if this array is a single NaN, then there are in fact no saccades.
-sd.numTemporal_moving = length(sd.temporal_timestamps_MOVING); if sd.numTemporal_moving == 1; sd.numTemporal_moving = 0; end % if this array is a single NaN, then there are in fact no saccades.
-sd.numTemporal_stationary = length(sd.temporal_timestamps_REST); if sd.numTemporal_stationary == 1; sd.numTemporal_stationary = 0; end % if this array is a single NaN, then there are in fact no saccades.
+    % Separate MOVING vs. SPONTANEOUS saccades
+    [~, ~, ~, ~, sd.nasal_timestamps_MOVING, sd.temporal_timestamps_MOVING] = isolateManualSaccades();
+    [~, ~, sd.nasal_timestamps_REST, sd.temporal_timestamps_REST] = isolateStationarySaccades();
+    
+    sd.numNasal_moving = length(sd.nasal_timestamps_MOVING); if sd.numNasal_moving == 1; sd.numNasal_moving = 0; end  % if this array is a single NaN, then there are in fact no saccades.
+    sd.numNasal_stationary = length(sd.nasal_timestamps_REST); if sd.numNasal_stationary == 1; sd.numNasal_stationary = 0; end % if this array is a single NaN, then there are in fact no saccades.
+    sd.numTemporal_moving = length(sd.temporal_timestamps_MOVING); if sd.numTemporal_moving == 1; sd.numTemporal_moving = 0; end % if this array is a single NaN, then there are in fact no saccades.
+    sd.numTemporal_stationary = length(sd.temporal_timestamps_REST); if sd.numTemporal_stationary == 1; sd.numTemporal_stationary = 0; end % if this array is a single NaN, then there are in fact no saccades.
 end
 
 %----------------------------
 % WHEEL ENCODER (Quadrature)
 %----------------------------
 encoderCSC = strcat(SSN, '-CSC34.Ncs');
-if exist(encoderCSC)  
+if exist(encoderCSC)
     updownTSD = getQEupdown([]);
     state_tsd = ConvertQEUpDownToState(updownTSD);
     [angle_tsd, wheel_tsd] = ConvertQEStatesToAngle([], state_tsd); %#ok<*ASGLU>
     [d, speed, cfg] = ConvertWheeltoSpeed([], wheel_tsd);  % speed the wheel (in centimeters per second)
     
     d.tvec = d.tvec - starttime;
-    speed.data = -speed.data;           % we want forward motion to be displayed as a positive velocity. This requires a sign reversal.  
+    speed.data = -speed.data;           % we want forward motion to be displayed as a positive velocity. This requires a sign reversal.
     speed.tvec = speed.tvec - starttime;
-    speed.dt = median(diff(speed.tvec)); 
+    speed.dt = median(diff(speed.tvec));
     
     sd.d = d; % total distance travelled on the wheel (in centimenters)
-    sd.speed = speed;  
+    sd.speed = speed;
 end
 %----------------------------
 % PLATFORM ROTATION PERIODS
@@ -200,9 +203,6 @@ end
 if dirpushed
     popdir;
 end
-
-
-toc
 
 
 

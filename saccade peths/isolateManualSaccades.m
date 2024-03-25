@@ -17,7 +17,7 @@ nasal_indices_MOVING = [];
 temporal_indices_MOVING = [];
 
 
-SSN = HD_GetSSN; disp(SSN);
+SSN = HD_GetSSN; % disp(SSN);
 if exist(strcat(SSN, '-AHV_StationaryTimes.mat'))==2 && exist(strcat(SSN, '-saccades-edited.mat')) ==2
     load(strcat(SSN, '-AHV_StationaryTimes.mat'));
     load(strcat(SSN, '-saccades-edited.mat'));
@@ -44,7 +44,7 @@ if exist(strcat(SSN, '-AHV_StationaryTimes.mat'))==2 && exist(strcat(SSN, '-sacc
         overlap_T = temporalSaccadesToUse > Mstart(iST) & temporalSaccadesToUse < Mend(iST);
         T = find(overlap_T);
         temporal_indices_MOVING = horzcat(temporal_indices_MOVING, T);
-        disp(iST)
+%         disp(iST)
     end
     
     nasal_timestamps_MOVING = nasalSaccadesToUse(nasal_indices_MOVING);
