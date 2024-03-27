@@ -197,7 +197,7 @@ try
     sd.STstart = STtstart;
     sd.STend = STtend;
 catch
-    warning('cannot platform stationary times file')
+    warning('cannot find platform stationary times file')
 end
 
 if dirpushed

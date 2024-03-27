@@ -1,3 +1,43 @@
+%% ALTERNATE RESTRICT METHOD
+
+pre = combinedSaccadesToUse - cfg_out.saccade_pre; 
+post = combinedSaccadesToUse + cfg_out.saccade_post; 
+
+tStart = horzcat(0, post);
+tEnd = horzcat(pre, sd.AHV.tvec(end)); 
+
+sizeFullAHV = length(sd.AHV.tvec);
+
+[sacc,keepSACC] = restrict(sd.AHV, combinedSaccadesToUse - cfg_out.saccade_pre, combinedSaccadesToUse + cfg_out.saccade_post);  % 
+size_sacc = length(sacc.tvec);
+
+[ISI,keepISI] = restrict(sd.AHV, tStart, tEnd);  % ISI = inter-saccade interval 
+size_ISI = length(ISI.tvec); 
+
+total = size_sacc + size_ISI; 
+assert(total == sizeFullAHV)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 %%
 rng(0)
 cd('C:\Jeff\U01\datatouse\M052\M052-2020-09-04');

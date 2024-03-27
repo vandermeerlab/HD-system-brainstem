@@ -18,6 +18,7 @@ function [numSpikesRemoved] = getSlowPhaseWIP(cfg_in, sd, iCell)
 % minOcc of 100 requires only 0.5 s of occupancy to include those values. I usually set this to 200 to include at least 1 s of data. But one may want to set it higher.
 % JJS. 2024-03-15. This version restricts the spike train first and then does all operations with that restricted version. 
 % 2024-03-22. Changed so that firing rate F is only computed once. Function now reports occ_dt, how many samples are removed, etc. Checks mean firing rate for Q and TCs.
+% 2024-03-27. Corrected the way that average firing rate for the tuning curves is calculated. The normalization step was wrong (simple division). Now it looks like  sum(tc.occ_hist .* tc.tc) ./ sum(tc.occ_hist);
 format short
 cfg_def = [];
 cfg_def.doPlot = 1;
@@ -60,16 +61,17 @@ keepersAHV = keepAHV == 0;  % invert the output so that logical values of 1 indi
 AHVr = sd.AHV;
 AHVr.tvec = sd.AHV.tvec(keepersAHV);
 AHVr.data = sd.AHV.data(keepersAHV);
-AHV_samplingrate = 1/median(diff(AHVr.tvec)); disp(strcat('AHV sampling rate = ', num2str(round(AHV_samplingrate))))
+AHV_samplingrate = 1/median(diff(AHVr.tvec)); disp(strcat('AHV sampling rate = ', num2str(AHV_samplingrate)))
 fprintf(1, '\n');
 AHVsamplesRemoved = sum(keepAHV); 
+
 % EYE VELOCITY
 [~,keepEV] = restrict(diffH, combinedSaccadesToUse - cfg_out.saccade_pre, combinedSaccadesToUse + cfg_out.saccade_post);  
 keepersEV = keepEV == 0;  % invert the output so that logical values of 1 indicate data that was not restricted (i.e. everything but peri-saccade times)
 diffHr = diffH;
 diffHr.tvec = diffH.tvec(keepersEV);
 diffHr.data = diffH.data(keepersEV);
-diffH_samplingrate = 1/median(diff(diffHr.tvec)); disp(strcat('Eye velocity sampling rate = ', num2str(round(diffH_samplingrate))))
+diffH_samplingrate = 1/median(diff(diffHr.tvec)); disp(strcat('Eye velocity sampling rate = ', num2str(diffH_samplingrate)))
 fprintf(1, '\n');
 EVsamplesRemoved = sum(keepEV); 
 % HEAD DIRECTION
@@ -78,7 +80,7 @@ keepersHD = keepHD == 0;  % invert the output so that logical values of 1 indica
 orientationR = sd.orientation;
 orientationR.tvec = orientationR.tvec(keepersHD);
 orientationR.data = orientationR.data(keepersHD);
-disp(strcat('Head direction sampling rate = ', num2str(round(sd.orientationsamplingrate)))) 
+disp(strcat('Head direction sampling rate = ', num2str(sd.orientationsamplingrate))) 
 fprintf(1, '\n');
 HDsamplesRemoved = sum(keepHD); 
 % EYE POSITION
@@ -99,7 +101,9 @@ disp(strcat('HD samples Removed = ', num2str(HDsamplesRemoved)))
 fprintf(1, '\n');
 disp(strcat('EV samples Removed = ', num2str(EVsamplesRemoved)))
 disp(strcat('EP samples Removed = ', num2str(EPsamplesRemoved)))
+disp(strcat('Ratio = ', num2str(AHVsamplesRemoved/EVsamplesRemoved)))
 fprintf(1, '\n');
+
 
 %% get AHV Tuning Curve
 cfg_tcAHV = [];
@@ -294,9 +298,9 @@ cfg_tcAHVu.occ_dt = median(diff(AHV_tsd.tvec));
 tc_outAHVu = TuningCurves(cfg_tcAHVu, myCell, AHV_tsd);
 % plot the Tuning Curve
 if cfg_out.smooth
-    plot(tc_outAHV.binCenters, smoothdata(tc_outAHV.tc), 'LineWidth', cfg_out.LineWidth, 'Color', 'k');
+    plot(tc_outAHVu.binCenters, smoothdata(tc_outAHVu.tc), 'LineWidth', cfg_out.LineWidth, 'Color', 'k');
 else
-    plot(tc_outAHV.binCenters, tc_outAHV.tc, 'LineWidth', 3, 'Color', 'k');
+    plot(tc_outAHVu.binCenters, tc_outAHVu.tc, 'LineWidth', 3, 'Color', 'k');
 end
 xlabel('AHV (deg/s)', 'FontSize', cfg_out.FontSize)
 ylabel('FR (Hz)', 'FontSize', cfg_out.FontSize)
@@ -311,20 +315,57 @@ text(150, 20, 'All Data', 'FontSize', 20)
 fprintf(1, '\n');
 disp(strcat('Overall FR = ', num2str(meanFRoverall,4), '_Hz')) % note: change this to sprintf
 disp(strcat('Q matrix mean F = ', num2str(nanmean(F.data),4), '_Hz')) % note: change this to sprintf
+
 fprintf(1, '\n');
-disp(strcat('mean AHV_F = ', num2str(nanmean(AHV_F),4), '_Hz')) % note: change this to sprintf
-disp(strcat('mean AHV tc = ', num2str(nanmean(tc_outAHV.tc./tc_outAHV.occ_hist),4), '_Hz')) % note: change this to sprintf
+meanAHV_F = nanmean(AHV_F);
+meanAHV_TC = nansum(tc_outAHV.occ_hist .* tc_outAHV.tc) ./ nansum(tc_outAHV.occ_hist); % average firing rate, weighted by occupancy
+disp(strcat('mean AHV_F = ', num2str(meanAHV_F,4), '_Hz')) % note: change this to sprintf
+disp(strcat('mean AHV tc = ', num2str(meanAHV_TC,4), '_Hz')) % note: change this to sprintf
+subtightplot(4,2,1, [cfg_out.tightX cfg_out.tightY]);
+c = axis;
+line([c(1) c(2)], [meanAHV_F meanAHV_F], 'Color', 'b', 'LineWidth', 1, 'LineStyle', '--')
+line([c(1) c(2)], [meanAHV_TC meanAHV_TC], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--')
 fprintf(1, '\n');
-disp(strcat('mean EV_F = ', num2str(nanmean(EV_F),4), '_Hz')) % note: change this to sprintf
-disp(strcat('mean EV tc = ', num2str(nanmean(tc_velEV.tc./tc_velEV.occ_hist),4), '_Hz')) % note: change this to sprintf
+
+meanEV_F = mean(EV_F);
+meanEV_TC = nansum(tc_velEV.occ_hist .* tc_velEV.tc) ./ nansum(tc_velEV.occ_hist);  % average firing rate, weighted by occupancy
+disp(strcat('mean EV_F = ', num2str(meanEV_F,4), '_Hz')) % note: change this to sprintf
+disp(strcat('mean EV tc = ', num2str(meanEV_TC,4), '_Hz')) % note: change this to sprintf
+subtightplot(4,2,2, [cfg_out.tightX cfg_out.tightY]);
+c = axis;
+line([c(1) c(2)], [meanEV_F meanEV_F], 'Color', 'b', 'LineWidth', 1, 'LineStyle', '--')
+line([c(1) c(2)], [meanEV_TC meanEV_TC], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--')
 fprintf(1, '\n');
-disp(strcat('mean HD_F = ', num2str(nanmean(HD_F),4), '_Hz')) % note: change this to sprintf
-disp(strcat('mean HD tc = ', num2str(nanmean(tc_outHD.tc./tc_outHD.occ_hist),4), '_Hz')) % note: change this to sprintf
+
+meanHD_F = nanmean(HD_F);
+meanHD_TC = nansum(tc_outHD.occ_hist .* tc_outHD.tc) ./ nansum(tc_outHD.occ_hist);
+disp(strcat('mean HD_F = ', num2str(meanHD_F,4), '_Hz')) % note: change this to sprintf
+disp(strcat('mean HD tc = ', num2str(meanHD_TC,4), '_Hz')) % note: change this to sprintf
+subtightplot(4,2,3, [cfg_out.tightX cfg_out.tightY]);
+c = axis;
+line([c(1) c(2)], [meanHD_F meanHD_F], 'Color', 'b', 'LineWidth', 1, 'LineStyle', '--')
+line([c(1) c(2)], [meanHD_TC meanHD_TC], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--')
 fprintf(1, '\n');
-disp(strcat('mean EP_F = ', num2str(nanmean(EP_F),4), '_Hz')) % note: change this to sprintf
-disp(strcat('mean EP tc = ', num2str(nanmean(tc_outEP.tc./tc_outEP.occ_hist),4), '_Hz')) % note: change this to sprintf
+
+meanEP_F = nanmean(EP_F);
+meanEP_TC = nansum(tc_outEP.occ_hist .* tc_outEP.tc) ./ nansum(tc_outEP.occ_hist);
+disp(strcat('mean EP_F = ', num2str(meanEP_F,4), '_Hz')) % note: change this to sprintf
+disp(strcat('mean EP tc = ', num2str(meanEP_TC,4), '_Hz')) % note: change this to sprintf
+subtightplot(4,2,4, [cfg_out.tightX cfg_out.tightY]);
+c = axis;
+line([c(1) c(2)], [meanEP_F meanEP_F], 'Color', 'b', 'LineWidth', 1, 'LineStyle', '--')
+line([c(1) c(2)], [meanEP_TC meanEP_TC], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--')
 fprintf(1, '\n');
-disp(strcat('mean AHV all FR = ', num2str(nanmean(AHV_Fu),4), '_Hz')) % note: change this to sprintf
-disp(strcat('mean AHV all tc = ', num2str(nanmean(tc_outAHVu.tc./tc_outAHVu.occ_hist),4), '_Hz')) % note: change this to sprintf
+
+meanAHV_Fu = nanmean(AHV_Fu);
+meanAHVu_TC = nansum(tc_outAHVu.occ_hist .* tc_outAHVu.tc) ./ nansum(tc_outAHVu.occ_hist);
+
+disp(strcat('mean AHV all FR = ', num2str(meanAHV_Fu,4), '_Hz')) % note: change this to sprintf
+disp(strcat('mean AHV all tc = ', num2str(meanAHVu_TC,4), '_Hz')) % note: change this to sprintf
+subtightplot(4,2,[6 8], [cfg_out.tightX cfg_out.tightY]);
+c = axis;
+line([c(1) c(2)], [meanAHV_Fu meanAHV_Fu], 'Color', 'b', 'LineWidth', 1, 'LineStyle', '--')
+line([c(1) c(2)], [meanAHVu_TC meanAHVu_TC], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--')
+
 
 end
