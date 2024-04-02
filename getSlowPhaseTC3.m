@@ -329,21 +329,58 @@ text(150, 20, 'All Data', 'FontSize', 20)
 fprintf(1, '\n');
 disp(strcat('Overall FR = ', num2str(meanFRoverall,4), '_Hz')) % note: change this to sprintf
 disp(strcat('Q matrix mean F = ', num2str(nanmean(F.data),4), '_Hz')) % note: change this to sprintf
+
 fprintf(1, '\n');
-disp(strcat('mean AHV_F = ', num2str(nanmean(AHV_F),4), '_Hz')) % note: change this to sprintf
-disp(strcat('mean AHV tc = ', num2str(nanmean(tc_outAHV.tc./tc_outAHV.occ_hist),4), '_Hz')) % note: change this to sprintf
+meanAHV_F = nanmean(AHV_F);
+meanAHV_TC = nansum(tc_outAHV.occ_hist .* tc_outAHV.tc) ./ nansum(tc_outAHV.occ_hist); % average firing rate, weighted by occupancy
+disp(strcat('mean AHV_F = ', num2str(meanAHV_F,4), '_Hz')) % note: change this to sprintf
+disp(strcat('mean AHV tc = ', num2str(meanAHV_TC,4), '_Hz')) % note: change this to sprintf
+subtightplot(4,2,1, [cfg_out.tightX cfg_out.tightY]);
+c = axis;
+line([c(1) c(2)], [meanAHV_F meanAHV_F], 'Color', 'b', 'LineWidth', 1, 'LineStyle', '--')
+line([c(1) c(2)], [meanAHV_TC meanAHV_TC], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--')
 fprintf(1, '\n');
-disp(strcat('mean EV_F = ', num2str(nanmean(EV_F),4), '_Hz')) % note: change this to sprintf
-disp(strcat('mean EV tc = ', num2str(nanmean(tc_velEV.tc./tc_velEV.occ_hist),4), '_Hz')) % note: change this to sprintf
+
+meanEV_F = mean(EV_F);
+meanEV_TC = nansum(tc_velEV.occ_hist .* tc_velEV.tc) ./ nansum(tc_velEV.occ_hist);  % average firing rate, weighted by occupancy
+disp(strcat('mean EV_F = ', num2str(meanEV_F,4), '_Hz')) % note: change this to sprintf
+disp(strcat('mean EV tc = ', num2str(meanEV_TC,4), '_Hz')) % note: change this to sprintf
+subtightplot(4,2,2, [cfg_out.tightX cfg_out.tightY]);
+c = axis;
+line([c(1) c(2)], [meanEV_F meanEV_F], 'Color', 'b', 'LineWidth', 1, 'LineStyle', '--')
+line([c(1) c(2)], [meanEV_TC meanEV_TC], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--')
 fprintf(1, '\n');
-disp(strcat('mean HD_F = ', num2str(nanmean(HD_F),4), '_Hz')) % note: change this to sprintf
-disp(strcat('mean HD tc = ', num2str(nanmean(tc_outHD.tc./tc_outHD.occ_hist),4), '_Hz')) % note: change this to sprintf
+
+meanHD_F = nanmean(HD_F);
+meanHD_TC = nansum(tc_outHD.occ_hist .* tc_outHD.tc) ./ nansum(tc_outHD.occ_hist);
+disp(strcat('mean HD_F = ', num2str(meanHD_F,4), '_Hz')) % note: change this to sprintf
+disp(strcat('mean HD tc = ', num2str(meanHD_TC,4), '_Hz')) % note: change this to sprintf
+subtightplot(4,2,3, [cfg_out.tightX cfg_out.tightY]);
+c = axis;
+line([c(1) c(2)], [meanHD_F meanHD_F], 'Color', 'b', 'LineWidth', 1, 'LineStyle', '--')
+line([c(1) c(2)], [meanHD_TC meanHD_TC], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--')
 fprintf(1, '\n');
-disp(strcat('mean EP_F = ', num2str(nanmean(EP_F),4), '_Hz')) % note: change this to sprintf
-disp(strcat('mean EP tc = ', num2str(nanmean(tc_outEP.tc./tc_outEP.occ_hist),4), '_Hz')) % note: change this to sprintf
+
+meanEP_F = nanmean(EP_F);
+meanEP_TC = nansum(tc_outEP.occ_hist .* tc_outEP.tc) ./ nansum(tc_outEP.occ_hist);
+disp(strcat('mean EP_F = ', num2str(meanEP_F,4), '_Hz')) % note: change this to sprintf
+disp(strcat('mean EP tc = ', num2str(meanEP_TC,4), '_Hz')) % note: change this to sprintf
+subtightplot(4,2,4, [cfg_out.tightX cfg_out.tightY]);
+c = axis;
+line([c(1) c(2)], [meanEP_F meanEP_F], 'Color', 'b', 'LineWidth', 1, 'LineStyle', '--')
+line([c(1) c(2)], [meanEP_TC meanEP_TC], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--')
 fprintf(1, '\n');
-disp(strcat('mean AHV all FR = ', num2str(nanmean(AHV_Fu),4), '_Hz')) % note: change this to sprintf
-disp(strcat('mean AHV all tc = ', num2str(nanmean(tc_outAHVu.tc./tc_outAHVu.occ_hist),4), '_Hz')) % note: change this to sprintf
+
+meanAHV_Fu = nanmean(AHV_Fu);
+meanAHVu_TC = nansum(tc_outAHVu.occ_hist .* tc_outAHVu.tc) ./ nansum(tc_outAHVu.occ_hist);
+
+disp(strcat('mean AHV all FR = ', num2str(meanAHV_Fu,4), '_Hz')) % note: change this to sprintf
+disp(strcat('mean AHV all tc = ', num2str(meanAHVu_TC,4), '_Hz')) % note: change this to sprintf
+subtightplot(4,2,[6 8], [cfg_out.tightX cfg_out.tightY]);
+c = axis;
+line([c(1) c(2)], [meanAHV_Fu meanAHV_Fu], 'Color', 'b', 'LineWidth', 1, 'LineStyle', '--')
+line([c(1) c(2)], [meanAHVu_TC meanAHVu_TC], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--')
+
 
 end
 
