@@ -74,7 +74,7 @@ plot(AHV_tsd.data, AHV_F, '.', 'MarkerSize', .5); hold on
 set(gca, 'Ylim', [0 ymax], 'FontSize', FontSize)
 
 % Add Tuning Curve
-plot(tc_out.usr.binCenters, tc_out.tc, 'LineWidth', LineWidth, 'Color', 'k');
+plot(tc_out.binCenters, tc_out.tc, 'LineWidth', LineWidth, 'Color', 'k');
 ylabel('FR (Hz)', 'FontSize', FontSize)
 set(groot, 'DefaultLegendInterpreter', 'none')
 title('AHV Tuning Curve')

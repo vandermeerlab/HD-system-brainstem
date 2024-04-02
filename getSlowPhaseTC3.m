@@ -70,7 +70,7 @@ total = size_sacc_AHV + size_ISI_AHV;
 assert(total == sizeFullAHV)
 AHV_samplingrate = 1/median(diff(ISI_AHV.tvec)); disp(strcat('AHV sampling rate = ', num2str(AHV_samplingrate)))
 fprintf(1, '\n');
-AHVsamplesRemoved = sum(sizeFullAHV - length(ISI_AHV.tvec)); 
+AHVsamplesRemovedr = sum(sizeFullAHV - length(ISI_AHV.tvec)); 
 
 [~,keepAHV] = restrict(sd.AHV, combinedSaccadesToUse - cfg_out.saccade_pre, combinedSaccadesToUse + cfg_out.saccade_post);  % AHV
 keepersAHV = keepAHV == 0;  % invert the output so that logical values of 1 indicate data that was not restricted (i.e. everything but peri-saccade times)
@@ -300,7 +300,7 @@ F_idxu = nearest_idx3(AHV_tsd.tvec, Fu.tvec);
 AHV_Fu = F.data(:,F_idxu);
 ymaxu = max(AHV_Fu);
 set(gca, 'TickDir', 'out', 'FontSize', cfg_out.FontSize)
-plot(AHVr.data, AHV_F, '.', 'MarkerSize', .5); hold on
+plot(sd.AHV.data, AHV_Fu, '.', 'MarkerSize', .5); hold on
 set(gca, 'Ylim', [0 ymaxu], 'FontSize', cfg_out.FontSize)
 
 % get AHV Tuning Curve
@@ -308,13 +308,13 @@ cfg_tcAHVu = [];
 cfg_tcAHVu.nBins = 100;
 cfg_tcAHVu.binEdges = {linspace(-200, 200, 101)};
 cfg_tcAHVu.minOcc = 100;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
-cfg_tcAHVu.occ_dt = median(diff(AHV_tsd.tvec));
-tc_outAHVu = TuningCurves(cfg_tcAHVu, myCell, AHV_tsd);
+cfg_tcAHVu.occ_dt = median(diff(sd.AHV.tvec));
+tc_outAHVu = TuningCurves(cfg_tcAHVu, myCell, sd.AHV);
 % plot the Tuning Curve
 if cfg_out.smooth
-    plot(tc_outAHV.binCenters, smoothdata(tc_outAHV.tc), 'LineWidth', cfg_out.LineWidth, 'Color', 'k');
+    plot(tc_outAHVu.binCenters, smoothdata(tc_outAHVu.tc), 'LineWidth', cfg_out.LineWidth, 'Color', 'k');
 else
-    plot(tc_outAHV.binCenters, tc_outAHV.tc, 'LineWidth', 3, 'Color', 'k');
+    plot(tc_outAHVu.binCenters, tc_outAHVu.tc, 'LineWidth', 3, 'Color', 'k');
 end
 xlabel('AHV (deg/s)', 'FontSize', cfg_out.FontSize)
 ylabel('FR (Hz)', 'FontSize', cfg_out.FontSize)

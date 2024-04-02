@@ -26,8 +26,8 @@ cfg_def.nBins = 100;
 cfg_def.binEdges = {linspace(-200, 200, 101)};
 cfg_def.occ_dt = median(diff(sd.AHV.tvec));
 cfg_def.minOcc = 200;  % remember that Occ is measured in samples, not in seconds. Usually 5ms per sample, b/c the platform encoder sampling rate is 200Hz,
-cfg_def.saccade_pre = .1;
-cfg_def.saccade_post = .05;
+cfg_def.saccade_pre = .2;
+cfg_def.saccade_post = .1;
 cfg_def.LineWidth = 3;
 cfg_def.FontSize = 20;
 cfg_def.insetText = 18;
@@ -164,10 +164,10 @@ title(sd.SSN)
 % calculate pupil velocity Tuning Curve
 cfg_V = [];
 cfg_V.nBins = 100;
-cfg_V.binEdges = {linspace(-35, 35, 100)};
+cfg_V.binEdges = {linspace(-25, 25, 100)};
 % cfg_V.occ_dt = median(diff(diffHr.tvec));
-cfg_V.occ_dt = .01;
-cfg_V.minOcc = 50;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
+cfg_V.occ_dt = median(diff(diffHr.tvec));
+cfg_V.minOcc = 25;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
 % tc_out = TuningCurves(cfg_tc, myCell, diffH);
 tc_velR = TuningCurves(cfg_V, myCellr, diffHr);
 c = axis;
@@ -178,9 +178,9 @@ if cfg_out.smooth
 else
     plot(tc_velR.binCenters, tc_velR.tc, 'LineWidth', 3, 'Color', 'k');
 end
-R = max(tc_velR.tc);
+
 c = axis;
-axis([-20 20 c(3) R + 10]); c = axis;
+axis([-20 20 c(3) max(F.data)]); c = axis;
 line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'k')
 
 %% #3 Head Direction Tuning Curve
