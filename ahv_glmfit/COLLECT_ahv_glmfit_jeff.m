@@ -1,8 +1,8 @@
 %% collector script to run GLM fits on all sessions, collect and plot the results
 % set up list of sessions: run from top-level data folder, e.g. cd('C:\data\U01\datatouse');
 cfg = [];
-%cfg.rats = {'M039', 'M052', 'M055', 'M079', 'M080', 'M085', 'M086', 'M089', 'M090', 'M094', 'M096', 'M104', 'M105', 'M112', 'M212', 'M269', 'M271', 'M293'};
-cfg.rats = {'M052'};
+cfg.rats = {'M039', 'M052', 'M055', 'M079', 'M080', 'M085', 'M086', 'M089', 'M090', 'M094', 'M096', 'M104', 'M105', 'M112', 'M212', 'M269', 'M271', 'M293'};
+%cfg.rats = {'M052'};
 fd = getDataPath(cfg);
 
 endSess = length(fd);

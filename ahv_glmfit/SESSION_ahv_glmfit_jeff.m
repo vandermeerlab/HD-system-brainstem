@@ -50,8 +50,8 @@ sd.m.baseline.modelspec = 'spk ~ 1 + time';
 sd.m.ahv.modelspec = 'spk ~ 1 + time + ahv';
 %sd.m.sacc.modelspec = 'spk ~ 1 + time + ns + ts';
 %sd.m.both.modelspec = 'spk ~ 1 + time + ns + ts + ahv';
-sd.m.pca_sacc.modelspec = 'spk ~ 1 + time + ts_pca1 + ns_pca1 + ts_pca2 + ns_pca2 + ts_pca3 + ns_pca3 + pupilX';
-sd.m.pca_sacc_both.modelspec = 'spk ~ 1 + time + ts_pca1 + ns_pca1 + ts_pca2 + ns_pca2 + ts_pca3 + ns_pca3 + pupilX + ahv';
+sd.m.pca_sacc.modelspec = 'spk ~ 1 + time + ts_pca1 + ns_pca1 + ts_pca2 + ns_pca2 + ts_pca3 + ns_pca3 + pupilX + pupilV';
+sd.m.pca_sacc_both.modelspec = 'spk ~ 1 + time + ts_pca1 + ns_pca1 + ts_pca2 + ns_pca2 + ts_pca3 + ns_pca3 + pupilX + pupilV + ahv';
 %sd.m.pca_sacc.modelspec = 'spk ~ 1 + time + pupilX + ts_pca1*ts_ampl + ns_pca1*ns_ampl + ts_pca2*ts_ampl + ns_pca2*ns_ampl + ts_pca3*ts_ampl + ns_pca3*ns_ampl';
 %sd.m.pca_sacc_both.modelspec = 'spk ~ 1 + time + pupilX + ahv + ts_pca1*ts_ampl + ns_pca1*ns_ampl + ts_pca2*ts_ampl + ns_pca2*ns_ampl + ts_pca3*ts_ampl + ns_pca3*ns_ampl';
 
@@ -73,6 +73,9 @@ this_ahv = tsd(sd.TVECc, p.ahv'); % used for making TCs within cell loop later
 
 p.pupilX = interp1(tsdH.tvec, tsdH.data, sd.TVECc)'; % pupil X-position predictor
 this_pupilX = tsd(sd.TVECc, p.pupilX');
+
+p.pupilV = interp1(tsdH.tvec(2:end), diff(tsdH.data), sd.TVECc)';
+this_pupilV = tsd(sd.TVECc, p.pupilV');
 
 % saccade predictors
 [ns_binarized, ns_bin] = histc(nasalSaccades, TVECe); ns_binarized = ns_binarized(1:end - 1);
