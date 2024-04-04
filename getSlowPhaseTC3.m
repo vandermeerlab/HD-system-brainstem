@@ -1,4 +1,4 @@
-function [numSpikesRemoved] = getSlowPhaseTC3(cfg_in, sd, iCell)
+function [numSpikesRemoved, data_out] = getSlowPhaseTC3(cfg_in, sd, iCell)
 % JJS. 2024-03-12.
 % Calculate and plot tuning curves for important variables during slow phase eye movements only. 
 % input:   sd - session data structure with spike trains S and tsd of angular head velocity
@@ -35,6 +35,14 @@ cfg_def.FontSize = 20;
 cfg_def.insetText = 18;
 cfg_def.tightX = .075;
 cfg_def.tightY = .045;
+
+cfg_Q = [];
+cfg_Q.dt = 0.05; % binsize in s
+cfg_Q.smooth = 'gauss'; % [], 'gauss'
+cfg_Q.gausswin_size = 1; % gaussian window size in seconds; only used if cfg.smooth = 'gauss'
+cfg_Q.gausswin_sd = 0.1; % SD for gaussian convolution in seconds
+cfg_def.cfg_Q = cfg_Q;
+
 cfg_out = ProcessConfig2(cfg_def, cfg_in);
 
 if exist(strcat(sd.SSN, '-saccades-edited.mat'),'file') == 2
@@ -46,23 +54,37 @@ sd = LoadSessionData([]); % initialize the variables for this session
 myCell = SelectTS([], sd.S, iCell); % choose a single neuron to work with
 meanFRoverall = length(myCell.t{1,1})/sd.SessLength; 
 
+%% Limit the data to everything but the quick phase periods 
 timestouse = ~isnan(combinedSaccades); % create a logical with not NaN saccade times
 combinedSaccadesToUse = combinedSaccades(timestouse); % select only non-NaN saccade values to use
-[~, keep] = restrict(myCell, combinedSaccadesToUse - cfg_out.saccade_pre, combinedSaccadesToUse + cfg_out.saccade_post);  % get the indices for times around the moment of saccade
+
+pre = combinedSaccadesToUse - cfg_out.saccade_pre; 
+post = combinedSaccadesToUse + cfg_out.saccade_post; 
+
+[~, keep] = restrict(myCell, pre, post);  % get the indices for times around the moment of saccade
+
 myCellr = myCell;
 myCellr.t{1,1}(keep{1,1}==1) = [];  % remove the values that are within the saccade window 
+
 disp(strcat('Total SPIKES = ' , num2str(length(sd.S.t{iCell}))))
 numSpikesRemoved = sum((keep{1,1}==1)); disp(strcat('num SPIKES removed =', num2str(numSpikesRemoved)))
 disp(strcat('Fraction = ', num2str(numSpikesRemoved/length(sd.S.t{iCell}),3)))
 fprintf(1, '\n');
-%% Limit the behavioral data to everything but the quick phase periods 
-pre = combinedSaccadesToUse - cfg_out.saccade_pre; 
-post = combinedSaccadesToUse + cfg_out.saccade_post; 
+
+%% also output restricted firing rate (useful for GLM later)
+Q = MakeQfromS(cfg_out.cfg_Q, myCellr);
+
+[~, keep] = restrict(Q, pre, post);  
+keep = (keep == 0);  % invert the output
+
+fr = Q; fr.tvec = fr.tvec(keep); fr.data = fr.data(keep) ./ cfg_out.cfg_Q.dt;
+data_out.fr = fr;
+
 %% AHV
 tStartAHV = horzcat(0, post);
 tEndAHV = horzcat(pre, sd.AHV.tvec(end)); 
 sizeFullAHV = length(sd.AHV.tvec);
-[sacc,~] = restrict(sd.AHV, combinedSaccadesToUse - cfg_out.saccade_pre, combinedSaccadesToUse + cfg_out.saccade_post);  % this is the tsd of restricted saccade times 
+[sacc,~] = restrict(sd.AHV, pre, post);  % this is the tsd of restricted saccade times 
 size_sacc_AHV = length(sacc.tvec);
 [ISI_AHV,~] = restrict(sd.AHV, tStartAHV, tEndAHV);  % ISI = inter-saccade interval 
 size_ISI_AHV = length(ISI_AHV.tvec); 
@@ -72,7 +94,7 @@ AHV_samplingrate = 1/median(diff(ISI_AHV.tvec)); disp(strcat('AHV sampling rate 
 fprintf(1, '\n');
 AHVsamplesRemovedr = sum(sizeFullAHV - length(ISI_AHV.tvec)); 
 
-[~,keepAHV] = restrict(sd.AHV, combinedSaccadesToUse - cfg_out.saccade_pre, combinedSaccadesToUse + cfg_out.saccade_post);  % AHV
+[~,keepAHV] = restrict(sd.AHV, pre, post);  % AHV
 keepersAHV = keepAHV == 0;  % invert the output so that logical values of 1 indicate data that was not restricted (i.e. everything but peri-saccade times)
 AHVr = sd.AHV;
 AHVr.tvec = sd.AHV.tvec(keepersAHV);
@@ -82,7 +104,7 @@ fprintf(1, '\n');
 AHVsamplesRemoved = sum(keepAHV); 
 
 %% EYE VELOCITY
-[~,keepEV] = restrict(diffH, combinedSaccadesToUse - cfg_out.saccade_pre, combinedSaccadesToUse + cfg_out.saccade_post);  
+[~,keepEV] = restrict(diffH, pre, post);  
 keepersEV = keepEV == 0;  % invert the output so that logical values of 1 indicate data that was not restricted (i.e. everything but peri-saccade times)
 diffHr = diffH;
 diffHr.tvec = diffH.tvec(keepersEV);
@@ -91,7 +113,7 @@ diffH_samplingrate = 1/median(diff(diffHr.tvec)); disp(strcat('Eye velocity samp
 fprintf(1, '\n');
 EVsamplesRemoved = sum(keepEV); 
 %% HEAD DIRECTION
-[~,keepHD] = restrict(sd.orientation, combinedSaccadesToUse - cfg_out.saccade_pre, combinedSaccadesToUse + cfg_out.saccade_post);  
+[~,keepHD] = restrict(sd.orientation, pre, post);  
 keepersHD = keepHD == 0;  % invert the output so that logical values of 1 indicate data that was not restricted (i.e. everything but peri-saccade times)
 orientationR = sd.orientation;
 orientationR.tvec = orientationR.tvec(keepersHD);
@@ -103,7 +125,7 @@ HDsamplesRemoved = sum(keepHD);
 if size(tsdH.tvec) == size(tsdH.data) %#ok<NODEF>
     tsdH.data = tsdH.data';
 end
-[~,keepEP] = restrict(tsdH, combinedSaccadesToUse - cfg_out.saccade_pre, combinedSaccadesToUse + cfg_out.saccade_post);   
+[~,keepEP] = restrict(tsdH, pre, post);   
 keepersEP = keepEP == 0;  % invert the output so that logical values of 1 indicate data that was not restricted (i.e. everything but peri-saccade times)
 tsdHr = tsdH;
 tsdHr.tvec = tsdHr.tvec(keepersEP);
@@ -118,6 +140,11 @@ fprintf(1, '\n');
 disp(strcat('EV samples Removed = ', num2str(EVsamplesRemoved)))
 disp(strcat('EP samples Removed = ', num2str(EPsamplesRemoved)))
 fprintf(1, '\n');
+
+data_out.horiz_eye_pos = tsdHr;
+data_out.horiz_eye_vel = diffHr;
+data_out.AHV = AHVr;
+data_out.S = myCellr;
 
 %% get AHV Tuning Curve
 cfg_tcAHV = [];
