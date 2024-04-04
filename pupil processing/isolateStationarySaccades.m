@@ -10,7 +10,7 @@ function [nasal_indices_REST, temporal_indices_REST, nasal_timestamps_REST, temp
 %           nasal_timestamps_REST:              timestamps for nasal saccades (mouse stationary)
 %           temporal_timestamps_REST:           timestamps for temporal saccades (mouse stationary)
 
-SSN = HD_GetSSN; disp(SSN);
+SSN = HD_GetSSN; % disp(SSN);
 if exist(strcat(SSN, '-AHV_StationaryTimes.mat'))==2 && exist(strcat(SSN, '-saccades-edited.mat')) ==2
     load(strcat(SSN, '-AHV_StationaryTimes.mat'));
     load(strcat(SSN, '-saccades-edited.mat'));
@@ -30,7 +30,7 @@ if exist(strcat(SSN, '-AHV_StationaryTimes.mat'))==2 && exist(strcat(SSN, '-sacc
         overlap_T = temporalSaccadesToUse > STtstart(iST) & temporalSaccadesToUse < STtend(iST);
         T = find(overlap_T);
         temporal_indices_REST = horzcat(temporal_indices_REST, T);
-        disp(iST)
+        % disp(iST)
     end
     
     nasal_timestamps_REST = nasalSaccadesToUse(nasal_indices_REST);

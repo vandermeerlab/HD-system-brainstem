@@ -56,7 +56,7 @@ disp(strcat('Lrange = ', num2str(Lrange)));
 disp(strcat('Rrange = ', num2str(Rrange)));
 disp(strcat('Percentage difference equals__ ', num2str(100*(1-rangediff)), '%'));
 
-if Rrange ~= Lrange; warning('Left and Right ranges do not coincide.'); end
+% if Rrange ~= Lrange; warning('Left and Right ranges do not coincide.'); end
 
 subtractedvoltage = tsd(csc_tsd.tvec, csc_tsd.data - baseline);
 divisionconstant = Fullrange/cfg.rangetouse;  % this is the constant value to normalize by to get a max of 180 degrees rotation in either direction.

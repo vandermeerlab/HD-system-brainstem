@@ -71,7 +71,7 @@ set(gca, 'Ylim', [0 ymax], 'FontSize', cfg.FontSize)
 % Add Tuning Curve
 cfg_ahv.doPlot = 0;
 [tc_out] = getAHV_TC(cfg_ahv, sd);
-plot(tc_out.usr.binCenters, smoothdata(tc_out.tc(iCell,:)), 'LineWidth', cfg.LineWidth, 'Color', 'k');
+plot(tc_out.binCenters, smoothdata(tc_out.tc(iCell,:)), 'LineWidth', cfg.LineWidth, 'Color', 'k');
 ylabel('FR (Hz)', 'FontSize', cfg.FontSize)
 set(groot, 'DefaultLegendInterpreter', 'none')
 title('AHV Tuning Curve')
@@ -95,7 +95,7 @@ if eye
     F = MakeQfromS(cfg_Q, sd.S); % convert to FR
     F.data = F.data(iCell,:) ./ cfg_Q.dt;
     
-    % find FR corresponding to each AHV sample
+    % find FR corresponding to each pupil position sample
     F_idx = nearest_idx3(sd.tsdH.tvec, F.tvec);
     tsdH_F = F.data(:,F_idx);
     plot(sd.tsdH.data, tsdH_F(1,:), '.', 'MarkerSize', .5, 'color', [.8 .8 .8]); hold on
@@ -107,7 +107,7 @@ if eye
     cfg_tc.occ_dt = median(diff(sd.tsdH.tvec));
     cfg_tc.minOcc = 10;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
     tc_pupil = TuningCurves(cfg_tc, sd.S, sd.tsdH);
-    plot(tc_pupil.usr.binCenters(tc_pupil.occ_hist > cfg.occthresh), smoothdata(tc_pupil.tc(1,(tc_pupil.occ_hist > cfg.occthresh))), 'k', 'LineWidth', 3);
+    plot(tc_pupil.binCenters(tc_pupil.occ_hist > cfg.occthresh), smoothdata(tc_pupil.tc(1,(tc_pupil.occ_hist > cfg.occthresh))), 'k', 'LineWidth', 3);
     set(gca, 'FontSize', cfg.FontSize)
     title('Pupil Position (pixels)')
     % axis tight

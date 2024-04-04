@@ -36,24 +36,21 @@ nT = length(t);
 outputS = [];
 outputT = [];
 outputGau = [];
-% outputID = repmat(inf, nT, diff(cfg.window)/cfg.dt+1);
+outputID = repmat(inf, nT, diff(cfg.window)/cfg.dt+1);
 outputIT = linspace(cfg.window(1), cfg.window(2), diff(cfg.window)/cfg.dt+1);
 if cfg.outputGrid
     xbin = cfg.window(1):cfg.dt:cfg.window(2);
     outputG = zeros(nT,length(xbin)-1);
 end
 
-% convolve with gaussian for firing rate%
-
-%plot(tbin_centers,S_gau_sdf,'g');
-
 for iT = 1:nT
+    
     S0 = restrict(S, t(iT)+cfg.window(1)-cfg.excessBounds, t(iT)+cfg.window(2)+cfg.excessBounds);
     %     if length(S0.t{1}) > 0
     S0 = restrict(S0, t(iT)+cfg.window(1), t(iT)+cfg.window(2));
     if length(S0.t{1}) > 0
         outputT = [outputT; repmat(iT, length(S0.t{1}),1)];
-        %         outputS = [outputS; S0.t{1}-t(iT)];        %convolve with gaussian for firing rate.
+                outputS = [outputS; S0.t{1}-t(iT)];        %convolve with gaussian for firing rate.
         temp = outputS;
         outputS = cat(1, temp, S0.t{1}-t(iT));   % JJS hack. Error with cat dim not consistent.
         tbin_edges = t(iT)+cfg.window(1):cfg.binsize:t(iT)+cfg.window(2);
@@ -77,7 +74,9 @@ for iT = 1:nT
         end
     end
 end
+% convolve with gaussian for firing rate%
 
+%plot(tbin_centers,S_gau_sdf,'g');
 %% check if there are any spikes
 if isempty(outputT)
     disp('No spikes')
@@ -91,7 +90,7 @@ if cfg.doPlot == 1
     %% display
     if cfg.doRaster ==1
         % spike raster
-        % 	imagesc(window,[1 nT], outputID);
+%         	imagesc(window,[1 nT], outputID);
         % 	colormap(1-0.25*gray);
         % 	hold on;
         plot(outputS, outputT+0.5, 'k.', 'MarkerSize', 5);
