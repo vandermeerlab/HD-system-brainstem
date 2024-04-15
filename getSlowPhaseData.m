@@ -7,8 +7,10 @@ function [data_out, numSpikesRemoved] = getSlowPhaseData(cfg_in, sd, iCell)
 % MvdM, based on JJS getSlowPhaseTC3
 
 cfg_def = [];
-cfg_def.saccade_pre = .2;  % how many seconds to cut out before the saccade.
-cfg_def.saccade_post = .1; % how many seconds to cut out after the saccade. 
+cfg_def.saccade_pre = 0.2;  % how many seconds to cut out before the saccade.
+cfg_def.saccade_post = 0.1; % how many seconds to cut out after the saccade. 
+
+cfg_def.medfilt_window_size = 11; % number of samples to use for slow phase velocity filter
 
 cfg_Q = [];
 cfg_Q.dt = 0.05; % binsize in s
@@ -25,8 +27,8 @@ else
     error('saccade mat file not found')
 end
 sd = LoadSessionData([]); % initialize the variables for this session
-myCell = SelectTS([], sd.S, iCell); % choose a single neuron to work with
-meanFRoverall = length(myCell.t{1,1}) / sd.SessLength; 
+this_cell = SelectTS([], sd.S, iCell); % choose a single neuron to work with
+meanFRoverall = length(this_cell.t{1}) / sd.SessLength; 
 
 %% resample data to be on common timebase
 new_tvec_edges = sd.AHV.tvec(1):cfg_master.cfg_Q.dt:sd.AHV.tvec(end);
@@ -34,60 +36,53 @@ new_tvec = new_tvec_edges(1:end-1) + (cfg_master.cfg_Q.dt / 2);
 
 % compute firing rate
 cfg_master.cfg_Q.tvec_edges = new_tvec_edges;
-fr = MakeQfromS(cfg_master.cfg_Q, myCell); fr.data = fr.data ./ cfg_master.cfg_Q.dt;
+fr = MakeQfromS(cfg_master.cfg_Q, this_cell); fr.data = fr.data ./ cfg_master.cfg_Q.dt;
 
 % ahv
 cfg = []; cfg.method = 'rebinning';
 ahv = resampleTSD(cfg, sd.AHV, new_tvec);
 
+% eye position
+horiz_eye_pos = resampleTSD(cfg, sd.tsdH, new_tvec);
+
+% eye velocity
+%horiz_eye_vel = dxdt(sd.tsdH.tvec, sd.tsdH.data, 'window', 0.2, 'postSmoothing', 0.1); % this would be nice, why doesn't it work?
+sd.horiz_eye_vel = cat(2, 0, diff(sd.tsdH.data)); sd.horiz_eye_vel = sd.horiz_eye_vel ./ median(diff(sd.tsdH.tvec));
+sd.horiz_eye_vel_smooth = medfilt1(sd.horiz_eye_vel, cfg_master.medfilt_window_size);
+sd.horiz_eye_vel = tsd(sd.tsdH.tvec, sd.horiz_eye_vel);
+sd.horiz_eye_vel_smooth = tsd(sd.tsdH.tvec, sd.horiz_eye_vel_smooth);
+
+if cfg_master.doPlot
+    displayFactor = 10;
+    plot(sd.tsdH.tvec, sd.tsdH.data .* displayFactor) hold on; plot(sd.tsdH.tvec, sd.tsdH.data .* displayFactor, '.b')
+    plot(sd.horiz_eye_vel,'r'); plot(sd.horiz_eye_vel,'r.')
+    plot(sd.horiz_eye_vel_smooth, 'g', 'LineWidth', 2)
+end
+
+cfg = []; cfg.method = 'rebinning';
+horiz_eye_vel = resampleTSD(cfg, sd.horiz_eye_vel, new_tvec);
+horiz_eye_vel_smooth = resampleTSD(cfg, sd.horiz_eye_vel, new_tvec);
+
+% head direction
+cfg = []; cfg.method = 'rebinning';
+head_direction = resampleTSD(cfg, sd.orientation, new_tvec);
+
 %% Limit the data to everything but the quick phase periods 
 timestouse = ~isnan(combinedSaccades); % create a logical with not NaN saccade times
 combinedSaccadesToUse = combinedSaccades(timestouse); % select only non-NaN saccade values to use
 
-pre = combinedSaccadesToUse - cfg_out.saccade_pre; 
-post = combinedSaccadesToUse + cfg_out.saccade_post; 
+pre = combinedSaccadesToUse - cfg_master.saccade_pre; 
+post = combinedSaccadesToUse + cfg_master.saccade_post; 
 
-[~, keep] = restrict(myCell, pre, post);  % get the indices for times around the moment of saccade
+[this_cellR, keep] = antirestrict(this_cell, pre, post);
 
-myCellr = myCell;
-myCellr.t{1,1}(keep{1,1}==1) = [];  % remove the values that are within the saccade window 
-
-disp(strcat('Total SPIKES = ' , num2str(length(sd.S.t{iCell}))))
-numSpikesRemoved = sum((keep{1,1}==1)); disp(strcat('num SPIKES removed =', num2str(numSpikesRemoved)))
-disp(strcat('Fraction = ', num2str(numSpikesRemoved/length(sd.S.t{iCell}),3)))
-fprintf(1, '\n');
-
-%% also output restricted firing rate (useful for GLM later)
-Q = MakeQfromS(cfg_out.cfg_Q, myCellr);
-
-[~, keep] = restrict(Q, pre, post);  
-keep = (keep == 0);  % invert the output
-
-fr = Q; fr.tvec = fr.tvec(keep); fr.data = fr.data(keep) ./ cfg_out.cfg_Q.dt;
-data_out.fr = fr;
+nSpikes = length(this_cell.t{1});
+fprintf('Total SPIKES: %d\n', nSpikes);
+nSpikesRemoved = sum((keep{1} == 0)); 
+fprintf('num SPIKES removed: %d (fraction %.2f)\n', nSpikesRemoved, nSpikesRemoved/nSpikes);
 
 %% AHV
-tStartAHV = horzcat(0, post);
-tEndAHV = horzcat(pre, sd.AHV.tvec(end)); 
-sizeFullAHV = length(sd.AHV.tvec);
-[sacc,~] = restrict(sd.AHV, pre, post);  % this is the tsd of restricted saccade times 
-size_sacc_AHV = length(sacc.tvec);
-[ISI_AHV,~] = restrict(sd.AHV, tStartAHV, tEndAHV);  % ISI = inter-saccade interval 
-size_ISI_AHV = length(ISI_AHV.tvec); 
-total = size_sacc_AHV + size_ISI_AHV; 
-assert(total == sizeFullAHV)
-AHV_samplingrate = 1/median(diff(ISI_AHV.tvec)); disp(strcat('AHV sampling rate = ', num2str(AHV_samplingrate)))
-fprintf(1, '\n');
-AHVsamplesRemovedr = sum(sizeFullAHV - length(ISI_AHV.tvec)); 
-
-[~,keepAHV] = restrict(sd.AHV, pre, post);  % AHV
-keepersAHV = keepAHV == 0;  % invert the output so that logical values of 1 indicate data that was not restricted (i.e. everything but peri-saccade times)
-AHVr = sd.AHV;
-AHVr.tvec = sd.AHV.tvec(keepersAHV);
-AHVr.data = sd.AHV.data(keepersAHV);
-AHV_samplingrate = 1/median(diff(AHVr.tvec)); disp(strcat('AHV sampling rate = ', num2str(AHV_samplingrate)))
-fprintf(1, '\n');
-AHVsamplesRemoved = sum(keepAHV); 
+ahvR = antirestrict(ahv, pre, post);
 
 %% EYE VELOCITY
 [~,keepEV] = restrict(diffH, pre, post);  
