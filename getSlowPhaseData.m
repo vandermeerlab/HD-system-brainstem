@@ -4,14 +4,17 @@ function [data_out, nSpikesRemoved] = getSlowPhaseData(cfg_in, sd, iCell)
 % use saccade .mat file to restrict data to slow phase only
 % useful for later tuning curve and GLM analysis
 %
-% MvdM, based on JJS getSlowPhaseTC3
+% 2024-04-18. MvdM, based on JJS getSlowPhaseTC3
 
 cfg_def = [];
+cfg_def.FontSize = 20;
 cfg_def.saccade_pre = 0.2;  % how many seconds to cut out before the saccade.
 cfg_def.saccade_post = 0.1; % how many seconds to cut out after the saccade. 
 cfg_def.doPlot = 1;
+cfg_def.markerSize = 3; 
 cfg_def.plotWhichPhase = 'slow'; % 'slow', 'both'
 cfg_def.medfilt_window_size = 11; % number of samples to use for slow phase velocity filter
+cfg_def.smooth = 1; 
 
 cfg_Q = [];
 cfg_Q.dt = 0.02; % binsize in s
@@ -54,13 +57,17 @@ sd.horiz_eye_vel = tsd(sd.tsdH.tvec, sd.horiz_eye_vel);
 sd.horiz_eye_vel_smooth = tsd(sd.tsdH.tvec, sd.horiz_eye_vel_smooth);
 
 if cfg_master.doPlot
-
+    clf; 
     subplot(221)
     displayFactor = 10;
-    plot(sd.tsdH.tvec, sd.tsdH.data .* displayFactor); hold on; plot(sd.tsdH.tvec, sd.tsdH.data .* displayFactor, '.b')
-    plot(sd.horiz_eye_vel,'r'); plot(sd.horiz_eye_vel,'r.')
-    plot(sd.horiz_eye_vel_smooth, 'g', 'LineWidth', 2)
-
+    plot(sd.tsdH.tvec, sd.tsdH.data .* displayFactor); hold on  % pupil position
+    plot(sd.horiz_eye_vel,'r');  % pupil velocity
+    plot(sd.horiz_eye_vel_smooth, 'g', 'LineWidth', 2) % smoothed pupil velocity
+    set(gca, 'FontSize', cfg_master.FontSize)
+    plot(sd.horiz_eye_vel,'r.')
+    plot(sd.tsdH.tvec, sd.tsdH.data .* displayFactor, '.b')
+    plot(sd.horiz_eye_vel_smooth, 'g', 'LineWidth', 2) % smoothed pupil velocity. Replotted here so the green line is in front. 
+    legend('pupil position', 'velocity', 'smoothed velocity')
 end
 
 cfg = []; cfg.method = 'rebinning';
@@ -94,11 +101,11 @@ head_directionR = antirestrict(head_direction, pre, post);
 frR = antirestrict(fr, pre, post);
 
 if cfg_master.doPlot
-
-   subplot(223)
-   plot(ahvR.data, horiz_eye_vel_smoothR.data, '.');
+   subplot(222)
+   plot(ahvR.data, horiz_eye_vel_smoothR.data,  '.b', 'MarkerSize', cfg_master.markerSize);
    xlabel('AHV'); ylabel('horiz eye vel. (smoothed)')
-
+   set(gca, 'FontSize', cfg_master.FontSize)
+   lsline
 end
 
 % restricted and resampled data
@@ -113,11 +120,11 @@ data_outR.fr = frR; data_out.fr = fr;
 if cfg_master.doPlot
 
     cfg_master.LineWidth = 3;
-    cfg_master.FontSize = 20;
+%     cfg_master.FontSize = 20;
     cfg_master.insetText = 18;
     cfg_master.tightX = .025;
     cfg_master.tightY = .025;
-    cfg_master.smooth = 0;
+    cfg_master.smooth = 1;
 
         switch cfg_master.plotWhichPhase
             case 'slow'
@@ -139,9 +146,10 @@ if cfg_master.doPlot
 %--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     %% #1 AHV tuning curve
     % calculate raw firing rates 
-    figure; clf; hold on;
-    % subplot(2,2,1)
-    subtightplot(4,2,1, [cfg_master.tightX cfg_master.tightY]);
+%     figure; clf; 
+    hold on;
+    subplot(2,2,3)
+%     subtightplot(4,2,1, [cfg_master.tightX cfg_master.tightY]);
 
     % NOTE it is critical to not recompute firing rates here (as in
     % previous versions!)
@@ -150,7 +158,7 @@ if cfg_master.doPlot
     
     ymax = max(AHV_F);
     set(gca, 'TickDir', 'out', 'FontSize', cfg_master.FontSize)
-    plot(this_data.AHV.data, AHV_F, '.', 'MarkerSize', 2); hold on
+    plot(this_data.AHV.data, AHV_F, '.b', 'MarkerSize', cfg_master.markerSize); hold on
     set(gca, 'Ylim', [0 ymax], 'FontSize', cfg_master.FontSize)
 
     % add the Tuning Curve
@@ -177,13 +185,14 @@ if cfg_master.doPlot
     tc_velEV = TuningCurves(cfg_V, this_data.S, this_data.horiz_eye_vel_smooth);
     
     % Calculate pupil velocity firing rates
-    subtightplot(4,2,2, [cfg_master.tightX cfg_master.tightY]);
+    subplot(2,2,4)
+%     subtightplot(4,2,2, [cfg_master.tightX cfg_master.tightY]);
     hold on
     % find FR corresponding to each pupil position sample
     F_idxEV = nearest_idx3(this_data.horiz_eye_vel_smooth.tvec, this_data.fr.tvec);
     EV_F = this_data.fr.data(:,F_idxEV);
     ymaxEV = max(EV_F);
-    plot(this_data.horiz_eye_vel_smooth.data, EV_F, '.', 'MarkerSize', 2);   %  'color', [.8 .8 .8]
+    plot(this_data.horiz_eye_vel_smooth.data, EV_F, '.b', 'MarkerSize', cfg_master.markerSize);   %  'color', [.8 .8 .8]
     
     set(gca, 'FontSize', cfg_master.FontSize)
     % title('Pupil Position (pixels)')
@@ -199,7 +208,7 @@ if cfg_master.doPlot
     title(sd.fn{iCell,1})
     
     if cfg_master.smooth
-        plot(smoothdata(tc_velEV.binCenters), tc_velEV.tc, 'LineWidth', 3, 'Color', 'k');
+        plot(tc_velEV.binCenters, smoothdata(tc_velEV.tc), 'LineWidth', 3, 'Color', 'k');
     else
         plot(tc_velEV.binCenters, tc_velEV.tc, 'LineWidth', 3, 'Color', 'k');
     end

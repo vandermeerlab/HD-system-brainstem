@@ -113,7 +113,7 @@ if exist(strcat(SSN, '-saccades-edited.mat'))
     cfg_tc.occ_dt = median(diff(tsdH.tvec));
     cfg_tc.minOcc = 10;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
     tc_pupil = TuningCurves(cfg_tc, S, tsdH);
-    plot(tc_pupil.usr.binCenters(tc_pupil.occ_hist>occthresh), smoothdata(tc_pupil.tc(1,(tc_pupil.occ_hist>occthresh))), 'k', 'LineWidth', 3);
+    plot(tc_pupil.binCenters(tc_pupil.occ_hist>occthresh), smoothdata(tc_pupil.tc(1,(tc_pupil.occ_hist>occthresh))), 'k', 'LineWidth', 3);
     set(gca, 'FontSize', FontSize)
     title('Pupil Position (pixels)')
     % axis tight
