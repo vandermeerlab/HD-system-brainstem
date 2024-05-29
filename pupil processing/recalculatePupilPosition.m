@@ -1,4 +1,4 @@
-function [xNew, yNew, prX, prY, xT, yT, Hnew] = recalculatePupilPosition(LeftEye, RightEye, first_f, cfg_in)
+function [xNew, yNew, prX, prY, xT, yT, Hnew, pupil, rois] = recalculatePupilPosition(LeftEye, RightEye, first_f, cfg_in)
 
 % JJS. 2024-04-29.
 % This function recalculates the pupil position for each video frame into new coordinates, based on the axis defined by the left and right edges
@@ -34,7 +34,7 @@ function [xNew, yNew, prX, prY, xT, yT, Hnew] = recalculatePupilPosition(LeftEye
 %                           (1) Plotting all of the new data points and lines is prohibitively slow. It only really works if you wait an extremely long 
 %                           time or run through just a few examples in debug mode. 
 %                           (2) Need to include an option to scroll ahead to find a good frame if the mouse is blinking in the first frame of video. 
-%
+%                           (3) add as an output the angle between the camera horizontal and the new eye axis
 %
 cfg_def.doPlot = 0;
 cfg_def.MarkerSize = .05;
@@ -49,7 +49,7 @@ else
     error('could not find facemap pupil data')
 end
 %% Load the video
-if ~exist('first_f')
+if ~isempty('first_f')
     vname = strcat(SSN, '-VT1.mp4'); % filename of the video
     disp('Loading video...')
     vidObj = VideoReader(vname); % Load it into Matlab.

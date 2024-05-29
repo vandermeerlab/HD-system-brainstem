@@ -139,7 +139,7 @@ end
 if EYE
     success = 0; %#ok<NASGU>
     try
-        load(FindFile('*saccades-edited.mat'), 'temporalSaccades', 'temporalAmplitudes', 'nasalSaccades', 'nasalAmplitudes', 'tsdH', 'tsdV')
+        load(FindFile('*saccades-edited.mat'), 'temporalSaccades', 'temporalAmplitudes', 'nasalSaccades', 'nasalAmplitudes', 'tsdH', 'tsdV', 'diffH', 'diffV')
         % ____saccades = timestamps.
         % ____amplitudes = saccade amplitdues.
         % tsdH is horizontal pupil position
@@ -154,6 +154,8 @@ if EYE
             sd.tsdH.data = sd.tsdH.data'; % TuningCurves() requires this format whereby tvec and data have opposite orientations (1 x n and n x 1, instead of 1 x n and 1 x n). 2023-07-19.
             sd.tsdH_dt = median(diff(tsdH.tvec));
             sd.tsdV = tsdV;
+            sd.diffH = diffH;
+            sd.diffV = diffV;
         end
     catch
         warning('cannot find saccade data')
@@ -203,22 +205,6 @@ end
 if dirpushed
     popdir;
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 %% alternate way of find start and stop recording times
