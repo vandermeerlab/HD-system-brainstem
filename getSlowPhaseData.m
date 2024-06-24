@@ -12,9 +12,9 @@ function [data_out, data_outR, nSpikesRemoved] = getSlowPhaseData(cfg_in, sd, iC
 
 cfg_def = [];
 cfg_def.FontSize = 20;
-cfg_def.saccade_pre = 0.2;  % how many seconds to cut out before the saccade.
+cfg_def.saccade_pre = 0.1;  % how many seconds to cut out before the saccade.
 cfg_def.saccade_post = 0.1; % how many seconds to cut out after the saccade.
-cfg_def.doPlot = 1;
+cfg_def.doPlot = 0;
 cfg_def.markerSize = 3;
 cfg_def.plotWhichPhase = 'slow'; % 'slow', 'both'
 cfg_def.medfilt_window_size = 11; % number of samples to use for slow phase velocity filter

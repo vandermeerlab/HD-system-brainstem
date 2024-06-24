@@ -82,7 +82,7 @@ text(.5*h(2), 10, 'CCW', 'FontSize', 12)
 subtightplot(4,6,1, [tightX tightY])
 fc = FindFiles('*.t', 'CheckSubdirs', 0);
 [a, b, c] = fileparts(fc{iCell});
-plot(tc_out.usr.binCenters, tc_out.tc, 'LineWidth', LineWidth);
+plot(tc_out.binCenters, tc_out.tc, 'LineWidth', LineWidth);
 set(gca, 'TickDir', 'out', 'FontSize', FontSize)
 set(gca, 'Ylim', [0 ymax])
 xlabel('AHV (deg./sec)', 'FontSize', FontSize)

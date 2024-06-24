@@ -1,6 +1,6 @@
 function [tc_out] = getHD_TC(cfg_in, sd)
 % JJS. 2023-08-24.
-% Calculate and plot the AHV tuning curve
+% Calculate and plot the Head Direction Tuning Curve
 % input:   sd - session data structure with spike trains S and tsd of angular head velocity
 % output:  tc_out - a structure
 %               .usr.tc - nCells x mBins
@@ -34,7 +34,7 @@ if cfg_tc.doPlot
     for iCell = 1:length(sd.S.t)
         % Add Tuning Curve
         if cfg_tc.smooth
-            plot(tc_out.usr.binCenters, smoothdata(tc_out.tc(iCell,:)), 'LineWidth', 3, 'Color', 'k'); 
+            plot(tc_out.binCenters, smoothdata(tc_out.tc(iCell,:)), '.', 'LineWidth', 3, 'Color', 'k'); 
         else
             plot(tc_out.usr.binCenters, tc_out.tc(iCell,:), 'LineWidth', 3, 'Color', 'k');
         end
