@@ -56,7 +56,7 @@ cfg = []; cfg.method = 'rebinning';
 ahv = resampleTSD(cfg, sd.AHV, new_tvec);
 
 % eye position
-horiz_eye_pos = resampleTSD(cfg, sd.tsdH, new_tvec);
+horiz_eye_pos = resampleTSD(cfg, sd.tsdH, new_tvec); 
 
 % eye velocity
 %horiz_eye_vel = dxdt(sd.tsdH.tvec, sd.tsdH.data, 'window', 0.2, 'postSmoothing', 0.1); % this would be nice, why doesn't it work?
