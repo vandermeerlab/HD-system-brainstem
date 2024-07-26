@@ -7,6 +7,9 @@ function [k, tsdHdeg, diffHdeg] = calibrate_eye_position_single_session_ver2(sd,
 % can approximate degrees by finding the scaling factor at which 0.9*AHV approximate equals the eye velocity trace. This scaling factor usually lies around 0.4 to 06,
 % but can vary a lot depending on the particular session. Therefore, it is necessary to estimate k for every single session.
 % Future protocols for the task may employ some kind of calibration step, in order to empirically relate the eye position too degrees.
+
+% Note: smoothing and velocity cutoff (doRestrict) should not be used at the same time. Using the cutoff velocity will interfere with smoothing. If smoothing, then just plot raw data.
+
 % ***Note to self: ask Brandie Verdone how she does the calibration step in the Cullen lab.
 
 % JJS. 2024-07-25. ver2
@@ -30,19 +33,33 @@ function [k, tsdHdeg, diffHdeg] = calibrate_eye_position_single_session_ver2(sd,
 %           diffHdeg - 1x1 struct with fields same as above ^^
 %                   .unit - 'degrees per second' [this is pupil velocity]
 
+cfg_def.vel_cutoff = 35; % degrees per second cuttoff for use when visualizing the two traces overlapping 
+cfg_def.doRestrict = 0; % remove samples with velocity greater than cutoff above ^^ 
 cfg_def.doSave = 1;
 cfg_def.FontSize = 25;
 cfg_def.MarkerSize = 15;
 cfg_def.doSmooth = 1;
 cfg_out = ProcessConfig(cfg_def,cfg_in);
 
+if cfg_out.doRestrict ==1 && cfg_out.doSmooth == 1
+    warning('veloctiy cutoff selected AND smoothing detected. Please remove one or the other')
+end
 % Initialize
 SSN = HD_GetSSN;
 k = [];
 tsdHdeg = [];  % this is a tsd of the eye position in degrees (as approximated by the 0.9 AHV rule)
 diffHdeg = []; % this is a tsd of eye velocity in degrees per second
 
-%% Make sure that eye data is present
+%% Make sure that eye tracking exists for this session
+if exist(strcat(SSN, '-VT1.smi')) ~= 2
+    disp('eye tracking data does not exist for this session. Skipping session.')
+    k = NaN; 
+    tsdHdeg = NaN; 
+    diffHdeg = NaN;
+    return
+end
+
+%% Make sure that curated eye data is present
 filename = strcat(SSN, '-saccades-edited.mat');
 doExist = exist(filename);
 if doExist ~= 2
@@ -78,12 +95,26 @@ else
     ahvR = tsd(data_outR.AHV.tvec, -data_outR.AHV.data); % introducing a sign change here so that AHV and EYE are correlated.
 end
 
-k = 0.40;
+k = 0.40;  % defulat starting value for k, the conversion factor 
+
+%% Velocity cutoff
+% if 'yes', then restric the traces to only those times when eye velocity is less than ~35 degrees per second. This is per Kathy Cullen. 
+% She says that the approximate equality of the two signals may not hold for velocities greater than this (or it may not be known.
+% However, from looking anectdoctally, it seems like the two traces still match up most of the time at the higher velocities. 
+if cfg_out.doRestrict   
+    index = abs(0.9.*ahvR.data) < cfg_out.vel_cutoff; 
+%     ahvRdata = ahvRdata(index); ahvRtime = ahvR.tvec(index);
+%     eyeRdata = eyeRdata(index); eyeRtime = ahvR.tvec(index);
+else
+    index = logical(ones(1,length(ahvR.tvec)));
+end
+
+%% Visualization Loop
 cont = 1; % 'continue' variable. Keep running the for loop until user is satisfied with the coefficient
 while cont == 1
     clf; hold on
-    plot(ahvR.tvec, (0.9).*ahvR.data, '-o', 'Color', 'r', 'MarkerSize', cfg_out.MarkerSize)
-    plot(eyeR.tvec, k.*eyeR.data, '-o', 'Color', 'b', 'MarkerSize', cfg_out.MarkerSize)
+    plot(ahvR.tvec(index), (0.9).*ahvR.data(index), '-o', 'Color', 'r', 'MarkerSize', cfg_out.MarkerSize)
+    plot(eyeR.tvec(index), k.*eyeR.data(index), '-o', 'Color', 'b', 'MarkerSize', cfg_out.MarkerSize)
     %     plot(eye.tvec, k.*eye.data, 'b')
     set(gca, 'FontSize', cfg_out.FontSize)
     % c = axis;
@@ -94,26 +125,29 @@ while cont == 1
         title(sd.SSN)
     end
     legend('9/10*AHV (deg/s)', strcat(num2str(k),'*EV (pixels/s)'), 'Location', 'NorthWest')
-    x = input('Are you satisfied with the overlap? Type y or n    ', "s");
+    x = input('Are you satisfied with the overlap? Type y or n. Type s to skip session     ', "s");
     if strcmp(x, 'n') == 1
         y = input('Type in a new numerical value for the coefficient     ');
         assert(isnumeric(y))
         k = y;
+    elseif strcmp(x, 's') == 1
+        k = NaN;
+        return
     elseif strcmp(x, 'y') == 1
         disp('k value accepted')
         cont = 0;
     else
-        error('must type y or n as a reply')
+        error('must type y or n or s as a reply')
     end
 end
-
+%% Make tsd
 tsdHdeg = tsd(tsdH.tvec, tsdH.data.*k); % tsdH is the pupil position, in units of pixels
 tsdHdeg.units = 'degrees';
 tsdHdeg.label = {'calibrated pupil position'};
 diffHdeg = tsd(diffH.tvec, diffH.data.*k); % diffH is the pupil velocity, in units of pixels per second
 diffHdeg.units = 'degrees per second';
 diffHdeg.label = {'calibrated pupil velocity'};
-
+%% Save it 
 if cfg_out.doSave
     save(filename, 'k', 'tsdHdeg', 'diffHdeg', "-append")
     disp('data saved to saccades-edited.mat file')

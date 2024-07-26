@@ -70,7 +70,11 @@ B = cellfun(wrapperB, events_ts.label);
 Startindex = find(A); % index which label says 'Start Recording'
 starttime = events_ts.t{1, Startindex}; % use the very first start record time
 Endindex = find(B);
+if strcmp(SSN, 'M281-2021-12-23') ==1   % This session crashed and doesn't have a cheetah endtime. JJS. 2024-07-26
+    endtime = 396.75;
+else
 endtime = events_ts.t{1, Endindex};
+end
 sd.starttime = starttime;
 sd.endtime = endtime;
 sd.SessLength = sd.endtime - sd.starttime;
