@@ -63,47 +63,21 @@ if Events
 end
 % New cheetah versions have timestamps that are in Unix Epoch Time, so you have to subtract the start time.
 
-wrapperA = @(events_ts) strcmp(events_ts, 'Starting Recording');
-A = cellfun(wrapperA, events_ts.label);
-wrapperB = @(events_ts) strcmp(events_ts, 'Stopping Recording');
-B = cellfun(wrapperB, events_ts.label);
-Startindex = find(A); % index which label says 'Start Recording'
-starttime = events_ts.t{1, Startindex}; % use the very first start record time
-Endindex = find(B);
-if strcmp(SSN, 'M281-2021-12-23') ==1   % This session crashed and doesn't have a cheetah endtime. JJS. 2024-07-26
-    endtime = 396.75;
-else
-endtime = events_ts.t{1, Endindex};
-end
-sd.starttime = starttime;
-sd.endtime = endtime;
-sd.SessLength = sd.endtime - sd.starttime;
-%-------------------------
-% SPIKES
-%-------------------------
-if Spikes ==1
-    cfg = [];
-    cfg.uint = '64';
-    if Use__Ts == 1
-        cfg.fc = cat(1, fc, FindFiles('*._t', 'CheckSubdirs',0));
-    else
-        cfg.fc = FindFiles('*.t', 'CheckSubdirs', 0);
-    end
-    sd.fc = cfg.fc;
-    S = LoadSpikes(cfg);
-    % Start Recording should be in the first or second .label position.
-    for iC = 1:length(S.t)
-        S.t{iC} = S.t{iC} - starttime;  % subtract the very first time stamp to convert from Unix time to 'start at zero' time.
-    end
-    sd.S = S;
-    
-    sd.fn = {};
-    for iC = 1:length(sd.fc)
-        [~,sd.fn{iC}] = fileparts(sd.fc{iC});
-        sd.fn{iC} = strrep(sd.fn{iC}, '_', '-');
-    end
-    sd.fn = sd.fn';
-end
+% wrapperA = @(events_ts) strcmp(events_ts, 'Starting Recording');
+% A = cellfun(wrapperA, events_ts.label);
+% wrapperB = @(events_ts) strcmp(events_ts, 'Stopping Recording');
+% B = cellfun(wrapperB, events_ts.label);
+% Startindex = find(A); % index which label says 'Start Recording'
+% starttime = events_ts.t{1, Startindex}; % use the very first start record time
+% Endindex = find(B);
+% if strcmp(SSN, 'M281-2021-12-23') ==1   % This session crashed and doesn't have a cheetah endtime. JJS. 2024-07-26
+%     endtime = 396.75;
+% else
+% endtime = events_ts.t{1, Endindex};
+% end
+% sd.starttime = starttime;
+% sd.endtime = endtime;
+% sd.SessLength = sd.endtime - sd.starttime;
 %-------------------------
 % ANGULAR HEAD VELOCITY
 %-------------------------
@@ -136,6 +110,36 @@ if AHV
         ylabel('AHV (deg/sec)')
         xlabel('Time (sec)')
     end
+end
+% Start and end session times
+sd.starttime = csc_tsd.tvec(1); % uses the first and last timestamps of the encoder signal instead of the Cheetah start/stop times in the Events file (in case the session crashed)
+sd.endtime = csc_tsd.tvec(end);
+sd.SessLength = sd.endtime - sd.starttime;
+%-------------------------
+% SPIKES
+%-------------------------
+if Spikes ==1
+    cfg = [];
+    cfg.uint = '64';
+    if Use__Ts == 1
+        cfg.fc = cat(1, fc, FindFiles('*._t', 'CheckSubdirs',0));
+    else
+        cfg.fc = FindFiles('*.t', 'CheckSubdirs', 0);
+    end
+    sd.fc = cfg.fc;
+    S = LoadSpikes(cfg);
+    % Start Recording should be in the first or second .label position.
+    for iC = 1:length(S.t)
+        S.t{iC} = S.t{iC} - sd.starttime;  % subtract the very first time stamp to convert from Unix time to 'start at zero' time.
+    end
+    sd.S = S;
+    
+    sd.fn = {};
+    for iC = 1:length(sd.fc)
+        [~,sd.fn{iC}] = fileparts(sd.fc{iC});
+        sd.fn{iC} = strrep(sd.fn{iC}, '_', '-');
+    end
+    sd.fn = sd.fn';
 end
 %-------------------------
 % EYE MOVEMENTS
