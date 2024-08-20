@@ -3,8 +3,8 @@ function [M, Mfr] = saccade_peth_shuffled_spike_times(myCell, t, varargin)
 % spikePETH(S, t, varargin)
 %
 % input:
-%        TS S
-%        Event times t
+%        myCell = ts of spike times for a single neuron
+%        t = Event times of interest
 % output:
 %        z score for each time bin
 % parameters:

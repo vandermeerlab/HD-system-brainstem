@@ -188,9 +188,9 @@ if exist(encoderCSC)
     [angle_tsd, wheel_tsd] = ConvertQEStatesToAngle([], state_tsd); %#ok<*ASGLU>
     [d, speed, cfg] = ConvertWheeltoSpeed([], wheel_tsd);  % speed the wheel (in centimeters per second)
     
-    d.tvec = d.tvec - starttime;
+    d.tvec = d.tvec - sd.starttime;
     speed.data = -speed.data;           % we want forward motion to be displayed as a positive velocity. This requires a sign reversal.
-    speed.tvec = speed.tvec - starttime;
+    speed.tvec = speed.tvec - sd.starttime;
     speed.dt = median(diff(speed.tvec));
     
     sd.d = d; % total distance travelled on the wheel (in centimenters)
