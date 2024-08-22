@@ -1,4 +1,4 @@
-function [cfg_out] = saccadePETHsig_ver1_1(tfilelist, cfg_in)
+function [cfg_out] = circ_saccadePETHsig_ver1_1(tfilelist, cfg_in)
 % saccadePETHsig_ver1_1.m  This function determines whether each neuorn is significantly modulated around the saccade time
 %
 %   Inputs

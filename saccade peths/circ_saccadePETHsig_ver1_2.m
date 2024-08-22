@@ -1,4 +1,4 @@
-function [c, nNew, tNew, mt_shuff, mn_shuff, cfg_out] = saccadePETHsig_ver1_2(tfilelist, cfg_in)
+function [c, tNew, nNew, mt_shuff, mn_shuff, outputS_t_shuff, outputS_n_shuff, outputIT_t_shuff, outputIT_n_shuff, cfg_out] = circ_saccadePETHsig_ver1_2(tfilelist, cfg_in)
 % saccadePETHsig_ver1_1.m  This function determines whether each neuorn is significantly modulated around the saccade time
 %
 %   Inputs
@@ -58,14 +58,14 @@ for iC = 1:length(tfilelist)
     [outputS_t, ~, ~, outputIT_t, cfg_peth_t] = SpikePETHvdm(cfg_peth, myCell, t);  % temporal saccade peth
     [outputS_n, ~, ~, outputIT_n, cfg_peth_n] = SpikePETHvdm(cfg_peth, myCell, n);  % nasal saccade peth
     
-    mt = histcounts(outputS_t, outputIT_t / cfg_peth.dt / length(t));
-    mn = histcounts(outputS_n, outputIT_n / cfg_peth.dt / length(n));
+    mt = histcounts(outputS_t, outputIT_t);
+    mn = histcounts(outputS_n, outputIT_n);
     
     %% Plot it
     if cfg_out.doPlot == 1
         clf
-        plot(outputIT_t(1:end-1), smoothdata(mt)); hold on    % *** hack. Using end-1 here because outputIT is 1 element longer. Using histc produced the right lenght, but the last entry was always zero.
-        plot(outputIT_n(1:end-1), smoothdata(mn));
+        plot(outputIT_t(1:end-1), mt / cfg_peth.dt / length(t)); hold on    % *** hack. Using end-1 here because outputIT is 1 element longer. Using histc produced the right lenght, but the last entry was always zero.
+        plot(outputIT_n(1:end-1), mn / cfg_peth.dt / length(n));
         disp('press any key to continue'); pause
         close
     end
@@ -92,12 +92,15 @@ for iC = 1:length(tfilelist)
     toc; disp('^^ circshift time')
     %% Find the new saccade indices for each circshift shuffle: NASAL
     for iShuff = 1: cfg_out.numShuff   % this should be a 1 x nSaccades vector with new timestamps
+        %         disp(iShuff)
         nNew(iShuff,:) = c(iShuff, indextouse_N);
     end
     for iShuff = 1: cfg_out.numShuff   % this should be a 1 x nSaccades vector with new timestamps
+        %         disp(iShuff)
         tNew(iShuff,:) = c(iShuff, indextouse_T);
     end
-    %% Calculate the shuffled PETH  % use same config variables as the true peth (above)
+    %% Calculate the shuffled PETH
+    %     cfg_peth = []; % use same config variables as the true peth (above)
     mt_shuff =  NaN(cfg_out.numShuff, length(outputIT_t)-1);
     mn_shuff = NaN(cfg_out.numShuff, length(outputIT_t)-1);
     tic
@@ -106,16 +109,19 @@ for iC = 1:length(tfilelist)
         [outputS_t_shuff, ~, ~, outputIT_t_shuff, ~] = SpikePETHvdm(cfg_peth, myCell, tNew(iShuff,:));  % temporal saccade peth
         [outputS_n_shuff, ~, ~, outputIT_n_shuff, ~] = SpikePETHvdm(cfg_peth, myCell, nNew(iShuff,:));  % nasal saccade peth
         
-        mt_shuff(iShuff,:) = histcounts(outputS_t_shuff, outputIT_t_shuff)/ cfg_peth.dt / length(t);
-        mn_shuff(iShuff,:) = histcounts(outputS_n_shuff, outputIT_n_shuff)/ cfg_peth.dt / length(t);
+%         mt_shuff(iShuff,:) = histcounts(outputS_t_shuff, outputIT_t_shuff)/ cfg_peth.dt / length(t);
+%         mn_shuff(iShuff,:) = histcounts(outputS_n_shuff, outputIT_n_shuff)/ cfg_peth.dt / length(t);
+        
+        mt_shuff(iShuff,:) = histcounts(outputS_t_shuff, outputIT_t_shuff);
+        mn_shuff(iShuff,:) = histcounts(outputS_n_shuff, outputIT_n_shuff);
         
     end
     toc; disp('^^ time to calculate shuffled PETHs')
     
     if cfg_out.doPlot == 1
         figure
-        plot(outputIT_t_shuff(1:end-1), mt_shuff); hold on    % *** hack. Using end-1 here because outputIT is 1 element longer. Using histc produced the right lenght, but the last entry was always zero.
-        plot(outputIT_n_shuff(1:end-1), mn_shuff);
+        plot(outputIT_t_shuff(1:end-1), mt_shuff / cfg_peth.dt / length(t)); hold on    % *** hack. Using end-1 here because outputIT is 1 element longer. Using histc produced the right lenght, but the last entry was always zero.
+        plot(outputIT_n_shuff(1:end-1), mn_shuff / cfg_peth.dt / length(n));
         close
     end
     
