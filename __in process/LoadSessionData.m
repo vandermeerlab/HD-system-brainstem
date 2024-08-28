@@ -140,6 +140,9 @@ if Spikes ==1
         sd.fn{iC} = strrep(sd.fn{iC}, '_', '-');
     end
     sd.fn = sd.fn';
+    for iCell = 1:length(sd.S.t)
+        sd.aveFR(iCell) = length(sd.S.t{iCell})/sd.SessLength;
+    end
 end
 %-------------------------
 % EYE MOVEMENTS

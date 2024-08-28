@@ -1,5 +1,5 @@
-function [pass_flag] = CheckHFreqs(cfg_in)
-% 2024-07-16. JJS. For brainstem AHV/EYE neuron recording project. 
+function [pass_flag] = CheckHFkeys(cfg_in)
+% 2024-08-28. JJS. For brainstem AHV/EYE neuron recording project. 
 % CheckHFreqs: This function looks through each recording session in the directory and checks that the required files and ExpKey fields are present. 
 %   Detailed explanation goes here
 
