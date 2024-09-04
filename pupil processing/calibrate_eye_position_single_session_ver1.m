@@ -43,7 +43,7 @@ while cont == 1
 %     plot(eye.tvec, k.*eye.data, 'b.', 'MarkerSize', cfg_out.MarkerSize)
 %     plot(eye.tvec, k.*eye.data, 'b.', 'MarkerSize', cfg_out.MarkerSize)
 %     plot(ahv.tvec, (0.9).*ahv.data, 'r', 'MarkerSize', cfg_out.MarkerSize)
-    plot(eye.tvec, k.*eye.data, 'b')
+%     plot(eye.tvec, k.*eye.data, 'b')
     set(gca, 'FontSize', cfg_out.FontSize)
     % c = axis;
     %     axis([177 192 -250 250]);

@@ -16,7 +16,7 @@ end
 cfg_def.startSess = 1;
 cfg_def.endSess = length(fd);
 cfg_def.requireExpKeys = 1;  % ExpKeys is needed for every session.
-cfg_def.requireExpKeysFields = 0; % require specific keys fields, as defined later in cfg.ExpKeysFields
+cfg_def.requireExpKeysFields = 1; % require specific keys fields, as defined later in cfg.ExpKeysFields
 cfg_def.require_mp4 = 1;     %
 cfg_def.require_smi = 1;
 cfg_def.require_proc_mat = 1;

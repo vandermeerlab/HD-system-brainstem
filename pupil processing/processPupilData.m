@@ -51,14 +51,15 @@ pupiltime = tvec_raw - starttime;
 f = FindFiles('*VT1_proc.mat');
 load(f{1}, 'pupil');
 % Subtract the mean
-meanH = mean(pupil{1}.com(:,2));
-meanV = mean(pupil{1}.com(:,1));
+meanH = nanmean(pupil{1}.com(:,2));
+meanV = nanmean(pupil{1}.com(:,1));
 % Make it into a TSD
+dt = median(diff(pupiltime));
 tsdH = tsd(pupiltime, pupil{1}.com(:,2) - meanH);   % tsd of horizontal pupil position
 tsdV = tsd(pupiltime, pupil{1}.com(:,1) - meanV);   % tsd of vertical pupil position
 
-diffH = tsd(pupiltime(2:end), diff(tsdH.data)');     % Should this be (1:end-1) or (2:end)?
-diffV = tsd(pupiltime(2:end), diff(tsdV.data)');
+diffH = tsd(pupiltime(2:end), (diff(tsdH.data)./dt)');     % Should this be (1:end-1) or (2:end)?
+diffV = tsd(pupiltime(2:end), (diff(tsdV.data)./dt)');
 
 tstart = diffH.tvec(1);
 tend = diffH.tvec(end);

@@ -5,7 +5,7 @@ function [nasal_MOVING_amp, nasal_REST_amp, temporal_MOVING_amp, temporal_REST_a
 %   Inputs
 %   Outputs
 
-pixel_ceiling = 45;
+pixel_ceiling = 45; % *** need to change this 
 doPlot = 0;
 process_varargin(varargin);
 
@@ -13,6 +13,7 @@ SSN = HD_GetSSN; disp(SSN);
 
 if exist(strcat(SSN, '-saccades-edited.mat')) == 2
     load(strcat(SSN, '-saccades-edited.mat'));
+    disp(num2str(k))
     
     [nasal_indices_REST, temporal_indices_REST, ~, ~] = isolateStationarySaccades();
     [~, ~, nasal_indices_MOVING, temporal_indices_MOVING, ~, ~] = isolateManualSaccades();
@@ -27,7 +28,9 @@ if exist(strcat(SSN, '-saccades-edited.mat')) == 2
     if length(temporal_indices_REST) + length(temporal_indices_MOVING) ~= length(temporalAmplitudes)
         warning('discrepancy in number of temporal saccades')
     end
-    
+    nasalAmplitudes = nasalAmplitudes(~isnan(nasalAmplitudes)); nasalAmplitudes = nasalAmplitudes*k;
+    temporalAmplitudes = temporalAmplitudes(~isnan(temporalAmplitudes)); temporalAmplitudes = temporalAmplitudes*k;
+    % JJS. 2024-09-04. Remember that we are now using a conversion factor k for converting from pixels to degrees. 
     nasal_MOVING_amp = nasalAmplitudes(nasal_indices_MOVING);
     nasal_MOVING_amp = nasal_MOVING_amp(abs(nasal_MOVING_amp) < pixel_ceiling);
     temporal_MOVING_amp = temporalAmplitudes(temporal_indices_MOVING);
@@ -37,7 +40,6 @@ if exist(strcat(SSN, '-saccades-edited.mat')) == 2
     nasal_REST_amp = nasal_REST_amp(abs(nasal_REST_amp) < pixel_ceiling);
     temporal_REST_amp = temporalAmplitudes(temporal_indices_REST);
     temporal_REST_amp = temporal_REST_amp(abs(temporal_REST_amp) < pixel_ceiling);
-    
 else
     disp('no EYE data for this session')
     nasal_MOVING_amp = [];

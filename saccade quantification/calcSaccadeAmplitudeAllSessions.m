@@ -12,7 +12,6 @@ process_varargin(varargin);
 for iSess = startSess: endSess
     pushdir(fileparts(fd{iSess}));
     [nasal_MOVING_amp{iSess}, nasal_REST_amp{iSess}, temporal_MOVING_amp{iSess}, temporal_REST_amp{iSess}] = calcSaccadeAmplitudeSingleSession;
-    
 end
 
 nasal_MOVING_cat = horzcat(nasal_MOVING_amp{:});
