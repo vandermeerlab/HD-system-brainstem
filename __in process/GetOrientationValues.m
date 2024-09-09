@@ -1,4 +1,4 @@
-function [csc_tsd, orientation, starttime, endtime, samplingrate, dt] = GetOrientationValues(cfg_in)
+function [csc_tsd, orientation, starttimeUNIX, endtimeUNIX, samplingrate, dt] = GetOrientationValues(cfg_in)
 %2019-12-20. JJS.
 %   Pulls out the raw trace from the encoder and converts the signal into orientation in degrees.
 %   Current configuration of the arduino is for it to process 180 deg rotation total (90 deg clockwise, 90 deg counterclockwise).
@@ -20,6 +20,7 @@ function [csc_tsd, orientation, starttime, endtime, samplingrate, dt] = GetOrien
 
 cfg_def.rangetouse = 360;  % this was previously set to 180, which is incorrect. The full range of the platform is 180 degrees in either direction, which is 360 degrees total.
 cfg_def.CheckPlot = 0;
+cfg_def.verbose = 0;
 
 dateswitch = datetime('2020-10-06');               % On this date I swtiched from using CSC21 to CSC33 for the platform encoder.
 SSN = HD_GetSSN;
@@ -38,8 +39,8 @@ cfg_csc = [];
 cfg_csc.fc = {FindFile(strcat('*CSC', num2str(CSCtoUse), '.ncs'))};
 cfg_csc.VoltageConvFactor = 10^6;
 csc_tsd = LoadCSC(cfg_csc);
-starttime = csc_tsd.tvec(1);
-endtime = csc_tsd.tvec(end);
+starttimeUNIX = csc_tsd.tvec(1);
+endtimeUNIX = csc_tsd.tvec(end);
 csc_tsd.tvec = csc_tsd.tvec - csc_tsd.tvec(1); % MvdM: this probably shouldn't happen here because you need to know this information when loading spikes.
 
 baseline = csc_tsd.data(1);               % It is critical that the rig is oriented in the same position from day to day when the arduino is turned on.
@@ -53,12 +54,12 @@ rangediff = Lrange/Rrange;
 %                                          for rare sessions in which I do not move the platform through its full range, the 'fullrange' variable can be estimated as Fullrange =120550.
 Fullrange = abs(maxL - maxR);           % ***Figure out what this value is and make sure it is the same from session to session. Add a warning.
 format bank
-disp(strcat('Fullrange = ', num2str(Fullrange)));
-disp(strcat('Lrange = ', num2str(Lrange)));
-disp(strcat('Rrange = ', num2str(Rrange)));
-disp(strcat('Percentage difference equals__ ', num2str(100*(1-rangediff)), '%'));
-
-% if Rrange ~= Lrange; warning('Left and Right ranges do not coincide.'); end
+if cfg.verbose == 1
+    disp(strcat('Fullrange = ', num2str(Fullrange)));
+    disp(strcat('Lrange = ', num2str(Lrange)));
+    disp(strcat('Rrange = ', num2str(Rrange)));
+    disp(strcat('Percentage difference equals__ ', num2str(100*(1-rangediff)), '%'));
+end
 
 subtractedvoltage = tsd(csc_tsd.tvec, csc_tsd.data - baseline);
 divisionconstant = Fullrange/cfg.rangetouse;  % this is the constant value to normalize by to get a max of 180 degrees rotation in either direction.
