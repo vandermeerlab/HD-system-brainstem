@@ -15,7 +15,7 @@ function [csc_tsd, orientation, starttime, endtime, samplingrate, dt] = GetOrien
 
 %  Outputs: a tsd of orientation valuees with size equal to that of the original CSC. The range of values depends upon the setting of the arduino, and it needs
 %  to be entered here as the variable 'rangetouse'.
-
+%           csc_tsd - a copy of the raw encoder CSC
 %2020-03-04.  Updated to be compatible with Mvdm lab codeset.
 
 cfg_def.rangetouse = 360;  % this was previously set to 180, which is incorrect. The full range of the platform is 180 degrees in either direction, which is 360 degrees total.

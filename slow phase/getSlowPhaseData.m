@@ -20,7 +20,7 @@ cfg_def = [];
 cfg_def.FontSize = 20;
 cfg_def.saccade_pre = 0.1;  % how many seconds to cut out before the saccade.
 cfg_def.saccade_post = 0.1; % how many seconds to cut out after the saccade.
-cfg_def.doPlot = 0;
+cfg_def.doPlot = 1;
 cfg_def.markerSize = 3;
 cfg_def.plotWhichPhase = 'slow'; % 'slow', 'both'
 cfg_def.medfilt_window_size = 11; % number of samples to use for slow phase velocity filter
@@ -221,7 +221,7 @@ if cfg_master.doPlot
     line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'k')
     text(-30, c(4)/2, 'nasal', 'FontSize', cfg_master.insetText, 'Units', 'normalized', 'Position', [.15 .85 0])
     text(30, c(4)/2, 'temporal', 'FontSize', cfg_master.insetText, 'Units', 'normalized', 'Position', [.75 .85 0])
-    xlabel('Eye Velocity (pixels/s)', 'FontSize', cfg_master.FontSize)
+    xlabel('Eye Velocity (deg/s)', 'FontSize', cfg_master.FontSize)
     ylabel('FR (Hz)', 'FontSize', cfg_master.FontSize)
     set(gca, 'FontSize', cfg_master.FontSize)
     title(sd.fn{iCell,1})
