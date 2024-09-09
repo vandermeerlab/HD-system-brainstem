@@ -1,4 +1,4 @@
-function [Z] = cell_summary_statistics(fd)
+function [numNPH_confirmed, lesion_conf_NPH] = cell_summary_statistics(fd)
 % JJS. 2024-08-20.
 % This function tabulates the number of NPH and Gi neurons from all recording sessions in the input directory, as well as location confidence scores.
 
@@ -24,56 +24,60 @@ end
 for iSess = 1:length(fd)
     pushdir(fileparts(fd{iSess}));
     SSN = HD_GetSSN; disp(SSN)
-    if exist(strcat(SSN,'-VT1.mp4')) 
-%         disp('video file found')
+    if exist(strcat(SSN,'-VT1.mp4'))
+        %         disp('video file found')
         EvalKeys;
         lc_NPH = strcmp(ExpKeys.LesionStructureConfirmed, 'NPH');       % nucleus prepositus
-        lc_Gi = strcmp(ExpKeys.LesionStructureConfirmed, 'Gi');         % gigantocellular nucleus               a.k.a. PGNRd in rats. 
-        lc_NPH = strcmp(ExpKeys.LesionStructureConfirmed, 'SGN');       % gupragenual nucleus
-        lc_NPH = strcmp(ExpKeys.LesionStructureConfirmed, 'MVN');       % medial vestibular nucleus
-        lc_NPH = strcmp(ExpKeys.LesionStructureConfirmed, 'DTN');       % dorsal tegmental nucleus
-        lc_NPH = strcmp(ExpKeys.LesionStructureConfirmed, 'Abducens');  % abducens nucleus
-        lc_NPH = strcmp(ExpKeys.LesionStructureConfirmed, '6N');        % abducens nucleus                      ***This is a repeat. Fix this.  
-        lc_NPH = strcmp(ExpKeys.LesionStructureConfirmed, 'mlf');       % medial longitudinal fascicular        ***Change this to indicate something more precise.
-        lc_NPH = strcmp(ExpKeys.LesionStructureConfirmed, 'PDTg');      % posterior dorsal tegmental nucleus    [***Maybe I should merge this with DTN?]
-        lc_NPH = strcmp(ExpKeys.LesionStructureConfirmed, 'LDTg');      % lateral dorsal tegmental nucleus 
-        lc_NPH = strcmp(ExpKeys.LesionStructureConfirmed, 'CG');        % central grey
-        lc_NPH = strcmp(ExpKeys.LesionStructureConfirmed, 'mRt');       % mesencephalic reticular formation
-        lc_NPH = strcmp(ExpKeys.LesionStructureConfirmed, 'PNC');       % pontine reticular nucleus.            Gi turns into PNC in the anterior aspect 
-   
-        
-        
-        
+%         lc_Gi = strcmp(ExpKeys.LesionStructureConfirmed, 'Gi');         % gigantocellular nucleus               a.k.a. PGNRd in rats.
+%         lc_NPH = strcmp(ExpKeys.LesionStructureConfirmed, 'SGN');       % gupragenual nucleus
+%         lc_NPH = strcmp(ExpKeys.LesionStructureConfirmed, 'MVN');       % medial vestibular nucleus
+%         lc_NPH = strcmp(ExpKeys.LesionStructureConfirmed, 'DTN');       % dorsal tegmental nucleus
+%         lc_NPH = strcmp(ExpKeys.LesionStructureConfirmed, 'Abducens');  % abducens nucleus
+%         lc_NPH = strcmp(ExpKeys.LesionStructureConfirmed, '6N');        % abducens nucleus                      ***This is a repeat. Fix this.
+%         lc_NPH = strcmp(ExpKeys.LesionStructureConfirmed, 'mlf');       % medial longitudinal fascicular        ***Change this to indicate something more precise.
+%         lc_NPH = strcmp(ExpKeys.LesionStructureConfirmed, 'PDTg');      % posterior dorsal tegmental nucleus    [***Maybe I should merge this with DTN?]
+%         lc_NPH = strcmp(ExpKeys.LesionStructureConfirmed, 'LDTg');      % lateral dorsal tegmental nucleus
+%         lc_NPH = strcmp(ExpKeys.LesionStructureConfirmed, 'CG');        % central grey
+%         lc_NPH = strcmp(ExpKeys.LesionStructureConfirmed, 'mRt');       % mesencephalic reticular formation
+%         lc_NPH = strcmp(ExpKeys.LesionStructureConfirmed, 'PNC');       % pontine reticular nucleus.            Gi turns into PNC in the anterior aspect
         
         bg_NPH = strcmp(ExpKeys.RecordingStructureBestGuess, 'NPH');   % search for NPH string for best guess recordings
         bg_Gi = strcmp(ExpKeys.RecordingStructureBestGuess, 'Gi');     % search for Gi string for best guess recordings
-        
-        
-        
+        bg_NPH = strcmp(ExpKeys.RecordingStructureBestGuess, 'SGN');       % gupragenual nucleus
+        bg_NPH = strcmp(ExpKeys.RecordingStructureBestGuess, 'MVN');       % medial vestibular nucleus
+        bg_NPH = strcmp(ExpKeys.RecordingStructureBestGuess, 'DTN');       % dorsal tegmental nucleus
+        bg_NPH = strcmp(ExpKeys.RecordingStructureBestGuess, 'Abducens');  % abducens nucleus
+        bg_NPH = strcmp(ExpKeys.RecordingStructureBestGuess, '6N');        % abducens nucleus                      ***This is a repeat. Fix this.
+        bg_NPH = strcmp(ExpKeys.RecordingStructureBestGuess, 'mlf');       % medial longitudinal fascicular        ***Change this to indicate something more precise.
+        bg_NPH = strcmp(ExpKeys.RecordingStructureBestGuess, 'PDTg');      % posterior dorsal tegmental nucleus    [***Maybe I should merge this with DTN?]
+        bg_NPH = strcmp(ExpKeys.RecordingStructureBestGuess, 'LDTg');      % lateral dorsal tegmental nucleus
+        bg_NPH = strcmp(ExpKeys.RecordingStructureBestGuess, 'CG');        % central grey
+        bg_NPH = strcmp(ExpKeys.RecordingStructureBestGuess, 'mRt');       % mesencephalic reticular formation
+        bg_NPH = strcmp(ExpKeys.RecordingStructureBestGuess, 'PNC');
         
         numNPH_confirmed(iSess) = sum(lc_NPH); % num NPH cells for each session
-        numGi_confirmed(iSess) = sum(lc_Gi);   % num Gi cells for each session
+        %         numGi_confirmed(iSess) = sum(lc_Gi);   % num Gi cells for each session
+        %
+        %         numNPH_best_guess(iSess) = sum(bg_NPH); % num NPH cells for each session
+        %         numGi_best_guess(iSess) = sum(bg_Gi);   % num Gi cells for each session
         
-        numNPH_best_guess(iSess) = sum(bg_NPH); % num NPH cells for each session
-        numGi_best_guess(iSess) = sum(bg_Gi);   % num Gi cells for each session
+        %% Check for Confidence Score from lesion evidence
         
-        %         %% Check for Confidence Score from lesion evidence
-        %
-        %         if isfield(ExpKeys, 'LesionStructureConfirmed')
-        %             if isfield(ExpKeys, 'LesionConfidence')        % see if 'LesionConfidence' exists in ExpKeys.  ***It should in every session.
-        %                 if isempty(ExpKeys.LesionConfidence)  % This field shoule be a cell {}. See if it is empty.
-        %                     lesion_conf_NPH(iSess) = NaN;  % if empty, then ExpKeys.RecrodingStructureBestGuess should be NOT empty.
-        %                 else
-        %                     lesion_conf_NPH(iSess) = ExpKeys.LesionConfidence;
-        %                 end
-        %             else
-        %                 lesion_conf_NPH(iSess) = NaN; disp('ExpKeys.LesionConfidence field is not present.')
-        %             end
-        %         else
-        %             disp('ExpKeys.LesionConfidence field is not present.')
-        %         end
-        %
-        %
+        if isfield(ExpKeys, 'LesionStructureConfirmed')
+            if isfield(ExpKeys, 'LesionConfidence')        % see if 'LesionConfidence' exists in ExpKeys.  ***It should in every session.
+                if isempty(ExpKeys.LesionConfidence)  % This field shoule be a cell {}. See if it is empty.
+                    lesion_conf_NPH(iSess) = NaN;  % if empty, then ExpKeys.RecrodingStructureBestGuess should be NOT empty.
+                else
+                    lesion_conf_NPH(iSess) = ExpKeys.LesionConfidence;
+                end
+            else
+                lesion_conf_NPH(iSess) = NaN; disp('ExpKeys.LesionConfidence field is not present.')
+            end
+        else
+            disp('ExpKeys.LesionConfidence field is not present.')
+        end
+        
+        
         %         if isfield(ExpKeys, 'RecordingStructureBestGuess')
         %             if isfield(ExpKeys, 'NeuronConfidence')        % see if 'LesionConfidence' exists in ExpKeys.  ***It should in every session.
         %                 if isempty(ExpKeys.NeuronConfidence)  % This field shoule be a cell {}. See if it is empty.
@@ -107,11 +111,11 @@ for iSess = 1:length(fd)
         disp('VIDEO FILE NOT FOUND')
     end
 end
-Z.numNPH_confirmed = numNPH_confirmed; Z.sumNPH_confirmed = sum(Z.numNPH_confirmed);
-Z.numGi_confirmed = numGi_confirmed;   Z.sumGi_confirmed = sum(Z.numGi_confirmed);
-
-Z.numNPH_best_guess = numNPH_best_guess; Z.sumNPH_best_guess = sum(Z.numNPH_best_guess);
-Z.numGi_best_guess = numGi_best_guess;   Z.sumGi_best_guess = sum(Z.numGi_best_guess);
+% Z.numNPH_confirmed = numNPH_confirmed; Z.sumNPH_confirmed = sum(Z.numNPH_confirmed);
+% Z.numGi_confirmed = numGi_confirmed;   Z.sumGi_confirmed = sum(Z.numGi_confirmed);
+% 
+% Z.numNPH_best_guess = numNPH_best_guess; Z.sumNPH_best_guess = sum(Z.numNPH_best_guess);
+% Z.numGi_best_guess = numGi_best_guess;   Z.sumGi_best_guess = sum(Z.numGi_best_guess);
 
 
 % %% Tabulate the Results for NPH

@@ -2,6 +2,7 @@ function [EVmov_filt_touse, maxEVfiltered, meanEVfiltered] = calc_slowphase_peak
 
 doSave = 1;
 % doPlot = 1;
+zscore_cutoff = 2.5;
 filtorder = 10;
 if isempty(fd)
     fd = FindFiles('*keys.m');
@@ -28,7 +29,7 @@ for iSess = startSess: endSess
             EVmov_filt = antirestrict(EVfilt, STtstart, STtend);
 %             zEVmov_filt_data = zscore(EVmov_filt.data); % regular z-score won't work if there are NaNs
             N = normalize(EVmov_filt.data); % z-score is the default method.  check to make sure mean = 0 and std = 1. M = mean(N, 'omitnan'); S = std(N, 'omitnan');           
-            keepIndices = abs(N) < 2.5; % remove the tope 1% of the the (abs. values of the) distribution. 0.5% on each side. 
+            keepIndices = abs(N) < zscore_cutoff; % remove the tope 1% of the the (abs. values of the) distribution. 0.5% on each side. 
 %             zEVmov_filtTSD = tsd(EVmov_filt.tvec(removeIndices), N(removeIndices)); % *** Add a plot as a check here. 
             EVmov_filt_touse{iSess} = tsd(EVmov_filt.tvec(keepIndices), EVmov_filt.data(keepIndices)); % plot(EVmov_filt_touse) 
             maxEVfiltered(iSess) = max(EVmov_filt_touse{iSess}.data);

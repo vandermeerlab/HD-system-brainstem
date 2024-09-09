@@ -85,7 +85,7 @@ if AHV
     cfg = [];
     cfg.CheckPlot = 0;  % if CheckPlot == 1, will display the orientation plot.
     cfg.rangetouse = 360;  % this is the angular range for the platform, a critical value.
-    [csc_tsd, orientation, samplingrate, dt] = GetOrientationValues(cfg); %#ok<ASGLU>
+    [csc_tsd, orientation, starttime, endtime, samplingrate, dt] = GetOrientationValues(cfg); %#ok<ASGLU>
     subsample_factor = 10;
     orientationtousedata = downsample(orientation.data, subsample_factor);
     orientationtouserange = downsample(orientation.tvec, subsample_factor);
@@ -112,9 +112,9 @@ if AHV
     end
 end
 % Start and end session times
-sd.starttime = csc_tsd.tvec(1); % uses the first and last timestamps of the encoder signal instead of the Cheetah start/stop times in the Events file (in case the session crashed)
-sd.endtime = csc_tsd.tvec(end);
-sd.SessLength = sd.endtime - sd.starttime;
+sd.starttime = starttime; % uses first timestamp of the encoder signal, which is gotten above from [~, ~, starttime, ~, ~] = GetOrientationValues(cfg)
+sd.endtime = endtime; 
+sd.SessLength = sd.endtime - sd.starttime; 
 %-------------------------
 % SPIKES
 %-------------------------

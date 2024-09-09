@@ -1,4 +1,4 @@
-function [data_out, data_outR, nSpikesRemoved] = getSlowPhaseData(cfg_in, sd, iCell)
+function [data_out, data_outR, nSpikesRemoved] = getSlowPhaseData2(cfg_in, sd, iCell)
 % function [data_out, nSpikesRemoved] = getSlowPhaseData(cfg_in, sd, iCell)
 %
 %   Inputs
@@ -14,7 +14,8 @@ function [data_out, data_outR, nSpikesRemoved] = getSlowPhaseData(cfg_in, sd, iC
 %
 % 2024-04-18. MvdM, based on JJS getSlowPhaseTC3
 % 2024-05-29. JJS. Added conditions to skip the resampling of neural data.
-% 2024-09-04. JJS. Update to use the variables that are saved in units of degrees and degrees/second (tsdHdeg, diffHdeg). 
+% 2024-09-04. JJS. Updated to use the variables that are saved in units of degrees and degrees/second (tsdHdeg, diffHdeg). 
+% 2024-09-08. JJS. This version (ver2) no longer takes sd or iCell as inputs. sd can take a long time to load, and there is no need to do anything with neurons at this step. 
 
 cfg_def = [];
 cfg_def.FontSize = 20;
@@ -32,7 +33,7 @@ cfg_Q.smooth = 'gauss'; % [], 'gauss'
 cfg_Q.gausswin_size = 1; % gaussian window size in seconds; only used if cfg.smooth = 'gauss'
 cfg_Q.gausswin_sd = 0.1; % SD for gaussian convolution in seconds
 cfg_def.cfg_Q = cfg_Q;
-nSpikesRemoved = NaN;
+nSpikesRemoved = 0;
 
 cfg_master = ProcessConfig2(cfg_def, cfg_in);
 
@@ -54,8 +55,7 @@ new_tvec = new_tvec_edges(1:end-1) + (cfg_master.cfg_Q.dt / 2);
 % compute firing rate
 if ~isempty(iCell)
     cfg_master.cfg_Q.tvec_edges = new_tvec_edges;
-    fr = MakeQfromS(cfg_master.cfg_Q, this_cell); 
-    fr.data = fr.data ./ cfg_master.cfg_Q.dt;
+    fr = MakeQfromS(cfg_master.cfg_Q, this_cell); fr.data = fr.data ./ cfg_master.cfg_Q.dt;
 end
 
 % ahv
