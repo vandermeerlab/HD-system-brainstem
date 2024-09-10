@@ -1,4 +1,4 @@
-function [data_out, data_outM, data_outD, data_outMD] = getSlowPhaseData2(cfg_in)
+function [data_out, data_outC, data_outM, data_outD, data_outMD] = getSlowPhaseData2(cfg_in)
 % function [data_out, nSpikesRemoved] = getSlowPhaseData(cfg_in, sd, iCell)
 %
 %   Inputs
@@ -10,35 +10,41 @@ function [data_out, data_outM, data_outD, data_outMD] = getSlowPhaseData2(cfg_in
 %           data_outD   - the same TSDs, but with the pre and post saccade interval cut out (with antirestrict.m)
 %           data_outMD  - same as above, but additionally with the stationary periods removed (with antirestrict.m)
 %
+%                           data_out.wheel                      - tsd of wheel data, in common timebase
+%                           data_outM.wheel                     - tsd of wheel data, without stationary periods
+%                           data_outD.wheel                     - tsd of wheel data, without saccade epochs
+%                           data_outMD.wheel                    - tsd of wheel data, without stationary periods or saccade epochs
+%                           data_outC.wheel                     - same as above, but with slow phase eye velocity cutoff 
+
 %                           data_out.HD                         - tsd of HD (platform orientation), in common timebase
 %                           data_outM.HD                        - tsd of HD (platform orientation), without stationary periods
 %                           data_outD.HD                        - tsd of HD (platform orientation), without saccade epochs
 %                           data_outMD.HD                       - tsd of HD (platform orientation), without stationary periods or saccade epochs
+%                           data_outC.HD                        - same as above, but with slow phase eye velocity cutoff 
 
 %                           data_out.AHV                        - tsd of AHV, in common timebase
 %                           data_outM.AHV                       - tsd of AHV, without stationary epochs
 %                           data_outD.AHV                       - tsd of AHV, without saccade epochs
 %                           data_outMD.AHV                      - tsd of AHV, without stationary periods or saccade epochs
+%                           data_outC.AHV                       - same as above, but with slow phase eye velocity cutoff 
 
 %                           data_out.horiz_eye_pos              - tsd of EP, in common timebase
 %                           data_outM.horiz_eye_pos             - tsd of EP, without stationary periods
 %                           data_outD.horiz_eye_pos             - tsd of EP, without saccade epochs
 %                           data_outMD.horiz_eye_pos            - tsd of EP, without stationary periods or saccade epochs
+%                           data_outC.horiz_eye_pos             - same as above, but with slow phase eye velocity cutoff 
 
 %                           data_out.horiz_eye_vel              - tsd of EV, in common timebase
 %                           data_outM.horiz_eye_vel             - tsd of EV, without stationary periods
 %                           data_outD.horiz_eye_vel             - tsd of EV, without saccade epochs
 %                           data_outMD.horiz_eye_vel            - tsd of EV, without stationary periods or saccade epochs
+%                           data_outC.horiz_eye_vel             - same as above, but with slow phase eye velocity cutoff 
 
 %                           data_out.horiz_eye_vel_smooth       - tsd of filtered & smoothed EV, in common timebase
 %                           data_outM.horiz_eye_vel_smooth      - tsd of filtered & smoothed EV, without stationary periods
 %                           data_outD.horiz_eye_vel_smooth      - tsd of filtered & smoothed EV, without saccade epochs
 %                           data_outMD.horiz_eye_vel_smooth     - tsd of filtered & smoothed EV, without stationary periods or saccade epochs
-
-%                           data_out.wheel                      - tsd of wheel data, in common timebase
-%                           data_outM.wheel                     - tsd of wheel data, without stationary periods
-%                           data_outD.wheel                     - tsd of wheel data, without saccade epochs
-%                           data_outMD.wheel                    - tsd of wheel data, without stationary periods or saccade epochs
+%                           data_outC.horiz_eye_vel_smooth      - same as above, but with slow phase eye velocity cutoff 
 
 
 % Uses saccade .mat file to restrict data to slow phase only
@@ -55,8 +61,8 @@ cfg_def = [];
 cfg_def.FontSize = 20;
 cfg_def.saccade_pre = 0.1;  % how many seconds to cut out before the saccade.
 cfg_def.saccade_post = 0.1; % how many seconds to cut out after the saccade.
-cfg_def.doPlotEYE = 1;
-cfg_def.doPlotEVERYTHING = 1;
+cfg_def.doPlotEYE = 0;
+cfg_def.doPlotEVERYTHING = 0;
 cfg_def.markerSize = 3;
 cfg_def.plotWhichPhase = 'slow'; % 'slow', 'both'
 cfg_def.medfilt_window_size = 11; % number of samples to use for slow phase velocity filter
@@ -69,6 +75,8 @@ cfg_def.tightY = .04;
 cfg_def.everythingPLOTfontsize = 15;
 cfg_def.LineWidth = 1;
 cfg_def.MarkerSize = 6;
+cfg_def.restrict_velocity = 1; 
+cfg_def.velocitythreshold = 35;  % velocity cutoff for eye velocity, in degrees per second. The restricted time periods are restricted from all data (HD,AHV,EP,EV)
 
 cfg_Q = [];
 cfg_Q.dt = 0.02; % binsize in s
@@ -192,6 +200,33 @@ data_outMD.AHV                   = ahvMD;                                       
 data_outMD.horiz_eye_pos         = horiz_eye_posMD;                                     % EP
 data_outMD.horiz_eye_vel         = horiz_eye_velMD;                                     % EV
 data_outMD.horiz_eye_vel_smooth  = horiz_eye_vel_smoothMD;                              % EV, smooth & filtered
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Find velocity threshold times and restrict 
+if cfg_master.restrict_velocity 
+    i = abs(data_outMD.horiz_eye_vel_smooth.data) >= cfg_master.velocitythreshold;  % find the indices of moving, de-saccaded data that is ABOVE threshold (to remove later)
+    
+    W = data_outMD.wheel.data; W(i) = NaN; W = tsd(data_outMD.wheel.tvec, W);                                          % WHEEL
+        
+    HD = data_outMD.HD.data; HD(i) = NaN; HD = tsd(data_outMD.HD.tvec, HD);                                             % HD
+    
+    AHV = data_outMD.AHV.data; AHV(i) = NaN; AHV = tsd(data_outMD.AHV.tvec, AHV);                                       % AHV
+    
+    EP = data_outMD.horiz_eye_pos.data; EP(i) = NaN; EP = tsd(data_outMD.horiz_eye_pos.tvec, EP);                       % EP
+    
+    EV = data_outMD.horiz_eye_vel.data; EV(i) = NaN; EV = tsd(data_outMD.horiz_eye_vel.tvec, EV);                       % EV
+    
+    EVS = data_outMD.horiz_eye_vel_smooth.data; EVS(i) = NaN; EVS = tsd(data_outMD.horiz_eye_vel_smooth.tvec, EVS);     % EVS
+end
+
+% Save the resampled, MOVING-only data
+data_outC.wheel                 = W;                % WHEEL
+data_outC.HD                    = HD;               % HD
+data_outC.AHV                   = AHV;              % AHV
+data_outC.horiz_eye_pos         = EP;               % EP
+data_outC.horiz_eye_vel         = EV;               % EV
+data_outC.horiz_eye_vel_smooth  = EVS;              % EV, smooth & filtered
 
 %% Plot EYE only
 if cfg_master.doPlotEYE
@@ -366,6 +401,16 @@ end
 if cfg_master.doWarn == 1; warning('on','all'); end  % Return warnings to ON state.
 toc(start)
 
-% set(gca, 'LooseInset', get(gca,'TightInset'))
-%     p1 = linkprop([w1 w2 w3 w4 hd1 hd2 hd3 hd4 ahv1 ahv2 ahv3 ahv4 ep1 ep2 ep3 ep4], 'xlim'); % why not working?
-%     p2 = linkprop([hd1 hd2 hd3 hd4 ahv1 ahv2 ahv3 ahv4], 'ylim');
+% clf
+% plot(data_out.horiz_eye_vel.tvec, data_out.horiz_eye_vel.data); hold on; 
+% axis([64 72 -200 200])
+% plot(data_outMD.horiz_eye_vel_smooth.tvec, data_outMD.horiz_eye_vel_smooth.data, 'r.', 'MarkerSize', 25);
+% plot(data_outC.horiz_eye_vel_smooth.tvec, data_outC.horiz_eye_vel_smooth.data, 'g.', 'MarkerSize', 15);
+% set(gca, 'FontSize', 20)
+% xlabel('time (s)')
+% ylabel('eye vel (deg/s)')
+% title(SSN)
+% c = axis;
+% line([c(1) c(2)], [35 35], 'Color', 'k', 'LineWidth', 3, 'LineStyle', '--')
+% line([c(1) c(2)], [-35 -35], 'Color', 'k', 'LineWidth', 3, 'LineStyle', '--')
+% legend('all data', 'desaccaded', 'desaccaded + slow phase cutoff')
