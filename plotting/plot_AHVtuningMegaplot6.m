@@ -211,7 +211,7 @@ set(gca, 'XTick', [])
 p = subtightplot(6,6,15, [tightX tightY]); hold on
 % -----------------------------------------------------------------------------------------------------------------------------------------------------
 % -----------------------------------------------------------------------------------------------------------------------------------------------------
-laser_on = events_ts.t{1}-events_ts.t{2};                % this needs to be fixed. laser_on and laser_off occur at variable positions 
+laser_on = events_ts.t{1}-events_ts.t{2};                % this needs to be fixed. laser_on and laser_off occur at variable positions
 % -----------------------------------------------------------------------------------------------------------------------------------------------------
 % -----------------------------------------------------------------------------------------------------------------------------------------------------
 cfg_laser.window = [-1.1 2];
@@ -409,19 +409,20 @@ set(gca, 'XTick', [])
 %% #19:24 WHEEL SPEED and AHV
 plot8 = subtightplot(6,6,19:24, [tightX tightY]);
 
-yyaxis left
-updownTSD = getQEupdown([]);
-state_tsd = ConvertQEUpDownToState(updownTSD);
-[~, wheel_tsd] = ConvertQEStatesToAngle([], state_tsd);
-[d, speed, cfg_w] = ConvertWheeltoSpeed([], wheel_tsd);
-speed.tvec = speed.tvec - starttime;
-plot(speed.tvec, -speed.data)    % IMPORTANT: there is a sign change here b/c the voltage change in response to the mouse moving forward is negative. When the mouse moves 'forward', the wheel moves 'backward'.
-set(gca, 'Xlim', [0 tvec(end)], 'FontSize', FontSize)
-ylabel('Wheel Speed (cm/s)')
-yyaxis right
-plot(AHV_tsd.tvec, AHV_tsd.data)
-set(gca, 'XTick', [])
-
+if exist(strcat(SSN, '-CSC34.Ncs'))
+    yyaxis left
+    updownTSD = getQEupdown([]);
+    state_tsd = ConvertQEUpDownToState(updownTSD);
+    [~, wheel_tsd] = ConvertQEStatesToAngle([], state_tsd);
+    [d, speed, cfg_w] = ConvertWheeltoSpeed([], wheel_tsd);
+    speed.tvec = speed.tvec - starttime;
+    plot(speed.tvec, -speed.data)    % IMPORTANT: there is a sign change here b/c the voltage change in response to the mouse moving forward is negative. When the mouse moves 'forward', the wheel moves 'backward'.
+    set(gca, 'Xlim', [0 tvec(end)], 'FontSize', FontSize)
+    ylabel('Wheel Speed (cm/s)')
+    yyaxis right
+    plot(AHV_tsd.tvec, AHV_tsd.data)
+    set(gca, 'XTick', [])
+end
 %% #31:36 HORIZONTAL EYE POSITIION and AHV
 plot9 = subtightplot(6,6,31:36, [tightX tightY]);
 SSN = HD_GetSSN;

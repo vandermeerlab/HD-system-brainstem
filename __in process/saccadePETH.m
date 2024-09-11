@@ -73,13 +73,13 @@ if doPlot == 1
     for iCell = 1:length(sd.S.t)
         %% Temporal
         subplot(2,2,1);
-        title('Temporal Saccades')
         plot(spkTimes_T{iCell}, eventindexT{iCell} + 0.5, 'k.', 'MarkerSize', 5);
         xlabel('peri-event (sec)');
         ylabel('Event #');
         ylim([1 nT])
         xlim(cfg.window);
         set(gca, 'FontSize', cfg.FontSize)
+        title('Temporal Saccades')
         
         % bar graph
         subplot(2,2,3);
@@ -93,13 +93,13 @@ if doPlot == 1
         
         %% Nasal
         subplot(2,2,2);
-        title('Nasal Saccades')
         plot(spkTimes_N{iCell}, eventindexN{iCell} + 0.5, 'k.', 'MarkerSize', 5);
         xlabel('peri-event (sec)');
         ylabel('Event #');
         ylim([1 nN])
         xlim(cfg.window);
         set(gca, 'FontSize', cfg.FontSize)
+        title('Nasal Saccades')
         
         % bar graph
         subplot(2,2,4);
@@ -111,7 +111,9 @@ if doPlot == 1
         set(gca, 'FontSize', cfg.FontSize)
         
         disp('press any key')
-        pause
+        if iCell ~= length(sd.S.t)
+            pause
+        end
     end
 end
 
