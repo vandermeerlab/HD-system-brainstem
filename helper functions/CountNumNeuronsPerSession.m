@@ -6,6 +6,7 @@ function [C, index, sessList] = CountNumNeuronsPerSession(fd, minCells)
 % fd = FindFiles('*keys.m');
 for iSess = 1:length(fd)
     pushdir(fileparts(fd{iSess}));
+    SSN = HD_GetSSN; disp(SSN)
     c = FindFiles('*.t');
     num = length(c);
     C(iSess) = num;

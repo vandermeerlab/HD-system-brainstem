@@ -6,9 +6,11 @@ function [data_out, data_outC, data_outM, data_outD, data_outMD] = getSlowPhaseD
 %           iCell       - which cell number to plot. leave empty [] if not calculating neural data
 %           cfg_in      - config variable. Choose the "de-saccading" window.
 %   Outputs
-%           data_out    - the TSDs for this session, including horiz_eye_pos, horiz_eye_vel, horiz_eye_vel_smooth, AHV, and HD (a.k.a. "orientation")
-%           data_outD   - the same TSDs, but with the pre and post saccade interval cut out (with antirestrict.m)
-%           data_outMD  - same as above, but additionally with the stationary periods removed (with antirestrict.m)
+%           data_out    - strcuture with a TSD for each data type for this session, including horiz_eye_pos, horiz_eye_vel, horiz_eye_vel_smooth, AHV, and HD (a.k.a. "orientation")
+%           data_outD   - the same above^^, but with the pre and post saccade interval cut out (with antirestrict.m)
+%           data_outMD  - same as above^^, but with stationary periods removed 
+%           data_outC   - same as above^^, but additionally with a cutoff (using > abs(EVS) operation) of the filtered, smooth EV trace  
+
 %
 %                           data_out.wheel                      - tsd of wheel data, in common timebase
 %                           data_outM.wheel                     - tsd of wheel data, without stationary periods
@@ -61,8 +63,8 @@ cfg_def = [];
 cfg_def.FontSize = 20;
 cfg_def.saccade_pre = 0.1;  % how many seconds to cut out before the saccade.
 cfg_def.saccade_post = 0.1; % how many seconds to cut out after the saccade.
-cfg_def.doPlotEYE = 0;
-cfg_def.doPlotEVERYTHING = 0;
+cfg_def.doPlotEYE = 1;
+cfg_def.doPlotEVERYTHING = 1;
 cfg_def.markerSize = 3;
 cfg_def.plotWhichPhase = 'slow'; % 'slow', 'both'
 cfg_def.medfilt_window_size = 11; % number of samples to use for slow phase velocity filter
@@ -397,20 +399,22 @@ if cfg_master.doPlotEVERYTHING
     p5 = linkprop([ev1 ev2 ev3 ev4], 'ylim');
     p6 = linkprop([evf1 evf2 evf3 evf4], 'ylim');
 end
+if cfg_master.doPlotEVERYTHING
+    figure(3); clf
+    plot(data_out.horiz_eye_vel.tvec, data_out.horiz_eye_vel.data); hold on;
+%     axis([64 72 -200 200])
+    plot(data_outMD.horiz_eye_vel.tvec, data_outMD.horiz_eye_vel.data, 'r.', 'MarkerSize', 25);
+    plot(data_outC.horiz_eye_vel_smooth.tvec, data_outC.horiz_eye_vel_smooth.data, 'g.', 'MarkerSize', 15);
+    set(gca, 'FontSize', 20)
+    xlabel('time (s)')
+    ylabel('eye vel (deg/s)')
+    title(SSN)
+    c = axis;
+    line([c(1) c(2)], [35 35], 'Color', 'k', 'LineWidth', 3, 'LineStyle', '--')
+    line([c(1) c(2)], [-35 -35], 'Color', 'k', 'LineWidth', 3, 'LineStyle', '--')
+    legend('all data', 'desaccaded raw', 'desaccaded smoothed + slow phase cutoff')
+end
 
 if cfg_master.doWarn == 1; warning('on','all'); end  % Return warnings to ON state.
 toc(start)
 
-% clf
-% plot(data_out.horiz_eye_vel.tvec, data_out.horiz_eye_vel.data); hold on; 
-% axis([64 72 -200 200])
-% plot(data_outMD.horiz_eye_vel_smooth.tvec, data_outMD.horiz_eye_vel_smooth.data, 'r.', 'MarkerSize', 25);
-% plot(data_outC.horiz_eye_vel_smooth.tvec, data_outC.horiz_eye_vel_smooth.data, 'g.', 'MarkerSize', 15);
-% set(gca, 'FontSize', 20)
-% xlabel('time (s)')
-% ylabel('eye vel (deg/s)')
-% title(SSN)
-% c = axis;
-% line([c(1) c(2)], [35 35], 'Color', 'k', 'LineWidth', 3, 'LineStyle', '--')
-% line([c(1) c(2)], [-35 -35], 'Color', 'k', 'LineWidth', 3, 'LineStyle', '--')
-% legend('all data', 'desaccaded', 'desaccaded + slow phase cutoff')
