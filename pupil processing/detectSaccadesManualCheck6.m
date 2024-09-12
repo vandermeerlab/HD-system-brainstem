@@ -43,7 +43,7 @@ if exist(strcat(SSN, '-VT1.smi'), 'file') == 2
     elseif strcmp(f, 's')
         skip = 1;
     else
-        derror('unrecognized response')
+        error('unrecognized response')
     end
     
     

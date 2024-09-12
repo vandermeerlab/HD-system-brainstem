@@ -12,8 +12,9 @@ end
 confirmed_field = NaN(1,length(fd));  % pre-allocate
 best_guess_field = NaN(1,length(fd));
 structure_mismatch = 0;
+numSess = length(fd); 
 
-for iSess = 1:length(fd)
+for iSess = 1:numSess
     pushdir(fileparts(fd{iSess}));
     SSN = HD_GetSSN; disp(SSN)
     if ~exist(strcat(SSN,'-VT1.mp4')); error('VIDEO FILE NOT FOUND'); end
@@ -298,6 +299,18 @@ X.problem_sessions = intersect(X.confirmed_sessions, X.best_guess_sessions);
 if ~isempty(X.problem_sessions); warning('overlap detected between confidence scores for Confirmed and BestGuess sessions'); end 
 
 if length(X.confirmed_sessions) + length(X.best_guess_sessions) ~= length(fd); warning('mismatch between number sessions in dir and the number of sessions with confidence field'); end
+
+if length(X.confirmed_sessions) + length(X.best_guess_sessions) ~= numSess; warning('num sess mismatch'); end
+
+sessList = 1:numSess;
+a = intersect(X.confirmed_sessions, X.best_guess_sessions); assert(isempty(a)==1);% this should be zero, i.e. No overlap. 
+Allsess = sort(horzcat(X.confirmed_sessions, X.best_guess_sessions)); % all the sessions in each list combined, in sorted order
+c = setdiff(sessList, Allsess);  % find which sessions, if any, are missing
+assert(isempty(c));  % c is Sessions not represented in either list. If c is not empty, this needs to be fixed. 
+
+
+
+
 %% Print the main results
 
 
