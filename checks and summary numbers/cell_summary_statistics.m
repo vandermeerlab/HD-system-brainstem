@@ -295,8 +295,9 @@ X.neuron_confidence_score = neuron_confidence_score;   % confidence scores for b
 X.confirmed_sessions = find(~isnan(X.lesion_confidence_score));
 X.best_guess_sessions = find(~isnan(X.neuron_confidence_score));
 
-X.problem_sessions = intersect(X.confirmed_sessions, X.best_guess_sessions); 
-if ~isempty(X.problem_sessions); warning('overlap detected between confidence scores for Confirmed and BestGuess sessions'); end 
+X.confidence_overlap_sessions = intersect(X.confirmed_sessions, X.best_guess_sessions); 
+
+if ~isempty(X.confidence_overlap_sessions); warning('overlap detected between confidence scores for Confirmed and BestGuess sessions'); end 
 
 if length(X.confirmed_sessions) + length(X.best_guess_sessions) ~= length(fd); warning('mismatch between number sessions in dir and the number of sessions with confidence field'); end
 
@@ -306,8 +307,230 @@ sessList = 1:numSess;
 a = intersect(X.confirmed_sessions, X.best_guess_sessions); assert(isempty(a)==1);% this should be zero, i.e. No overlap. 
 Allsess = sort(horzcat(X.confirmed_sessions, X.best_guess_sessions)); % all the sessions in each list combined, in sorted order
 c = setdiff(sessList, Allsess);  % find which sessions, if any, are missing
-assert(isempty(c));  % c is Sessions not represented in either list. If c is not empty, this needs to be fixed. 
+if ~isempty(c); warning('there are sessions without the right confidence entry. Look at X.confidence_missing_sessions.'); end  % c is Sessions not represented in either list. If c is not empty, this needs to be fixed. 
+X.confidence_missing_sessions = c; 
 
+%% NPH confdience numbers
+% 1 lesion
+c_score1 = X.lesion_confidence_score == 1; 
+NPH_1_lesion = double(c_score1); 
+X.num_NPH_1_lesion = NPH_1_lesion .* X.numNPH_confirmed; 
+X.sum_NPH_1_lesion = sum(X.num_NPH_1_lesion);
+% 2 lesion
+c_score2 = X.lesion_confidence_score == 2; 
+NPH_2_lesion = double(c_score2); 
+X.num_NPH_2_lesion = NPH_2_lesion .* X.numNPH_confirmed; 
+X.sum_NPH_2_lesion = sum(X.num_NPH_2_lesion);
+% 3 lesion
+c_score3 = X.lesion_confidence_score == 3; 
+NPH_3_lesion = double(c_score3); 
+X.num_NPH_3_lesion = NPH_3_lesion .* X.numNPH_confirmed; 
+X.sum_NPH_3_lesion = sum(X.num_NPH_3_lesion);
+
+% 1 best guess
+bg_score1 = X.neuron_confidence_score == 1; 
+NPH_1_best_guess = double(bg_score1); 
+X.num_NPH_1_best_guess = NPH_1_best_guess .* X.numNPH_guess; 
+X.sum_NPH_1_best_guess = sum(X.num_NPH_1_best_guess);
+% 2 best guess
+bg_score2 = X.neuron_confidence_score == 2; 
+NPH_2_best_guess = double(bg_score2); 
+X.num_NPH_2_best_guess = NPH_2_best_guess .* X.numNPH_guess; 
+X.sum_NPH_2_best_guess = sum(X.num_NPH_2_best_guess);
+% 3 best guess
+bg_score3 = X.neuron_confidence_score == 3; 
+NPH_3_best_guess = double(bg_score3); 
+X.num_NPH_3_best_guess = NPH_3_best_guess .* X.numNPH_guess; 
+X.sum_NPH_3_best_guess = sum(X.num_NPH_3_best_guess);
+
+
+%% Gi confidence numbers 
+% 1 lesion
+Gi_1_lesion = double(c_score1); 
+X.num_Gi_1_lesion = Gi_1_lesion .* X.numGi_confirmed; 
+X.sum_Gi_1_lesion = sum(X.num_Gi_1_lesion);
+% 2 lesion
+Gi_2_lesion = double(c_score2); 
+X.num_Gi_2_lesion = Gi_2_lesion .* X.numGi_confirmed; 
+X.sum_Gi_2_lesion = sum(X.num_Gi_2_lesion);
+% 3 lesion
+Gi_3_lesion = double(c_score3); 
+X.num_Gi_3_lesion = Gi_3_lesion .* X.numGi_confirmed; 
+X.sum_Gi_3_lesion = sum(X.num_Gi_3_lesion);
+
+% 1 best guess
+Gi_1_best_guess = double(bg_score1); 
+X.num_Gi_1_best_guess = Gi_1_best_guess .* X.numGi_guess; 
+X.sum_Gi_1_best_guess = sum(X.num_Gi_1_best_guess);
+% 2 best guess
+Gi_2_best_guess = double(bg_score2); 
+X.num_Gi_2_best_guess = Gi_2_best_guess .* X.numGi_guess; 
+X.sum_Gi_2_best_guess = sum(X.num_Gi_2_best_guess);
+% 3 best guess
+Gi_3_best_guess = double(bg_score3); 
+X.num_Gi_3_best_guess = Gi_3_best_guess .* X.numGi_guess; 
+X.sum_Gi_3_best_guess = sum(X.num_Gi_3_best_guess);
+
+%% SGN confidence scores
+% 1 lesion
+SGN_1_lesion = double(c_score1); 
+X.num_SGN_1_lesion = SGN_1_lesion .* X.numSGN_confirmed; 
+X.sum_SGN_1_lesion = sum(X.num_SGN_1_lesion);
+% 2 lesion
+SGN_2_lesion = double(c_score2); 
+X.num_SGN_2_lesion = SGN_2_lesion .* X.numSGN_confirmed; 
+X.sum_SGN_2_lesion = sum(X.num_SGN_2_lesion);
+% 3 lesion
+SGN_3_lesion = double(c_score3); 
+X.num_SGN_3_lesion = SGN_3_lesion .* X.numSGN_confirmed; 
+X.sum_SGN_3_lesion = sum(X.num_SGN_3_lesion);
+
+% 1 best guess
+SGN_1_best_guess = double(bg_score1); 
+X.num_SGN_1_best_guess = SGN_1_best_guess .* X.numSGN_guess; 
+X.sum_SGN_1_best_guess = sum(X.num_SGN_1_best_guess);
+% 2 best guess
+SGN_2_best_guess = double(bg_score2); 
+X.num_SGN_2_best_guess = SGN_2_best_guess .* X.numSGN_guess; 
+X.sum_SGN_2_best_guess = sum(X.num_SGN_2_best_guess);
+% 3 best guess
+SGN_3_best_guess = double(bg_score3); 
+X.num_SGN_3_best_guess = SGN_3_best_guess .* X.numSGN_guess; 
+X.sum_SGN_3_best_guess = sum(X.num_SGN_3_best_guess);
+
+%% MVN confidence scores
+% 1 lesion
+MVN_1_lesion = double(c_score1); 
+X.num_MVN_1_lesion = MVN_1_lesion .* X.numMVN_confirmed; 
+X.sum_MVN_1_lesion = sum(X.num_MVN_1_lesion);
+% 2 lesion
+MVN_2_lesion = double(c_score2); 
+X.num_MVN_2_lesion = MVN_2_lesion .* X.numMVN_confirmed; 
+X.sum_MVN_2_lesion = sum(X.num_MVN_2_lesion);
+% 3 lesion
+MVN_3_lesion = double(c_score3); 
+X.num_MVN_3_lesion = MVN_3_lesion .* X.numMVN_confirmed; 
+X.sum_MVN_3_lesion = sum(X.num_MVN_3_lesion);
+
+% 1 best guess
+MVN_1_best_guess = double(bg_score1); 
+X.num_MVN_1_best_guess = MVN_1_best_guess .* X.numMVN_guess; 
+X.sum_MVN_1_best_guess = sum(X.num_MVN_1_best_guess);
+% 2 best guess
+MVN_2_best_guess = double(bg_score2); 
+X.num_MVN_2_best_guess = MVN_2_best_guess .* X.numMVN_guess; 
+X.sum_MVN_2_best_guess = sum(X.num_MVN_2_best_guess);
+% 3 best guess
+MVN_3_best_guess = double(bg_score3); 
+X.num_MVN_3_best_guess = MVN_3_best_guess .* X.numMVN_guess; 
+X.sum_MVN_3_best_guess = sum(X.num_MVN_3_best_guess);
+
+%% Abducens Confidence scores
+Abducens_1_lesion = double(c_score1); 
+X.num_Abducens_1_lesion = Abducens_1_lesion .* X.numAbducens_confirmed; 
+X.sum_Abducens_1_lesion = sum(X.num_Abducens_1_lesion);
+% 2 lesion
+Abducens_2_lesion = double(c_score2); 
+X.num_Abducens_2_lesion = Abducens_2_lesion .* X.numAbducens_confirmed; 
+X.sum_Abducens_2_lesion = sum(X.num_Abducens_2_lesion);
+% 3 lesion
+Abducens_3_lesion = double(c_score3); 
+X.num_Abducens_3_lesion = Abducens_3_lesion .* X.numAbducens_confirmed; 
+X.sum_Abducens_3_lesion = sum(X.num_Abducens_3_lesion);
+
+% 1 best guess
+Abducens_1_best_guess = double(bg_score1); 
+X.num_Abducens_1_best_guess = Abducens_1_best_guess .* X.numAbducens_guess; 
+X.sum_Abducens_1_best_guess = sum(X.num_Abducens_1_best_guess);
+% 2 best guess
+Abducens_2_best_guess = double(bg_score2); 
+X.num_Abducens_2_best_guess = Abducens_2_best_guess .* X.numAbducens_guess; 
+X.sum_Abducens_2_best_guess = sum(X.num_Abducens_2_best_guess);
+% 3 best guess
+Abducens_3_best_guess = double(bg_score3); 
+X.num_Abducens_3_best_guess = Abducens_3_best_guess .* X.numAbducens_guess; 
+X.sum_Abducens_3_best_guess = sum(X.num_Abducens_3_best_guess);
+
+%% DTN confidence scores
+% 1 lesion
+DTN_1_lesion = double(c_score1); 
+X.num_DTN_1_lesion = DTN_1_lesion .* X.numDTN_confirmed; 
+X.sum_DTN_1_lesion = sum(X.num_DTN_1_lesion);
+% 2 lesion
+DTN_2_lesion = double(c_score2); 
+X.num_DTN_2_lesion = DTN_2_lesion .* X.numDTN_confirmed; 
+X.sum_DTN_2_lesion = sum(X.num_DTN_2_lesion);
+% 3 lesion
+DTN_3_lesion = double(c_score3); 
+X.num_DTN_3_lesion = DTN_3_lesion .* X.numDTN_confirmed; 
+X.sum_DTN_3_lesion = sum(X.num_DTN_3_lesion);
+
+% 1 best guess
+DTN_1_best_guess = double(bg_score1); 
+X.num_DTN_1_best_guess = DTN_1_best_guess .* X.numDTN_guess; 
+X.sum_DTN_1_best_guess = sum(X.num_DTN_1_best_guess);
+% 2 best guess
+DTN_2_best_guess = double(bg_score2); 
+X.num_DTN_2_best_guess = DTN_2_best_guess .* X.numDTN_guess; 
+X.sum_DTN_2_best_guess = sum(X.num_DTN_2_best_guess);
+% 3 best guess
+DTN_3_best_guess = double(bg_score3); 
+X.num_DTN_3_best_guess = DTN_3_best_guess .* X.numDTN_guess; 
+X.sum_DTN_3_best_guess = sum(X.num_DTN_3_best_guess);
+
+%% mlf confidence scores
+% 1 lesion
+mlf_1_lesion = double(c_score1); 
+X.num_mlf_1_lesion = mlf_1_lesion .* X.nummlf_confirmed; 
+X.sum_mlf_1_lesion = sum(X.num_mlf_1_lesion);
+% 2 lesion
+mlf_2_lesion = double(c_score2); 
+X.num_mlf_2_lesion = mlf_2_lesion .* X.nummlf_confirmed; 
+X.sum_mlf_2_lesion = sum(X.num_mlf_2_lesion);
+% 3 lesion
+mlf_3_lesion = double(c_score3); 
+X.num_mlf_3_lesion = mlf_3_lesion .* X.nummlf_confirmed; 
+X.sum_mlf_3_lesion = sum(X.num_mlf_3_lesion);
+
+% 1 best guess
+mlf_1_best_guess = double(bg_score1); 
+X.num_mlf_1_best_guess = mlf_1_best_guess .* X.nummlf_guess; 
+X.sum_mlf_1_best_guess = sum(X.num_mlf_1_best_guess);
+% 2 best guess
+mlf_2_best_guess = double(bg_score2); 
+X.num_mlf_2_best_guess = mlf_2_best_guess .* X.nummlf_guess; 
+X.sum_mlf_2_best_guess = sum(X.num_mlf_2_best_guess);
+% 3 best guess
+mlf_3_best_guess = double(bg_score3); 
+X.num_mlf_3_best_guess = mlf_3_best_guess .* X.nummlf_guess; 
+X.sum_mlf_3_best_guess = sum(X.num_mlf_3_best_guess);
+
+%% PDTg confidence scores
+% 1 lesion
+PDTg_1_lesion = double(c_score1); 
+X.num_PDTg_1_lesion = PDTg_1_lesion .* X.numPDTg_confirmed; 
+X.sum_PDTg_1_lesion = sum(X.num_PDTg_1_lesion);
+% 2 lesion
+PDTg_2_lesion = double(c_score2); 
+X.num_PDTg_2_lesion = PDTg_2_lesion .* X.numPDTg_confirmed; 
+X.sum_PDTg_2_lesion = sum(X.num_PDTg_2_lesion);
+% 3 lesion
+PDTg_3_lesion = double(c_score3); 
+X.num_PDTg_3_lesion = PDTg_3_lesion .* X.numPDTg_confirmed; 
+X.sum_PDTg_3_lesion = sum(X.num_PDTg_3_lesion);
+
+% 1 best guess
+PDTg_1_best_guess = double(bg_score1); 
+X.num_PDTg_1_best_guess = PDTg_1_best_guess .* X.numPDTg_guess; 
+X.sum_PDTg_1_best_guess = sum(X.num_PDTg_1_best_guess);
+% 2 best guess
+PDTg_2_best_guess = double(bg_score2); 
+X.num_PDTg_2_best_guess = PDTg_2_best_guess .* X.numPDTg_guess; 
+X.sum_PDTg_2_best_guess = sum(X.num_PDTg_2_best_guess);
+% 3 best guess
+PDTg_3_best_guess = double(bg_score3); 
+X.num_PDTg_3_best_guess = PDTg_3_best_guess .* X.numPDTg_guess; 
+X.sum_PDTg_3_best_guess = sum(X.num_PDTg_3_best_guess);
 
 
 
