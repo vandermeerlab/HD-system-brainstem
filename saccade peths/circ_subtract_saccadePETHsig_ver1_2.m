@@ -88,6 +88,7 @@ lastbin = max(nums); windowend = peth_tvec(lastbin);
 figure; plot(out_n); hold on; plot(out_t); pause(1); close
 
 %% Caclulate the Circularly Shifted PETH
+tic
 tvec = tsdH.tvec; % tvec from the pupil position tsd
 mt_shuff =  NaN(cfg_out.numShuff, length(out_n.tvec));
 mn_shuff = NaN(cfg_out.numShuff, length(out_t.tvec));
