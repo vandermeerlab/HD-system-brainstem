@@ -1,4 +1,4 @@
-function [td, tList, NPH_confirmed_tfileList, NPH_confirmed_score, confidencescoretouse, unified_score, X] = cell_summary_statistics(fd)
+function [td, tList, NPH_all_tfilelist, NPH_confirmed_tfileList, NPH_best_guess_tfilelist, NPH_all_confidence_score, NPH_confirmed_confidence_score, NPH_best_guess_confidence_score, unified_confidence_score, X] = cell_summary_statistics(fd)
 % JJS. 2024-08-20.
 % This function tabulates the number of NPH and Gi neurons from all recording sessions in the input directory, as well as location confidence scores.
 
@@ -6,6 +6,8 @@ function [td, tList, NPH_confirmed_tfileList, NPH_confirmed_score, confidencesco
 
 % Outputs:      td - list of the paths for the .t files used in this tabulation
 %               ts - list of .t files used in this tabulation
+
+
 
 if isempty(fd)
     fd = FindFiles('*keys.m');
@@ -17,10 +19,14 @@ numSess = length(fd);
 td = [];
 tList = [];
 NPH_confirmed_tfileList = {};
+NPH_best_guess_tfilelist = {}; 
+NPH_all_tfilelist = {};
 iNeuron = 0;
-NPH_confirmed_score = [];
-hemisphere_field = NaN(1, length(fd)); 
-hemisphere_correct = NaN(1, length(fd)); 
+NPH_confirmed_confidence_score = [];
+NPH_best_guess_confidence_score = [];
+
+hemisphere_field = NaN(1, length(fd));
+hemisphere_correct = NaN(1, length(fd));
 
 for iSess = 1:numSess
     pushdir(fileparts(fd{iSess}));
@@ -28,14 +34,14 @@ for iSess = 1:numSess
     if ~exist(strcat(SSN,'-VT1.mp4')); error('VIDEO FILE NOT FOUND'); end
     EvalKeys;
     
-    tS = FindFiles('*.t'); numCells = length(tS); 
+    tS = FindFiles('*.t'); numCells = length(tS);
     [~, b, ~] = fileparts(tS);
     td = vertcat(td, tS);
     tList = vertcat(tList, b);
     confirmed_structureID = 0;
     guess_structureID = 0;
-    %% Check that ExpKeys.Hemisphere exists and has the right number of cells 
-    if isfield(ExpKeys, 'Hemisphere')   % for hemisphere field, 1 = present, 0 = not present, NaN = not checked. 
+    %% Check that ExpKeys.Hemisphere exists and has the right number of cells
+    if isfield(ExpKeys, 'Hemisphere')   % for hemisphere field, 1 = present, 0 = not present, NaN = not checked.
         hemisphere_field(iSess) = 1;
         if length(ExpKeys.Hemisphere) ~= numCells; warning('Hemisphere field does not have the right number of entries.');
             hemisphere_correct(iSess) = 0;
@@ -44,7 +50,7 @@ for iSess = 1:numSess
     else
         hemishphere_field(iSess) = 0;
     end
-    disp(num2str(hemisphere_correct(iSess))); 
+%     disp(num2str(hemisphere_correct(iSess)));
     %% ExpKeys.LesionStructureConfirmed
     % Look for matching strings                                             ***note: ANY DIFFERENCE IN SPELLING WILL RESULT IN A MISMATCH***
     if isfield(ExpKeys, 'LesionStructureConfirmed')
@@ -207,23 +213,44 @@ for iSess = 1:numSess
         warning('ExpKeys.NeuronConfidence field is not present.')
     end
     %% MERGE THE TWO SCORING SYSTEMS --------------------------------------------------------------------------------------------------------------
-    assert(isnan(lesion_confidence_score(iSess)) + isnan(neuron_confidence_score(iSess)) == 1)  % only 1 can be NaN. Not both. And not neither. 
+    assert(isnan(lesion_confidence_score(iSess)) + isnan(neuron_confidence_score(iSess)) == 1)  % only 1 can be NaN. Not both. And not neither.
     if  ~isnan(lesion_confidence_score(iSess))
-        confidencescoretouse(iSess) = lesion_confidence_score(iSess);
+        NPH_all_confidence_score(iSess) = lesion_confidence_score(iSess);
+    elseif ~isnan(neuron_confidence_score(iSess))
+        NPH_all_confidence_score(iSess) = neuron_confidence_score(iSess);
     else
-        confidencescoretouse(iSess) = neuron_confidence_score(iSess);
+        error('issue with lesion/neuron confidence score for this session')
     end
-    %% Keep a list of NPH neurons and their corresponding confidence scores 
+    
+    %% Keep a list of NPH neurons and their corresponding confidence scores
+    if isempty(lc_NPH)   % if variable is entry, use zeros 
+        lc_NPH_to_use = zeros(1,length(tS)); 
+        else lc_NPH_to_use = lc_NPH;  
+    end
+    if isempty(bg_NPH)  % if variable is entry, use zeros 
+        bg_NPH_to_use = zeros(1,length(tS));
+        else bg_NPH_to_use = bg_NPH; 
+    end
+    
     for iT = 1:length(tS)
-        iNeuron = iNeuron + 1; 
+        assert(lc_NPH_to_use(iT) + bg_NPH_to_use(iT) <= 1)
+        iNeuron = iNeuron + 1;
         if ~isempty(lc_NPH)
             if lc_NPH(iT)
                 NPHtfile = cellstr(tS{iT});
                 NPH_confirmed_tfileList = vertcat(NPH_confirmed_tfileList, NPHtfile);
-                NPH_confirmed_score = vertcat(NPH_confirmed_score, confidencescoretouse(iSess));
+                NPH_all_tfilelist = vertcat(NPH_all_tfilelist, NPHtfile); % Get tilfelist for all NPH neurons
+                NPH_confirmed_confidence_score = vertcat(NPH_confirmed_confidence_score, NPH_all_confidence_score(iSess));
             end
         end
-        unified_score(iNeuron) = confidencescoretouse(iSess);
+        if ~isempty(bg_NPH)
+            if bg_NPH(iT)
+                NPH_best_guess_tfilelist = vertcat(NPH_best_guess_tfilelist, NPHtfile); 
+                NPH_all_tfilelist = vertcat(NPH_all_tfilelist, NPHtfile); % Get tilfelist for all NPH neurons
+                NPH_best_guess_confidence_score = vertcat(NPH_best_guess_confidence_score, NPH_all_confidence_score(iSess));
+            end
+        end
+        unified_confidence_score(iNeuron) = NPH_all_confidence_score(iSess);
     end
     %%
     clear ExpKeys
@@ -353,7 +380,10 @@ if ~isempty(c); warning('there are sessions without the right confidence entry. 
 X.confidence_missing_sessions = c;
 
 X.hemisphere_field = hemisphere_field;
-X.hemisphere_correct = hemisphere_correct; 
+X.hemisphere_correct = hemisphere_correct;
+
+NPH_all_confidence_score = NPH_all_confidence_score';
+unified_confidence_score = unified_confidence_score';
 %% NPH confdience numbers
 % 1 lesion
 c_score1 = X.lesion_confidence_score == 1;

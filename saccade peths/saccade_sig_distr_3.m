@@ -22,9 +22,9 @@ function [out_n, out_t, peth_tvec, mean_FR_n, mean_FR_t, mn_shuff, mt_shuff, Z, 
 % warning('off', 'all')  % why isnt this working?
 
 cfg_def.FontSize = 15;
-cfg_def.numShuff = 1000; % how many shuffles to do
+cfg_def.numShuff = 20; % how many shuffles to do
 cfg_def.histbinnum = 500;
-cfg_def.doPlot = 0;
+cfg_def.doPlot = 1;
 cfg_def.peth_Window = [-.2 .1]; % the window for doing statistics on. These values should be smaller than cfg_def.window
 cfg_def.window = [-1 1]; % the window for display
 cfg_out = ProcessConfig(cfg_def, cfg_in);
@@ -296,8 +296,8 @@ end
 nUP = nDir == 1;                % cells with an increase in FR during nasal saccades, in the stats window 
 nDOWN = nDir == -1;             % cells with an decrease in FR during nasal saccades, in the stats window 
 
-tUP = tDir == 1;                % cells with an increase in FR during temporal saccades, in the stats window 
-tDOWN = tDir == -1;             % cells with an increase in FR during temporal saccades, in the stats window 
+tUP = nDir == 1;                % cells with an increase in FR during temporal saccades, in the stats window 
+tDOWN = nDir == -1;             % cells with an increase in FR during temporal saccades, in the stats window 
 
 w = [];
 %% ONE OR THE OTHER significant, sign of change not considered
@@ -309,9 +309,6 @@ w.nasal_99 = percent_n >= 0.99; w.nasal_99_sum = sum(w.nasal_99); w.nasal_99_per
 
 w.t_or_n_95 = percent_t >= 0.95 | percent_n >= 0.95; w.sum_t_or_n_95 = sum(w.t_or_n_95);  w.per_t_or_n_95 = w.sum_t_or_n_95/numCells;
 w.t_or_n_99 = percent_t >= 0.99 | percent_n >= 0.99; w.sum_t_or_n_99 = sum(w.t_or_n_99);  w.per_t_or_n_99 = w.sum_t_or_n_99/numCells;
-
-w.either_t_or_n_95 = find(w.t_or_n_95); 
-w.either_t_or_n_99 = find(w.t_or_n_99);
 
 %% BOTH  significant (one up and one down) 
 w.tup_and_ndown_95 = percent_t >= 0.95 & tDir == 1 &  percent_t >= 0.95 & nDir == -1;   % Increasing nasal & decreasing temporal @ 95th percentile
@@ -360,7 +357,10 @@ w.both_decr_99 = intersect(w.f99_t_decr, w.f99_n_decr); w.num_both_decr_99 = len
 
 %% NEITHER   (not significant for either saccade type)
 w.numSig_neither_95 = percent_t < 0.95 & percent_n < 0.95; w.sumSig_neither_95 = sum(w.numSig_neither_95); w.per_Sig_neither_95 = w.sumSig_neither_95/numCells;
-w.numSig_neither_99 = percent_t < 0.99 & percent_n < 0.99; w.sumSig_neither_99 = sum(w.numSig_neither_99); w.per_Sig_neither_99 = w.sumSig_neither_99/numCells;
+w.numSig_neither_99 = percent_t < 0.99 & percent_t < 0.99; w.sumSig_neither_99 = sum(w.numSig_neither_99); w.per_Sig_neither_99 = w.sumSig_neither_99/numCells;
+
+w.neither_sig_95 = find(w.numSig_neither_95); w.num_neither_95 = length(w.neither_sig_95); w.per_neither_95 = w.num_neither_95/numCells;
+w.neither_sig_99 = find(w.numSig_neither_99); w.num_neither_99 = length(w.neither_sig_99); w.per_neither_99 = w.num_neither_99/numCells;
 
 
 

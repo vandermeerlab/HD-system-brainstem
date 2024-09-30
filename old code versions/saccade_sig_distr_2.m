@@ -155,7 +155,8 @@ percent_t = h_t;
 
 %% Plot It
 if cfg_out.doPlot == 1
-    clf;
+%     clf;
+    figure
     subplot(321); % nasal peth
     plot(peth_tvec, out_n.data);
     set(gca, 'FontSize', cfg_out.FontSize)
