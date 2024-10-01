@@ -1,4 +1,4 @@
-function [TC_all, TC_norm, TC_cellID] = get_TuningCurves(cfg_in)
+function [TC_all, TC_norm, TC_cellID] = get_TuningCurves(cfg_in, fd)
 
 subtractStartTime = 1;
 cfg_def = [];
@@ -8,7 +8,9 @@ TC_all.tc = [];
 TC_all.bins = [];
 TC_cellID = [];
 
-fd = FindFiles('*keys.m');
+if isempty(fd)
+    fd = FindFiles('*keys.m');
+end
 for iSess = 1:length(fd)
     pushdir(fileparts(fd{iSess}));
     SSN = HD_GetSSN;
@@ -32,7 +34,7 @@ for iSess = 1:length(fd)
     numCells = size(tc_out.tc, 1);
     %     plot(tc_out.usr.binCenters, tc_out.tc(iCell,:), 'LineWidth', LineWidth);
     TC_all.tc = vertcat(TC_all.tc, tc_out.tc);
-    TC_all.bins = vertcat(TC_all.bins, repmat(tc_out.usr.binCenters, numCells, 1));
+    TC_all.bins = vertcat(TC_all.bins, repmat(tc_out.binCenters, numCells, 1));
     clear tc_out
     
     TC_cellID = vertcat(TC_cellID, S.label');
@@ -47,4 +49,4 @@ end
 
 % [B, I] = max(TC_norm.tc');
 
-    
+

@@ -7,7 +7,8 @@ SSN = HD_GetSSN('SingleSession');
 %% get AHV
 cfg_AHV = [];
 cfg_AHV.subsample_factor = 10;
-[AHV_tsd, S, tc_out] = AHV_tuning(cfg_AHV);
+[AHV_tsd, tc_out] = AHV_tuning(cfg_AHV, S);
+% [AHV_tsd, S, tc_out] = AHV_tuning(cfg_AHV);
 AHV_dt = median(diff(AHV_tsd.tvec));
 
 %% plot tuning curves
