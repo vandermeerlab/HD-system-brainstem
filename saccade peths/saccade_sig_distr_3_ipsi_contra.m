@@ -1,4 +1,4 @@
-function [out_ipsi, out_contra, peth_tvec, mean_FR_ipsi, mean_FR_contra, ipsi_shuff, contra_shuff, Z, w, percent_ipsi, percent_contra, ipsi_Dir, contra_Dir, cfg_out] = saccade_sig_distr_3_ipsi_contra(tfile, cfg_in)
+function [out_ipsi, out_contra, peth_tvec, mean_FR_ipsi, mean_FR_contra, ipsi_shuff, contra_shuff, Y, w, percent_ipsi, percent_contra, ipsi_Dir, contra_Dir, cfg_out] = saccade_sig_distr_3_ipsi_contra(tfile, cfg_in)
 % saccadePETHsig_ver1_1.m  This function determines whether each neuorn is significantly modulated around the saccade time
 %
 %   Inputs
@@ -308,7 +308,7 @@ for iCell = 1:length(tfile)
     % warning('on', 'all')
     disp(strcat('percent nasal = ', num2str(X.percent_ipsi)))
     disp(strcat('percent temporal = ', num2str(X.percent_contra)))
-    Z{iCell} = X;
+    Y{iCell} = X;
     clear X
 end
 

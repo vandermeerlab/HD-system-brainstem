@@ -14,7 +14,7 @@ function [outputS, outputT, outputGau, outputIT, cfg] = SpikePETHvdm(cfg_in, S,t
 %           -
 % based on spikePETH by MvdM
 % modified by EC to match mvdmlab codebase- 2017-05-01%% set defaults
-cfg_def.doPlot = 1;
+cfg_def.doPlot = 0;
 cfg_def.doBar = 0;
 cfg_def.window = [-1 2];
 cfg_def.color = 'black';

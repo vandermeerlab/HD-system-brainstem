@@ -1,4 +1,4 @@
-function [TC_all, TC_norm, TC_cellID] = get_TuningCurves2(cfg_in, tfilelist)
+function [TC_all, TC_norm, TC_cellID, sessCounter] = get_TuningCurves2(cfg_in, tfilelist)
 % JJS. 2024-10-01. This function calculated the AHV tuning curve for all neurons in the tfilelist and plots them, sorted, as an imagesc image.
 
 % Inputs:
@@ -44,16 +44,16 @@ for iNeuron = 1:length(tfilelist)
         [~, tc_out] = AHV_tuning(cfg_AHV, S);
     end
     index = strcmp({neuron_to_use}, neuronIDs);  % this result should be a nCell x 1 logical. if [0 1 0] for instance, then the second neuron in S is our spike train to use.
-    rows_to_use = find(index);
-    TCs_to_use = tc_out.tc(rows_to_use,:);
+    row_to_use = find(index);
+    TCs_to_use = tc_out.tc(row_to_use,:);
     
     %% Figure out which tuning curves are NPH and therefore which to concatenate
-    if ~isempty(rows_to_use)
+    if ~isempty(row_to_use)
         numCells = size(tc_out.tc, 1);
         TC_all.tc = vertcat(TC_all.tc, TCs_to_use);
-        TC_all.bins = vertcat(TC_all.bins, repmat(tc_out.binCenters, rows_to_use, 1));
-        for iLabel = 1:length(rows_to_use)
-            TC_cellID = vertcat(TC_cellID, {S.label{rows_to_use(iLabel)}});
+        TC_all.bins = vertcat(TC_all.bins, repmat(tc_out.binCenters, row_to_use, 1));
+        for iLabel = 1:length(row_to_use)
+            TC_cellID = vertcat(TC_cellID, {S.label{row_to_use(iLabel)}});
         end
     end
     popdir;
@@ -72,18 +72,10 @@ cmap = parula(256);
 % Make lowest one white
 cmap(1,:) = 0;
 colormap(cmap);
+xlabel('time (sec)')
+ylabel('neuron #')
+set(gca, 'FontSize', 30)
 
 
-% %% plot it 
-% [M, I] = max(TC_all.tc');
-% 
-% [B, isort] = sort(I);
-% 
-% pcolor(TC_all.bins(1,:), 1:length(TC_norm.tc), TC_norm.tc(isort, :))
-% 
-% cmap = jet(256);
-% % Make lowest one black
-% cmap(1,:) = 0;
-% colormap(cmap);
 
 

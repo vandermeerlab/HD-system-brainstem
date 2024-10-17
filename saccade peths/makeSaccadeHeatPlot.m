@@ -2,7 +2,7 @@ function [Z] = makeSaccadeHeatPlot(cfg_in, nasalSaccadesToUse, temporalSaccadesT
 % [] = makeSaccadeHeatPlot
 % JJS. 4/2021.
 
-doPlot = 1;
+doPlot = 0;
 cfg_def.FRwindow = [-.2 .2];
 cfg_def.dt = 0.005;
 cfg_def.threshH = 10;
@@ -117,29 +117,30 @@ Z.cellname = cellname;
 
 
 
-% %% Arrange the data in pairs so that you can see temporal and nasal saccades for the same cell, one above the other
-% pairs = nan(size(FRxBinT,1), size(FRxBinT,2));
+%% not usefull 
+% Arrange the data in pairs so that you can see temporal and nasal saccades for the same cell, one above the other
+% pairs = nan(size(Z.FRxBinT,1), size(Z.FRxBinT,2));
 % counter = 0;
-% for iPosition = 2:2:2*(size(FRxBinN,1))   % nasal
+% for iPosition = 2:2:2*(size(Z.FRxBinN,1))   % nasal
 %     counter = counter + 1;
-%     pairs(iPosition, :) = FRxBinN(counter,:);
+%     pairs(iPosition, :) = Z.FRxBinN(counter,:);
 % end
 % counter = 0;
-% for iPosition = 1:2:2*(size(FRxBinT,1))-1    % temporal
+% for iPosition = 1:2:2*(size(Z.FRxBinT,1))-1    % temporal
 %     counter = counter + 1;
-%     pairs(iPosition, :) = FRxBinT(counter,:);
+%     pairs(iPosition, :) = Z.FRxBinT(counter,:);
 % end
-%
-% pairsNorm = nan(size(FRxBinT,1), size(FRxBinT,2));
+% 
+% pairsNorm = nan(size(Z.FRxBinT,1), size(Z.FRxBinT,2));
 % counter = 0;
-% for iPosition = 2:2:2*(size(FRxBinN,1))   % nasal
+% for iPosition = 2:2:2*(size(Z.FRxBinN,1))   % nasal
 %     counter = counter + 1;
-%     pairsNorm(iPosition, :) = NnormSmooth(counter,:);
+%     pairsNorm(iPosition, :) = Z.NnormSmooth(counter,:);
 % end
 % counter = 0;
-% for iPosition = 1:2:2*(size(FRxBinT,1))-1    % temporal
+% for iPosition = 1:2:2*(size(Z.FRxBinT,1))-1    % temporal
 %     counter = counter + 1;
-%     pairsNorm(iPosition, :) = TnormSmooth(counter,:);
+%     pairsNorm(iPosition, :) = Z.TnormSmooth(counter,:);
 % end
 %
 %

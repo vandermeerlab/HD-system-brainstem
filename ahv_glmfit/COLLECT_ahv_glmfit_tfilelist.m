@@ -1,22 +1,14 @@
-function [cfg_master, out, rsq_all, sacc_gain, ahv_gain, sessUsed, cfg_plot] = COLLECT_ahv_glmfit_jeff2(varargin)
-
+function [cfg_master, out, ts_pca1, ns_pca1] = COLLECT_ahv_glmfit_tfilelist(tfilelist, Z)
+% JJS. 2024-10-02. This version works from a tfile list of .t files (path included), instead of pushing in and out of each session folder to calculate all neurons.
+%                  This way we can calculate for only NPH neurons, for example.
 % This version plots all points in the AHV and pupil tuning curves (in addition to the mean)
 %% collect data from all sessions
-%% set up data path
-cd('C:\Jeff\U01\datatouse');
-cfg = [];
-% cfg.rats = {'M039', 'M052', 'M055', 'M079', 'M080', 'M085', 'M086', 'M089', 'M090', 'M094', 'M096', 'M104', 'M105', 'M112', 'M212', 'M222', 'M247', 'M269', 'M271', 'M281', 'M282', 'M284', 'M287', 'M293', 'M362', 'M389', 'M390', 'M391', 'M402'};
-% cfg.rats (above) skips a bunch of animals. Check and see why this is the case. 2023-06-23.
-% fd = getDataPath(cfg);
-fd = FindFiles('*keys.m');
-
-endSess = length(fd);
 %%
 cfg_master = []; % overall params
 cfg_master.doColor = 1;
 cfg_master.FontSize = 10;
-cfg_master.doPlot = 1;
-cfg_master.WriteFig = 1; 
+cfg_master.doPlot = 0;
+cfg_master.WriteFig = 1;
 cfg_master.dt = 0.005;
 cfg_master.maxlag = 200; % bins for use in saccade PETH
 cfg_master.debug = 0;
@@ -24,55 +16,32 @@ cfg_master.tc_binEdges = -150:10:150;
 cfg_master.pupil_tc_binEdges = -80:5:80; % for pupilX TC
 
 out = [];
-sessUsed = {};
-sessCounter = 0;
-skip = 0;  % there are four sessions that return errors when the model that includes saccade amplitude is used.
-
-process_varargin(varargin);
-
-for iS = 1:endSess
-    pushdir(fileparts(fd{iS}));
-    SSN = HD_GetSSN; disp(SSN);
-    if exist(strcat(SSN, '-VT1_proc.mat')) == 2
-        if skip == 1
-            if strcmp(SSN, 'M094-2021-12-28') == 0 && strcmp(SSN, 'M105-2021-01-17') == 0 && strcmp(SSN, 'M212-2021-07-21') == 0 && strcmp(SSN, 'M271-2021-08-28') == 0 && strcmp(SSN, 'M086-2020-11-21') == 0 && strcmp(SSN, 'M094-2020-12-28') == 0
-                sessCounter = sessCounter +1;
-                sessUsed{sessCounter} = SSN;
-                out = cat(2, out, SESSION_ahv_glmfit_jeff(cfg_master));
-            else
-                disp('problem session. skipping for now...')
-            end
-        else
-            sessCounter = sessCounter +1;
-            sessUsed{sessCounter} = SSN;
-            out = cat(2, out, SESSION_ahv_glmfit_jeff(cfg_master));
-        end
-    else
-        disp('no video tracking data. skipping session...')
-    end
-    popdir;
+for iNeuron = 1:length(tfilelist)
+    [out{iNeuron}, ts_pca1(iNeuron), ns_pca1(iNeuron)] = SESSION_ahv_glmfit_tfilelist(cfg_master, tfilelist{iNeuron}, Z, iNeuron);
+    
 end
 
-ahv_gain_fun = @(x) x.pca_sacc_both.rsq - x.pca_sacc.rsq;
-sacc_gain_fun = @(x) x.pca_sacc_both.rsq - x.ahv.rsq;
-rsq_fun = @(x) x.pca_sacc_both.rsq;
-
-ahv_gain = arrayfun(ahv_gain_fun, out);
-sacc_gain = arrayfun(sacc_gain_fun, out);
-rsq_all = arrayfun(rsq_fun, out);
+%% ERROR with concatenating. Look at matt's original version. 
+% ahv_gain_fun = @(x) x.pca_sacc_both.rsq - x.pca_sacc.rsq;
+% sacc_gain_fun = @(x) x.pca_sacc_both.rsq - x.ahv.rsq;
+% rsq_fun = @(x) x.pca_sacc_both.rsq;
+% 
+% ahv_gain = arrayfun(ahv_gain_fun, out);
+% sacc_gain = arrayfun(sacc_gain_fun, out);
+% rsq_all = arrayfun(rsq_fun, out);
 
 save('GLM.mat')
 
-% PLOT 
+% PLOT
 if cfg_master.doPlot == 1
-    %% Overall Plot 
+    %% Overall Plot
     nCells = length(out);
     cfg_plot = [];
     cfg_plot.lim = 0.65;
     cfg_plot.rsq_bin = 0:0.05:1;
     cfg_plot.rsq_binC = cfg_plot.rsq_bin(1:end-1) + median(diff(cfg_plot.rsq_bin))/2;
     this_hist = histc(rsq_all, cfg_plot.rsq_bin);
-
+    
     figure;
     
     subplot(222)           % bar plot of FULL model Rsq
@@ -92,7 +61,7 @@ if cfg_master.doPlot == 1
     
     set(gca, 'XLim', [-0.1 cfg_plot.lim], 'YLim', [-0.1 cfg_plot.lim], 'TickDir', 'out', 'FontSize', 18);
     xlabel('R^2 gain from AHV'); ylabel('R^2 gain from eye movement');
-    %% Inidvidual Tuning Curves 
+    %% Inidvidual Tuning Curves
     cells_per_figure = 3; nFigures = ceil(nCells / cells_per_figure);
     xtight = .08;
     ytight = .04;
@@ -109,9 +78,9 @@ if cfg_master.doPlot == 1
             %             subplot(cells_per_figure, 3, this_plot);
             subtightplot(cells_per_figure, 3, this_plot,[xtight ytight])
             hold on
-            yyaxis left 
+            yyaxis left
             plot(out(iC).ahvscatterY', out(iC).ahvscatterX', '.')
-            maxY = max(out(iC).ahvscatterX'); 
+            maxY = max(out(iC).ahvscatterX');
             yl = ylabel(num2str(iC)); set(yl, 'FontWeight', 'Bold');
             yyaxis right
             tc_bin_centers = cfg_master.tc_binEdges(1:end-1) + median(diff(cfg_master.tc_binEdges))/2;

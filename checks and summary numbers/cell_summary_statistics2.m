@@ -250,10 +250,11 @@ for iSess = 1:numSess
     end
     
     for iT = 1:length(tS)
+        NPHtfile = cellstr(tS{iT});
         assert(lc_NPH_to_use(iT) + bg_NPH_to_use(iT) <= 1)
         if ~isempty(lc_NPH)
-            if lc_NPH(iT)
-                NPHtfile = cellstr(tS{iT});
+            if lc_NPH(iT) % why is this an if == 1 situation 
+%                 NPHtfile = cellstr(tS{iT});
                 NPH_confirmed_tfileList = vertcat(NPH_confirmed_tfileList, NPHtfile);
                 NPH_all_tfilelist = vertcat(NPH_all_tfilelist, NPHtfile); % Get tilfelist for all NPH neurons
                 NPH_confirmed_confidence_score = vertcat(NPH_confirmed_confidence_score, all_confidence_score(iSess));
@@ -265,6 +266,7 @@ for iSess = 1:numSess
         end
         if ~isempty(bg_NPH)
             if bg_NPH(iT)
+%                 NPHtfile = cellstr(tS{iT});
                 NPH_best_guess_tfilelist = vertcat(NPH_best_guess_tfilelist, NPHtfile);
                 NPH_all_tfilelist = vertcat(NPH_all_tfilelist, NPHtfile); % Get tilfelist for all NPH neurons
                 NPH_best_guess_confidence_score = vertcat(NPH_best_guess_confidence_score, all_confidence_score(iSess));

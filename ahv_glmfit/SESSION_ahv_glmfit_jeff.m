@@ -15,7 +15,7 @@ cfg_def.tc_binEdges = -150:10:150; % for AHV TC
 cfg_def.pupil_tc_binEdges = -80:5:80; % for pupilX TC
 cfg_def.skip_amp = 1;  % skip calculating saccade amplitude as part of the model
 cfg_def.plotAllPoints = 1;   % plot all of the points in the tuning curve scatterplot and all of the points in the pupil position plot
-cfg_def.intermediate_file_path = ''; % needed for SaccadePETH.mat file, define this in function call
+cfg_def.intermediate_file_path = 'C:\Jeff\U01\datatouse'; % needed for SaccadePETH.mat file, define this in function call
 
 cfg_master = ProcessConfig2(cfg_def, cfg_in);
 cfg_master.gausswin = gausswin(1./cfg_master.dt, 20); cfg_master.gausswin = cfg_master.gausswin ./ sum(cfg_master.gausswin);
@@ -24,22 +24,13 @@ cfg_master.gausswin = gausswin(1./cfg_master.dt, 20); cfg_master.gausswin = cfg_
 AHV_tsd = Get_AHV([]);
 S = LoadSpikesJeff; nCells = length(S.t);
 
-try load(FindFile('*saccades-edited.mat'))
-    keep = find(~isnan(temporalSaccades));
-    %     if length(keep) < length(temporalSaccades)
-    %         warning('NaNs found in temporalSaccades!');
-    %     end
-    temporalSaccades = temporalSaccades(keep); temporalAmplitudes = temporalAmplitudes(keep);
-    
-    keep = find(~isnan(nasalSaccades));
-    %     if length(keep) < length(nasalSaccades)
-    %         warning('NaNs found in nasalSaccades!');
-    %     end
-    nasalSaccades = nasalSaccades(keep); nasalAmplitudes = nasalAmplitudes(keep);
-catch
-    disp('WARNING: No edited saccades file available, computing automated version...')
-    [temporalSaccades, nasalSaccades, ~, ~, ~, tsdH, tsdV] = processPupilData2([]);
-end
+load(FindFile('*saccades-edited.mat'))
+keep = find(~isnan(temporalSaccades));
+temporalSaccades = temporalSaccades(keep); temporalAmplitudes = temporalAmplitudes(keep);
+
+keep = find(~isnan(nasalSaccades));
+nasalSaccades = nasalSaccades(keep); nasalAmplitudes = nasalAmplitudes(keep);
+
 %%
 p = table; % contains regressors
 
@@ -84,7 +75,7 @@ this_pupilV = tsd(sd.TVECc, p.pupilV');
 % PCA PETH predictors
 cfg_peth = [];
 % [FRxBinT, FRxBinN, FRxBinTsmooth, FRxBinNsmooth, FRxBinTnorm, FRxBinNnorm, TnormSmooth, NnormSmooth, outputIT, binCenters, ~, cellID, cellname] = makeSaccadeHeatPlot(cfg_peth);
-% [Z] = makeSaccadeHeatPlot(cfg_in, nasalSaccadesToUse, temporalSaccadesToUse, varargin).  This is the current version. 
+% [Z] = makeSaccadeHeatPlot(cfg_in, nasalSaccadesToUse, temporalSaccadesToUse, varargin).  This is the current version.
 pushdir(cfg_master.intermediate_file_path); load SaccadePETHs; popdir;
 
 x1 = Z.FRxBinNsmooth'; x2 = Z.FRxBinTsmooth'; x = cat(2, x1, x2);
@@ -172,26 +163,26 @@ for iC = nCells:-1:1
     out(iC).cellname = S.label{iC}; % this is the name of the eye tracking neurons (SSN-TT__.t, etc.)
     
     if cfg_master.plotAllPoints == 1
-    % get AHV Tuning Curve
-    cfg_AHV = [];
-    cfg_AHV.subsample_factor = 10;
-    [AHV_tsd, tc_out] = AHV_tuning(cfg_AHV, S);
-    AHV_dt = median(diff(AHV_tsd.tvec));
-    % Firing Rate x AHV 
-    cfg_Q = [];
-    cfg_Q.smooth = 'gauss';
-    cfg_Q.gausswin_sd = 0.05;
-    cfg_Q.dt = AHV_dt;
-    cfg_Q.tvec_edges = AHV_tsd.tvec(1):AHV_dt:AHV_tsd.tvec(end);
-    F = MakeQfromS(cfg_Q, S); % convert to FR
-    % convert to FR
-    F.data = F.data ./ cfg_Q.dt;
-    % find FR corresponding to each AHV sample
-    F_idx = nearest_idx3(AHV_tsd.tvec, F.tvec);
-    AHV_F = F.data(iC,F_idx);
-    ymax = max(AHV_F);
-    out(iC).ahvscatterX = AHV_F;
-    out(iC).ahvscatterY = AHV_tsd.data; 
+        % get AHV Tuning Curve
+        cfg_AHV = [];
+        cfg_AHV.subsample_factor = 10;
+        [AHV_tsd, tc_out] = AHV_tuning(cfg_AHV, S);
+        AHV_dt = median(diff(AHV_tsd.tvec));
+        % Firing Rate x AHV
+        cfg_Q = [];
+        cfg_Q.smooth = 'gauss';
+        cfg_Q.gausswin_sd = 0.05;
+        cfg_Q.dt = AHV_dt;
+        cfg_Q.tvec_edges = AHV_tsd.tvec(1):AHV_dt:AHV_tsd.tvec(end);
+        F = MakeQfromS(cfg_Q, S); % convert to FR
+        % convert to FR
+        F.data = F.data ./ cfg_Q.dt;
+        % find FR corresponding to each AHV sample
+        F_idx = nearest_idx3(AHV_tsd.tvec, F.tvec);
+        AHV_F = F.data(iC,F_idx);
+        ymax = max(AHV_F);
+        out(iC).ahvscatterX = AHV_F;
+        out(iC).ahvscatterY = AHV_tsd.data;
     end
     
     if cfg_master.debug
