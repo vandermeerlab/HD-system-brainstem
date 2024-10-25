@@ -1,4 +1,4 @@
-function [AHVtsd] = get_AHVtsd(cfg_in, sd)
+function [AHVtsd, orientationtouse] = get_AHVtsd(cfg_in)
 %2023-07-19. JJS. 
 %   Calculates a tsd of AHV values (degrees per second) for an individual session. 
 %

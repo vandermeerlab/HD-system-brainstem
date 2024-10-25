@@ -1,4 +1,4 @@
-function [neuronList, X] = calc_AHV_score_tfilelist(cfg_in, tfilelist)
+function [neuronList, X] = calc_AHV_score_IPSI_CONTRA(cfg_in, tfilelist)
 % JJS. 2024-10-17.  This function takes a cell array of neuron paths (tfilelist) and calculates the best line fit (r) and slope (in spk/s/deg/s), and AHV score
 %                   defined as r x slope x 100 for each turn direction (CW & CCW), and taking the larger of those 2 values. AHV values at +-5 deg/s AHV are omitted.
 % Inputs:           cfg_in      - structure with configuration variables
@@ -42,13 +42,24 @@ for iNeuron = 1:length(tfilelist)
     if strcmp(pwd, path) == 0    % if current neuron is in a new folder, cd to that folder
         pushdir(path);
         SSN = HD_GetSSN;
-        EvalKeys
         sessCounter = sessCounter + 1;
     end
+    EvalKeys
     neuronID = strcat(neuron_to_use, ext);
     cfg_spikes.fc = {neuronID};  % do one neuron at a time
     myCell = LoadSpikesJeff(cfg_spikes);
     cellname{iNeuron} = neuronID; % this is the name of the eye tracking neurons (SSN-TT__.t, etc.)
+    session_tfiles = FindFiles('*.t');  % tfiles for this session only. Need to find which number this cell is within this session. 
+    [pathSession, tNameSession, ext] = fileparts(session_tfiles); 
+    for iCell = 1:length(tNameSession)
+        if iscell(tNameSession)
+            tNameToUse = tNameSession{iCell};
+        else
+            tNameToUse = tNameSession;
+        end
+        index(iCell) = strcmp(neuron_to_use, tNameToUse);
+    end
+    neuronOrder = find(index); assert(~isempty(neuronOrder));
     
     %% get AHV Tuning Curve
     cfg_AHV = [];
@@ -65,34 +76,42 @@ for iNeuron = 1:length(tfilelist)
     else
         xdata = tc_out;
     end
-    %% Calculate the slopes
-    % Corr for Positive AHV values
+    %% Build the matrix 
     x = xdata.binCenters; x = x';
     y = xdata.tc;    y = y';
     idx = isnan(y);
     x(:,2) = ones(length(x),1);
     
-    % Corr for CCW (positive ahv values) 
-    CCWindex = xdata.binCenters > 0;
-    [bCCW,~,~,~,statsPos] = regress(y(CCWindex),x(CCWindex,:));
-    X.bCCW(iNeuron) = bCCW(1);
-    X.rsqCCW(iNeuron) = statsPos(1);
-    X.pCCW(iNeuron) = statsPos(3);
-    temp2 = corrcoef(x(CCWindex' & ~idx,1),y(CCWindex' & ~idx));
-    X.rCCW(iNeuron) = temp2(1,2);
-    ahv_score_CCW(iNeuron) = bCCW(1)* X.rCCW(iNeuron) *100; X.ahv_score_CCW(iNeuron) = ahv_score_CCW(iNeuron);
+    hemisphere_to_use = ExpKeys.Hemisphere{neuronOrder};
+    if strcmp(hemisphere_to_use, 'L')
+        IPSIindex = xdata.binCenters > 0;  %   binCenters > 0 correspond to CCW [LEFTWARD] rotation. LEFT = IPSI for a left hemisphere neuron. 
+        CONTRAindex = xdata.binCenters < 0; %           these correspond to CW [RIGHTWARD] rotation. RIGHT = CONTRA for a left hemisphere neuron. 
+    elseif strcmp(hemisphere_to_use, 'R')
+        IPSIindex = xdata.binCenters < 0;  %   negative values = CW = RIGHTWARD = IPSI for a right hemisphere neuron  
+        CONTRAindex = xdata.binCenters > 0; %  positivate values = CCW = LEFTWARD = CONTRA for a right hemisphere neuron 
+    else
+        error('hemisphere error in ExpKeys')
+    end
     
-    % Corr for CW (negative AHV values)
-    CWindex = xdata.binCenters < 0;
-    [bCW,~,~,~,statsCW] = regress(y(CWindex),x(CWindex,:));
-    X.bCW(iNeuron) = bCW(1);
-    X.rsqCW(iNeuron) = statsCW(1);
-    X.pCW(iNeuron) = statsCW(3);
-    temp3 = corrcoef(x(CWindex' & ~idx,1),y(CWindex' & ~idx));
-    X.rCW(iNeuron) = temp3(1,2);
-    ahv_score_CW(iNeuron) = bCW(1)* X.rCW(iNeuron) *100; X.ahv_score_CW(iNeuron) = ahv_score_CW(iNeuron);
+    %% Corr for IPSILATERAL
+    [bIPSI,~,~,~,statsIPSI] = regress(y(IPSIindex),x(IPSIindex,:));
+    X.bIPSI(iNeuron) = bIPSI(1);
+    X.rsqIPSI(iNeuron) = statsIPSI(1);
+    X.pIPSI(iNeuron) = statsIPSI(3);
+    temp2 = corrcoef(x(IPSIindex' & ~idx,1),y(IPSIindex' & ~idx));
+    X.rIPSI(iNeuron) = temp2(1,2);
+    ahv_score_IPSI(iNeuron) = bIPSI(1)* X.rIPSI(iNeuron) *100; X.ahv_score_IPSI(iNeuron) = ahv_score_IPSI(iNeuron);
     
-    ahv_score(iNeuron) =  max([ahv_score_CCW(iNeuron)  ahv_score_CW(iNeuron)]); X.ahv_score(iNeuron) = ahv_score(iNeuron); 
+    %% Corr for CONTRALATERAL
+    [bCONTRA,~,~,~,statsCONTRA] = regress(y(CONTRAindex),x(CONTRAindex,:));
+    X.bCONTRA(iNeuron) = bCONTRA(1);
+    X.rsqCONTRA(iNeuron) = statsCONTRA(1);
+    X.pCONTRA(iNeuron) = statsCONTRA(3);
+    temp3 = corrcoef(x(CONTRAindex' & ~idx,1),y(CONTRAindex' & ~idx));
+    X.rCONTRA(iNeuron) = temp3(1,2);
+    ahv_score_CONTRA(iNeuron) = bCONTRA(1)* X.rCONTRA(iNeuron) *100; X.ahv_score_CONTRA(iNeuron) = ahv_score_CONTRA(iNeuron);
+    
+    ahv_score(iNeuron) =  max([ahv_score_IPSI(iNeuron)  ahv_score_CONTRA(iNeuron)]); X.ahv_score(iNeuron) = ahv_score(iNeuron); 
     %% Plot It
     if doPlot; clf
         % All

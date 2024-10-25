@@ -47,7 +47,9 @@ for iT = 1:nT
     
     S0 = restrict(S, t(iT)+cfg.window(1)-cfg.excessBounds, t(iT)+cfg.window(2)+cfg.excessBounds);
     %     if length(S0.t{1}) > 0
+    tic
     S0 = restrict(S0, t(iT)+cfg.window(1), t(iT)+cfg.window(2));
+    toc
     if length(S0.t{1}) > 0
         outputT = [outputT; repmat(iT, length(S0.t{1}),1)];
                 outputS = [outputS; S0.t{1}-t(iT)];        %convolve with gaussian for firing rate.

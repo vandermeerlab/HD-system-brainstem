@@ -14,9 +14,9 @@ function [outputS, outputT, outputGau, outputIT, cfg] = SpikePETHvdm(cfg_in, S,t
 %           -
 % based on spikePETH by MvdM
 % modified by EC to match mvdmlab codebase- 2017-05-01%% set defaults
-cfg_def.doPlot = 0;
-cfg_def.doBar = 0;
-cfg_def.window = [-1 2];
+cfg_def.doPlot = 1;
+cfg_def.doBar = 1;
+cfg_def.window = [-.1 .1];
 cfg_def.color = 'black';
 cfg_def.MarkerSize = 5;
 % cfg_def.dt = 0.00025;
@@ -49,9 +49,10 @@ end
 %plot(tbin_centers,S_gau_sdf,'g');
 
 for iT = 1:nT
-    S0 = restrict(S, t(iT)+cfg.window(1)-cfg.excessBounds, t(iT)+cfg.window(2)+cfg.excessBounds);
+%     S0 = restrict(S, t(iT)+cfg.window(1)-cfg.excessBounds, t(iT)+cfg.window(2)+cfg.excessBounds);
     %     if length(S0.t{1}) > 0
-    S0 = restrict(S0, t(iT)+cfg.window(1), t(iT)+cfg.window(2));
+%     S0 = restrict(S0, t(iT)+cfg.window(1), t(iT)+cfg.window(2));
+    S0 = restrict(S, t(iT)+cfg.window(1), t(iT)+cfg.window(2));
     if length(S0.t{1}) > 0
         outputT = [outputT; repmat(iT, length(S0.t{1}),1)];
         %         outputS = [outputS; S0.t{1}-t(iT)];        %convolve with gaussian for firing rate.
@@ -87,7 +88,7 @@ end
 %% display
 if cfg.doPlot ==1
     % spike raster
-    %     subplot(2,1,1);
+        subplot(2,1,1);
     % 	imagesc(window,[1 nT], outputID);
     % 	colormap(1-0.25*gray);
     % 	hold on;
@@ -112,7 +113,7 @@ if cfg.doPlot ==1
     end%%
 end
 % bar graph
-%     subplot(2,1,2);
+    subplot(2,1,2);
 if  cfg.doBar == 1
     m = histc(outputS, outputIT);
     bar(outputIT,m/cfg.dt/length(t));

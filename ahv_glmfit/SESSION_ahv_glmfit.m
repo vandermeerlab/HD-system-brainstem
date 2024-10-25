@@ -1,4 +1,4 @@
-function out = SESSION_ahv_glmfit(cfg_in)
+function [out, ts_pca1, ns_pca1] = SESSION_ahv_glmfit(cfg_in)
 % function out = SESSION_ahv_glmfit(cfg_in)
 %
 % perform single session GLM fits of spiking data with AHV and saccade
@@ -78,11 +78,11 @@ this_pupilX = tsd(sd.TVECc, p.pupilX');
 [ts_binarized, ts_bin] = histc(temporalSaccades, TVECe); ts_binarized = ts_binarized(1:end - 1);
 
 % PCA PETH predictors
-pushdir('C:\Users\mvdm\Dropbox\projects\Jeff\ahv_peth_pca');
-load SaccadePETHs
+pushdir('D:\Jeff\U01\analysis\old\dot mat files');
+load SaccadePETHsOLD
 popdir;
 
-x1 = FRxBinNsmooth'; x2 = FRxBinTsmooth'; x = cat(2, x1, x2);
+x1 = NnormSmooth'; x2 = TnormSmooth'; x = cat(2, x1, x2);
 [coeff, score] = pca(x);
 
 pca1_kernel = interp1(binCenters, score(:, 1), binCenters(1):cfg_master.dt:binCenters(end));
@@ -161,6 +161,9 @@ for iC = nCells:-1:1
         
         out(iC).(mn{iM}).rsq = this_m.Rsquared.Adjusted;
     end
+    
+    ts_pca1(iC) = this_m.Coefficients{6,1};
+    ns_pca1(iC) = this_m.Coefficients{7,1};
     
     if cfg_master.debug
         this_fit = this_m.predict(p);
