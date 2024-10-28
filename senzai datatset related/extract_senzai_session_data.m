@@ -1,5 +1,5 @@
 % 2024-10-24. JJS. Extracts Senzai data for one mouse.
-
+TCbinCenters = 5:10:355; 
 cd('J:\senzai dataset\data files')
 %% M77
 %% Import the spike train data
@@ -55,9 +55,14 @@ for iC = 1: totalCellsM77  % combine spike trains from each file into one struct
     M77.label{iC} = 'M77';
 end
 
+% **************************************************************************************************************************************************************
+% **************************************************************************************************************************************************************
 %% Get heading and AHV
 M77_heading = importdata('YutaTest77c_OpenField_HeadDirection.mat'); % contains Neck&NoseOmitIdx [value of 1 = omit], rho(distance between nose to neck),
 % theta (heading, in radians), t (timestamp, IN SECONDS)
+M77_heading_degrees = M77_heading.theta*180/pi;
+M77_heading_degreesTSD = tsd(M77_heading.t, M77_heading_degrees);
+
 M77tracking_dur = (M77_heading.t(end) - M77_heading.t(1))/60; % How many minutes long the tracking was in the open field. This is 98 minutes for M77.
 M77_Q = unwrap(M77_heading.theta);
 M77_Q_deg = M77_Q*180/pi;
@@ -66,16 +71,50 @@ postsmoothing = .05;
 M77_AHV = dxdt(M77_heading.t, M77_Q_deg, 'window', window, 'postsmoothing', postsmoothing);
 M77_AHVtsd = tsd(M77_heading.t, M77_AHV);
 M77_heading_sampling_rate = 1/median(diff(M77_heading.t));  % should be 50Hz
-% Isolate low AHV times
+% **************************************************************************************************************************************************************
+% **************************************************************************************************************************************************************
+%% Isolate low AHV times
+% Get Indices
 AHVthresh = 10; % cm/sec
 M77_low_AHV = abs(M77_AHV) < AHVthresh;
 M77_low_AHV_samples = sum(M77_low_AHV);
 M77_low_AHV_seconds = M77_low_AHV_samples/M77_heading_sampling_rate;
 M77_low_AHV_minutes = M77_low_AHV_seconds/60;
 fraction_M77_low_AHV = M77_low_AHV_samples / length(M77_heading.t); % 34 percent for M77
+% Get Start/Stop times (for later restrict)
 
+M77_low_AHV_diff = horzcat(NaN, diff(M77_low_AHV)); 
+% High to Low
+% ---------------------------------------
+%                                       -
+%                                       -
+%                                       -
+%                                       -
+%                                       ------------------------------------------------
+low_AHV_ones = find(M77_low_AHV_diff == 1); sum_low_AHV_ones = length(low_AHV_ones); % find the transition points from high(er) AHV to low AHV 
+low_AHV_tstart = M77_AHVtsd.tvec(low_AHV_ones); low_AHV_tstart = low_AHV_tstart';
+% Low to High 
+%                                       ------------------------------------------------
+%                                       -
+%                                       -
+%                                       -
+%                                       -
+% ---------------------------------------
+low_AHV_minus_ones = find(M77_low_AHV_diff == -1); sum_low_AHV_minus_ones = length(low_AHV_minus_ones);  % find transitions from low AHV back to high AHV
+low_AHV_tend = M77_AHVtsd.tvec(low_AHV_minus_ones); low_AHV_tend = low_AHV_tend';
+
+% Account for the first value being low or high. *** Need to account for all possiblities *** 
+
+if low_AHV_tstart(1) > low_AHV_tend(1)   % In other words, if the first transition is from high to low, then the session started out LOW. Make tstart(1) = the first timestamp
+    low_AHV_tstart = [M77_AHVtsd.tvec(1) low_AHV_tstart];
+end
+if low_AHV_tstart(end) > low_AHV_tend(end) % In other words, if the last transition is from high to low, then the session ended LOW. Make tend(end) = last timestamp
+    low_AHV_tend = [low_AHV_tend M77_AHVtsd.tvec(end)];
+end
+assert(length(low_AHV_tstart) == length(low_AHV_tstart))
+
+%% Load the Saccade data
 M77_saccade = importdata('YutaTest77c_REMsWAKE.mat');
-%% Get pupil position data, AWAKE
 % M77_pupil = importdata('YutaTest77c_eye_pupil_positions_converted.mat'); % pupil positions during wakefullness. Don't need this (yet), just saccades
 % M77_saccade.CommonStart are the saccade start times, in seconds. ***I think that all saccades (for both eyes) are concatenated
 % M77_saccade.ampX{1}: horizontal amplitude of saccades in RIGHT eye, in degree.
@@ -86,31 +125,137 @@ M77_num_saccades = length(M77_saccade.t); % 9065 for M77
 M77_saccade.right = M77_saccade.ampX{1}; % right saccade amplitudes
 M77_saccade.left = M77_saccade.ampX{2};  % left saccade amplitudes
 
-cfg_in = [];
-cfg_in.window = [-.2 .2];
-doPlot = 1;
-startCell = 1; endCell = length(M77.t);
+% cfg_in = [];
+% cfg_in.window = [-.2 .2];
+% doPlot = 1;
+% startCell = 1; endCell = length(M77.t);
+% % Awake saccade peths, all saccades
+% if doPlot
+%     for iCell = startCell:endCell
+%         disp(num2str(iCell))
+%         clf
+%         myCell = SelectTS([], M77, iCell);
+%         myCell.type = 'ts';
+%         tic
+%         [outputS, outputT, outputGau, outputIT, cfg_out] = SpikePETHvdm(cfg_in, myCell, M77_saccade.t, 'doPlot', doPlot);
+%         toc
+%         %     [peth_out, all_trials] = TSDpeth_fast(cfg_in, myCell, M77_saccade.t); % I don't think that I can use tsdPETH to do a spikePETH
+%         title(num2str(iCell))
+%         %     disp('press any key to continue')
+%         pause
+%     end
+% end
+
+%% Generate saccade-triggered AHV PETH                  ...this isn't very interesting will all the data included b/c its just random and noisy. 
+cfg_in.mode = 'interp';
+cfg_in.window = [-.5 .5];
+cfg_in.dt = .02;
 if doPlot
-    for iCell = startCell:endCell
-        disp(num2str(iCell))
-        clf
-        myCell = SelectTS([], M77, iCell);
-        myCell.type = 'ts';
-        tic
-        [outputS, outputT, outputGau, outputIT, cfg_out] = SpikePETHvdm(cfg_in, myCell, M77_saccade.t, 'doPlot', doPlot);
-        toc
-        %     [peth_out, all_trials] = TSDpeth_fast(cfg_in, myCell, M77_saccade.t); % I don't think that I can use tsdPETH to do a spikePETH
-        title(num2str(iCell))
-        %     disp('press any key to continue')
+    [peth_out, all_trials] = TSDpeth_fast(cfg_in, M77_AHVtsd, M77_saccade.t); % I don't think that I can use tsdPETH to do a spikePETH
+end
+a=colorbar;
+a.Label.String = 'AHV (deg/s)';
+
+%% Choose neurons with minimum FR and Strong HD tuning   [M77_neuronsToUse]
+% Find the PFD (peak) for each neuron that has significant HD tuning
+HD_z_thresh = 50;  % z-score threshold. ***Not sure how Yuta calculates the z-score. Check on this.
+% Peak firing rate criterion
+for iC = 1:length(M77_TCs.Maps)
+    M77_maxFR(iC) = max(M77_TCs.Maps{iC,1}.rate);
+    M77_maxFRsmooth(iC) = max(smoothdata(M77_TCs.Maps{iC,1}.rate));
+end
+FRthresh = 10; % in Hz. The tuning curve peak must be at or above this threshold to include the neuron. 
+M77_peakFRtoUse = M77_maxFR > FRthresh;
+M77_peakFRtoUseIDs = find(M77_peakFRtoUse); M77_peakFRtoUseIDs = M77_peakFRtoUseIDs';
+sum_M77_peakFRtoUse = sum(M77_peakFRtoUse); fraction_M77_peakFRtoUse = sum_M77_peakFRtoUse/length(M77_TCs.Maps);
+
+M77_HDC_logical = M77_TCs.z_ppln > HD_z_thresh;
+M77_HDC_IDs = find(M77_HDC_logical);
+M77_sum_HDCs = sum(M77_HDC_logical);
+
+M77_neuronsToUse = intersect(M77_peakFRtoUseIDs, M77_HDC_IDs);
+sum_M77_HDC_minFR = length(M77_neuronsToUse);
+
+clf; hold on; set(gca, 'FontSize', 24)
+doNorm = 0;
+if doPlot
+    for iC = 1 : sum_M77_HDC_minFR
+        IDtoUse(iC) = M77_neuronsToUse(iC);
+        disp(num2str(IDtoUse(iC)))
+        normIC(iC,:) = (M77_TCs.Maps{iC,1}.rate - min(M77_TCs.Maps{iC,1}.rate)) ./ (max(M77_TCs.Maps{iC,1}.rate) - min(M77_TCs.Maps{iC,1}.rate));
+        M77_TCs.Maps{iC,1}.rateSmoothed = smoothdata(M77_TCs.Maps{iC,1}.rate);
+        if doNorm
+            plot(TCbinCenters, smoothdata(normIC(iC,:)));
+            ylabel('normalized FR (Hz)')
+        else
+            plot(TCbinCenters, smoothdata(M77_TCs.Maps{IDtoUse(iC),1}.rate));
+%             line([halfwidth(iC,1) halfwidth(iC,1)], [0 M77_TCs_smoothed(iC, index1(iC))], 'LineStyle', '--', 'Color', 'k', 'LineWidth', 1)
+%             line([halfwidth(iC,2) halfwidth(iC,2)], [0 M77_TCs_smoothed(iC, index2(iC))], 'LineStyle', '--', 'Color', 'k', 'LineWidth', 1)
+            ylabel('FR (Hz)')
+        end
+        title(strcat('M77 cell num', num2str(IDtoUse)))
+        xlabel('HD (deg)')
         pause
     end
 end
-%% Isolate times for each neuron when the mouse is near the PFD (preferred firing direction) 
+c = axis;
+axis([0 365 c(3) c(4)]);
+%% AWAKE Saccade PETHs, restricted to low AHV
+% low_AHV_tstart and low_AHV_tend are the    start and end times for low AHV intervals 
+for iC = 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
+%% Restrict to PFD times
+% Isolate the PFD peak
+% Estimate PFD range  [half maximum]
+for iC = 1 : sum_M77_HDC_minFR
+    M77_TCs_smoothed(iC,:) = smoothdata(M77_TCs.Maps{IDtoUse(iC),1}.rate);    
+%     [peakFR(iC), peakIndex(iC)] = max(M77_maxFRsmooth(IDtoUse(iC)));
+    [minFR(iC), minIndex(iC)] = min(M77_TCs_smoothed(iC,:)); minIndexDeg(iC) = TCbinCenters(minIndex(iC));
+    [maxFR(iC), maxIndex(iC)] = max(M77_TCs_smoothed(iC,:)); maxIndexDeg(iC) = TCbinCenters(maxIndex(iC));
+    halfMax(iC) = (minFR(iC) + maxFR(iC))/2;
+    
+    % *** next 4 lines are glitchy and don't work right if the first bin is the lowest or highest value ***
+    % Find where the data first drops below half the max.
+    index1(iC) = find(M77_TCs_smoothed(iC,:) >= halfMax(iC), 1, 'first'); 
+    halfwidth(iC,1) = TCbinCenters(index1(iC));
+    % Find where the data last rises above half the max.
+    index2(iC) = find(M77_TCs_smoothed(iC,:) >= halfMax(iC), 1, 'last');  
+    halfwidth(iC,2) = TCbinCenters(index2(iC));
 
-
-
-
+    above(iC,:) = M77_TCs_smoothed(iC,:) > halfMax(iC);
+    range{iC} = find(above(iC,:));
+    
+    FWHM{iC} = TCbinCenters(range{iC});
+end
+% Plot the chosen TCs with the min, max, and half-max lines 
+for iC = 1 : sum_M77_HDC_minFR
+    clf; hold on
+    disp(num2str(IDtoUse(iC)))
+    plot(TCbinCenters, M77_TCs_smoothed(iC,:));
+    line([minIndexDeg(iC) minIndexDeg(iC)], [0 M77_TCs_smoothed(iC, minIndex(iC))], 'LineStyle', '--', 'Color', 'r', 'LineWidth', 1) % min line (often not visible)
+    line([maxIndexDeg(iC) maxIndexDeg(iC)], [0 M77_TCs_smoothed(iC, maxIndex(iC))], 'LineStyle', '--', 'Color', 'g', 'LineWidth', 1) % max line (green)
+    
+    line([halfwidth(iC,1) halfwidth(iC,1)], [0 M77_TCs_smoothed(iC, index1(iC))], 'LineStyle', '--', 'Color', 'k', 'LineWidth', 1)
+    line([halfwidth(iC,2) halfwidth(iC,2)], [0 M77_TCs_smoothed(iC, index2(iC))], 'LineStyle', '--', 'Color', 'k', 'LineWidth', 1)
+    
+    ylabel('FR (Hz)')
+    title(num2str(IDtoUse(iC)))
+    pause
+end
+a=colorbar;
+a.Label.String = 'FR';
+%% 
 
 
 
