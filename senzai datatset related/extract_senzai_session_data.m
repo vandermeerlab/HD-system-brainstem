@@ -9,7 +9,7 @@ M77_TCs = importdata('YutaTest77c_HeadDirection_OpenField.mat'); % data strcutur
 % Not sure what kappa is. z_ppln might be z-score.
 numCellsM77 = length(M77_TCs.Maps);
 
-spiketrain_1_M77 = importdata('YutaTest77c.res.1'); % Shank 1 from mouse 77. I think these spike trains are split in two because of their size.
+spiketrain_1_M77 = importdata('YutaTest77c.res.1'); % Shank 1 from mouse 77. 
 spiketrain_1_M77 = spiketrain_1_M77./20000; % divide by the sampling rate (20kHz) to get seconds
 spiketrain_2_M77 = importdata('YutaTest77c.res.2'); % Shank 2 from mouse 77.
 spiketrain_2_M77 = spiketrain_2_M77./20000;
@@ -25,7 +25,7 @@ assert(length(spiketrain_1_M77) == length(clu_1_M77toUse))
 assert(length(spiketrain_2_M77) == length(clu_2_M77toUse))
 %% Isolate the individual clusters (i.e., the single units)
 clu_1_M77_IDs = unique(clu_1_M77toUse);
-temp1 = ismember(clu_1_M77_IDs, 0:1); % 0 = artifact and 1 = noise. Remove these from consideration.
+temp1 = ismember(clu_1_M77_IDs, 0:1); % 0 = artifact and 1 = noise. Remove these from consideration.git 
 num_clu_1_M77 = sum(temp1==0); % how many single units (clusters) are there?
 clu_1_M77_IDsToUse = clu_1_M77_IDs(clu_1_M77_IDs ~= 0 & clu_1_M77_IDs ~= 1); % Use clusters that are not zero or one.
 
