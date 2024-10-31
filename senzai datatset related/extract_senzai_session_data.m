@@ -1,5 +1,5 @@
 % 2024-10-24. JJS. Extracts Senzai data for one mouse.
-TCbinCenters = 5:10:355; 
+TCbinCenters = -175:10:175;
 cd('J:\senzai dataset\data files')
 %% M77
 %% Import the spike train data
@@ -61,7 +61,7 @@ end
 M77_heading = importdata('YutaTest77c_OpenField_HeadDirection.mat'); % contains Neck&NoseOmitIdx [value of 1 = omit], rho(distance between nose to neck),
 % theta (heading, in radians), t (timestamp, IN SECONDS)
 M77_heading_degrees = M77_heading.theta*180/pi;
-M77_heading_degreesTSD = tsd(M77_heading.t, M77_heading_degrees);
+M77_heading_degreesTSD = tsd(M77_heading.t, M77_heading_degrees');
 
 M77tracking_dur = (M77_heading.t(end) - M77_heading.t(1))/60; % How many minutes long the tracking was in the open field. This is 98 minutes for M77.
 M77_Q = unwrap(M77_heading.theta);
@@ -113,6 +113,9 @@ if low_AHV_tstart(end) > low_AHV_tend(end) % In other words, if the last transit
 end
 assert(length(low_AHV_tstart) == length(low_AHV_tstart))
 
+%% RESTRICT THE DATA TO LOW AHV TIMES
+M77_heading_degreesTSD_lowAHV = restrict(M77_AHVtsd, low_AHV_tstart, low_AHV_tend);
+
 %% Load the Saccade data
 M77_saccade = importdata('YutaTest77c_REMsWAKE.mat');
 % M77_pupil = importdata('YutaTest77c_eye_pupil_positions_converted.mat'); % pupil positions during wakefullness. Don't need this (yet), just saccades
@@ -124,6 +127,31 @@ M77_saccade.t = M77_saccade.CommonStart;
 M77_num_saccades = length(M77_saccade.t); % 9065 for M77
 M77_saccade.right = M77_saccade.ampX{1}; % right saccade amplitudes
 M77_saccade.left = M77_saccade.ampX{2};  % left saccade amplitudes
+
+% These threshold values are specific to M77 
+clf; plot(M77_saccade.right, M77_saccade.left, '.'); hold on
+posRightLarge = M77_saccade.right > 5; 
+posLeftLarge = M77_saccade.left > 12; 
+posLeftRightLarge = posRightLarge & posLeftLarge; NUMposLeftRightLarge = sum(posLeftRightLarge); 
+plot(M77_saccade.right(posLeftRightLarge), M77_saccade.left(posLeftRightLarge), 'r.')
+
+negRightLarge = M77_saccade.right < -11; 
+negLeftLarge = M77_saccade.left < -6; 
+negLeftRightLarge = negRightLarge & negLeftLarge; NUMnegLeftRightLarge = sum(negLeftRightLarge); 
+bothLarge = posLeftRightLarge | negLeftRightLarge; sum_bothLarge = sum(bothLarge); disp(sum_bothLarge);
+LargeSaccades = M77_saccade.t(bothLarge); 
+
+% ***************************** Double check the terminology. Does a positive amplitdue saccade = CW? ***************************
+CCW_large_saccades = M77_saccade.t(negLeftRightLarge); 
+CW_large_saccades = M77_saccade.t(posLeftRightLarge);
+
+plot(M77_saccade.right(negLeftRightLarge), M77_saccade.left(negLeftRightLarge), 'm.')
+text(-30, 30, strcat('num Pos =', num2str(NUMposLeftRightLarge)));
+text(-30, 25, strcat('num Neg =', num2str(NUMnegLeftRightLarge)));
+text(-30, 20, strcat('total =', num2str(NUMposLeftRightLarge + NUMnegLeftRightLarge)));
+set(gca, 'FontSize', 26)
+xlabel('right eye amplitude')
+ylabel('left eye amplitude')
 
 % cfg_in = [];
 % cfg_in.window = [-.2 .2];
@@ -200,30 +228,42 @@ if doPlot
 end
 c = axis;
 axis([0 365 c(3) c(4)]);
-%% AWAKE Saccade PETHs, restricted to low AHV
-% low_AHV_tstart and low_AHV_tend are the    start and end times for low AHV intervals 
-for iC = 
+%% AWAKE Saccade PETHs, restricted to low AHV.  [M77_heading_degreesTSD_lowAHV]
     
+low_ahv_Interval = iv(low_AHV_tstart, low_AHV_tend);
+large_saccades_ts = ts({LargeSaccades});  
+large_amplitude_low_ahv_saccades = restrict(large_saccades_ts, low_ahv_Interval); 
+cfg_in = [];
+cfg_in.window = [-.2 .2];
+doPlot = 1;
+startCell = 1; endCell = length(M77.t);
+% Awake saccade peths, all saccades
+if doPlot
+    for iCell = startCell:endCell
+        disp(num2str(iCell))
+        clf
+        myCell = SelectTS([], M77, iCell);
+        myCell.type = 'ts';
+        tic
+        [outputS, outputT, outputGau, outputIT, cfg_out] = SpikePETHvdm(cfg_in, myCell, large_amplitude_low_ahv_saccades.t{1}, 'doPlot', doPlot);
+        toc
+        title(num2str(iCell))
+        pause
+    end
+end    
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
 %% Restrict to PFD times
 % Isolate the PFD peak
-% Estimate PFD range  [half maximum]
+% Estimate PFD range  [half maximum (or whatever fraction)]
+fractiontouse = 0.2;   % lower the value here, the more data is included (more of the tuning curve)
+rangeNaNs = NaN(length(M77_neuronsToUse),36);
 for iC = 1 : sum_M77_HDC_minFR
     M77_TCs_smoothed(iC,:) = smoothdata(M77_TCs.Maps{IDtoUse(iC),1}.rate);    
 %     [peakFR(iC), peakIndex(iC)] = max(M77_maxFRsmooth(IDtoUse(iC)));
     [minFR(iC), minIndex(iC)] = min(M77_TCs_smoothed(iC,:)); minIndexDeg(iC) = TCbinCenters(minIndex(iC));
     [maxFR(iC), maxIndex(iC)] = max(M77_TCs_smoothed(iC,:)); maxIndexDeg(iC) = TCbinCenters(maxIndex(iC));
-    halfMax(iC) = (minFR(iC) + maxFR(iC))/2;
+%     halfMax(iC) = (minFR(iC) + maxFR(iC))/2;
+    halfMax(iC) = minFR(iC) + ( maxFR(iC) - minFR(iC))*fractiontouse;
     
     % *** next 4 lines are glitchy and don't work right if the first bin is the lowest or highest value ***
     % Find where the data first drops below half the max.
@@ -235,6 +275,7 @@ for iC = 1 : sum_M77_HDC_minFR
 
     above(iC,:) = M77_TCs_smoothed(iC,:) > halfMax(iC);
     range{iC} = find(above(iC,:));
+    rangeNaNs(iC,range{iC}) = TCbinCenters(range{iC}); 
     
     FWHM{iC} = TCbinCenters(range{iC});
 end
@@ -253,20 +294,84 @@ for iC = 1 : sum_M77_HDC_minFR
     title(num2str(IDtoUse(iC)))
     pause
 end
-a=colorbar;
-a.Label.String = 'FR';
-%% 
+%% Break up Saccades into CW or CCW of PFD, and in or out of field    [CW_large_saccades & CCW_large_saccades]
+% define the intervals when the mouse is 
+%       (1) in the FWHM of the tuning curve
+%       (2) to the left (or right) of the peak 
+%           and (3) makes a saccade TOWARD (or AWAY) from the peak
+% LEFT -> CW = toward. LEFT -> CCW = away. RIGHT -> CCW = toward. RIGHT -> = AWAY. 
 
+% Example:  FWHM{1,2} = [175   185   195   205   215   225   235   245   255   265]; Need to select headings >= 170 & <= 270
 
+% M77_neuronsToUse = intersect(M77_peakFRtoUseIDs, M77_HDC_IDs);
+% IDtoUse(iC) = M77_neuronsToUse(iC);
+% M77_Q = unwrap(M77_heading.theta);
+% M77_Q_deg = M77_Q*180/pi;
+% M77_heading_degrees
+clear rangetouse
+%  from 0 degrees to first non-NaN bin, OR from last non-NaN bin to 360 degrees. 
+for iNeuron = 1: length(M77_neuronsToUse)
+    fwhm = FWHM{1, iNeuron}; 
+    rangetouse(iNeuron,1) = min(fwhm) - 5; % remember that bin centers are at intervals of 5,15,25, etc. BinEdges are 0,10,20, etc. 
+    rangetouse(iNeuron,2) = max(fwhm) + 5;
+    
+    if rangetouse(iNeuron,1) == -180 && rangetouse(iNeuron,2) == 180
+        wrapAroundCell(iNeuron) = 1; 
+%         rangetouse(iNeuron,:) = NaN;
+    else
+        wrapAroundCell(iNeuron) = 0;
+    end
+end
+wrapAroundCell = wrapAroundCell';
 
+%% For each Neuron, restrict to when mouse is in PFD 
+% ******************************************************** Remember that heading is between -180 and +180 here, not 0 - 360 ****************************************
+samples = length(M77_heading_degreesTSD.tvec);
+WRAPrangetouse = NaN(length(M77_neuronsToUse),4);
+for iNeuron = 1: length(M77_neuronsToUse)
+    if wrapAroundCell(iNeuron) == 0         % 'easy' cells
+        M77_headings_to_use{iNeuron} =  M77_heading_degreesTSD.data > rangetouse(iNeuron,1) & M77_heading_degreesTSD.data < rangetouse(iNeuron,2);
+    elseif wrapAroundCell(iNeuron) == 1     % wraparound cells
+        temp = isnan(rangeNaNs(iNeuron,:));
+        a = find(temp); % find the first empty bin
+        if a(1) == 1
+            b = 1;
+        else
+            b = a(1) - 1;
+        end
+        if a(end) == 36
+            b = 36;
+        else
+            c = a(end) + 1;
+        end
+        WRAPrangetouse(iNeuron,1) = -180;
+        WRAPrangetouse(iNeuron,2) = TCbinCenters(b) + 5; % remember that bin centers are at intervals of 5,15,25, etc. BinEdges are 0,10,20, etc. 
+        WRAPrangetouse(iNeuron,3) = TCbinCenters(c) - 5;
+        WRAPrangetouse(iNeuron,4) = 180;
+        
+        M77_headings_to_use{iNeuron} = M77_heading_degreesTSD.data < WRAPrangetouse(iNeuron,2) | M77_heading_degreesTSD.data > WRAPrangetouse(iNeuron,3); 
+        %  **** Need to turn this into tStart and tEnd times 
+    else
+        error('problem')
+    end
+    fraction_left(iNeuron) = sum(M77_headings_to_use{iNeuron})/samples;
+end
+fraction_left = fraction_left'; if doPlot; clf; plot(fraction_left); end
+%% Find the corresponding START/STOP times for each neuron 
+for iNeuron = 1: length(M77_neuronsToUse)
+    M77_headings_to_use_diff{iNeuron} = horzcat(NaN, diff(M77_headings_to_use)); 
+    low_AHV_ones = find(M77_low_AHV_diff == 1); sum_low_AHV_ones = length(low_AHV_ones); % find the transition points from high(er) AHV to low AHV 
 
+    
+end
+% M77_low_AHV_diff = horzcat(NaN, diff(M77_low_AHV)); 
+% % High to Low
+% low_AHV_ones = find(M77_low_AHV_diff == 1); sum_low_AHV_ones = length(low_AHV_ones); % find the transition points from high(er) AHV to low AHV 
+% low_AHV_tstart = M77_AHVtsd.tvec(low_AHV_ones); low_AHV_tstart = low_AHV_tstart';
+% % Low to High
+% low_AHV_minus_ones = find(M77_low_AHV_diff == -1); sum_low_AHV_minus_ones = length(low_AHV_minus_ones);  % find transitions from low AHV back to high AHV
+% low_AHV_tend = M77_AHVtsd.tvec(low_AHV_minus_ones); low_AHV_tend = low_AHV_tend';
 
-
-% ------------------------------------------------------------------------------------------------------------------------------------------------------
-% ------------------------------------------------------------------------------------------------------------------------------------------------------
-% ------------------------------------------------------------------------------------------------------------------------------------------------------
-% ------------------------------------------------------------------------------------------------------------------------------------------------------
-% ------------------------------------------------------------------------------------------------------------------------------------------------------
 %% M79
 %% Import the spike train data
 disp('importing data')
