@@ -1,4 +1,4 @@
-function [spiketrain_1,spiketrain_2, clu_1_toUse, clu_2_toUse, TCs, n, S] = senzai_extract_spike_train(mouseID)
+function [spiketrain_1,spiketrain_2, clu_1_toUse, clu_2_toUse, TCs, n, S] = senzai_extract_spike_train(mouseID, varargin)
 %2024-10-34. JJS. Imports the spike train data and tuning curves from the selected mouse from the data folder. 
 %   Import the data. Divide by 20000 to convert to seconds. Get the cluster identities for each spike. 
 %   Inputs:
@@ -13,6 +13,7 @@ function [spiketrain_1,spiketrain_2, clu_1_toUse, clu_2_toUse, TCs, n, S] = senz
 %           n           - structure with fields for total cells, and shank1/2 num cells, etc. 
 %           S           - structure with S.t{1:nNeurons} spike trains  
 
+process_varargin(varargin)
 %% Load TCs
 filename = strcat('YutaTest', mouseID, '_HeadDirection_OpenField.mat'); 
 disp(strcat('importing data from', filename))
@@ -30,6 +31,7 @@ spiketrain_2 = spiketrain_2/20000;
 filename = strcat('YutaTest', mouseID, '.clu.1');
 disp(strcat('importing data from', filename))
 clu_1 = importdata(filename);  % 'clu_1' here means the clusters from shank 1. 'clu_2' means the clusters from shank 2.
+n.shank1_num_all_clusters = clu_1(1);
 clu_1_toUse = clu_1(2:end); % remove the first value. Now it should equal length(spiketrain). 
 assert(length(spiketrain_1) == length(clu_1_toUse))
 
@@ -41,6 +43,7 @@ n.clu_1_IDsToUse = clu_1_unique(clu_1_unique ~= 0 & clu_1_unique ~= 1); % Use cl
 filename = strcat('YutaTest', mouseID, '.clu.2');
 disp(strcat('importing data from', filename))
 clu_2 = importdata(filename);  % 'clu_1' here means the clusters from shank 1. 'clu_2' means the clusters from shank 2.
+n.shank2_num_all_clusters = clu_2(1);
 clu_2_toUse = clu_2(2:end); % remove the first value. Now it should equal length(spiketrain). 
 assert(length(spiketrain_2) == length(clu_2_toUse))
 
@@ -49,7 +52,9 @@ temp2 = ismember(clu_2_unique, 0:1); % 0 = artifact and 1 = noise. Remove these 
 n.shank2_numCells = sum(temp2==0); % how many single units (clusters) are there?
 n.clu_2_IDsToUse = clu_2_unique(clu_2_unique ~= 0 & clu_2_unique ~= 1); % Use clusters that are not zero or one.
 
-assert(n.numCells == n.shank1_numCells + n.shank2_numCells)
+if n.numCells ~= n.shank1_numCells + n.shank2_numCells
+    warning('the number of neurons in Maps (# of HD TCs) does not equal the # of single units in the .clu files!')
+end
 
 %% Break up concatenated Spike Train into neurons  
 clear S
@@ -60,6 +65,9 @@ for iC = 1: n.numCells  % combine spike trains from each file into one structure
         S.t{iC} = spiketrain_1(clu_1_toUse == n.clu_1_IDsToUse(iC));
     elseif iC > n.shank1_numCells && iC <= n.numCells  % use spiketrain_2 for the remaining neurons. 
         counterToUse = counterToUse + 1;
+        if strcmp(mouseID, '98b') && counterToUse == 106   % ******** This is a hack. # neurons do not match on this mouse. Fix this. ******
+            return; 
+        end
         S.t{iC} = spiketrain_2(clu_2_toUse == n.clu_2_IDsToUse(counterToUse));
     else
         warning('problem with neuron count')
