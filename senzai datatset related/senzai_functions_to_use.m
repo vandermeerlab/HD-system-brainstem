@@ -1,9 +1,10 @@
-function [tc_out_AHV] = senzai_functions_to_use(mouseIDs, varargin)
+function [AHVtsd, tc_out_AHV] = senzai_functions_to_use(mouseIDs, varargin)
 %UNTITLED4 Summary of this function goes here
 %   Detailed explanation goes here
+cd('J:\senzai dataset\data files')
 HD_TCbinCenters = -175:10:175;
 
-doPlot = 1;
+doPlot = 0;
 doSmooth = 0;
 doSave = 1;
 doPause = 0;
@@ -15,10 +16,10 @@ end
 
 for iMouse = 1:6
     IDtoUse = mouseIDs{iMouse};
-    [~,~, ~, ~, HD_TCs{iMouse},~,~] = senzai_extract_spike_train(IDtoUse);
+    [~, ~, ~, ~, HD_TCs{iMouse}, ~, S] = senzai_extract_spike_train(IDtoUse);
     [HD_neuronsToUse{iMouse}] = senzai_choose_HD_cells(HD_TCs{iMouse}, 10, 'doPlot', 0);
-    [~, AHVtsd] = senzai_get_HD_AHV(IDtoUse);
-    [tc_out_AHV{iMouse}] = senzai_getAHV_TCs(HD_neuronsToUse{iMouse}, S, AHVtsd, 'doPlot', 0);
+    [~, AHVtsd{iMouse}] = senzai_get_HD_AHV(IDtoUse);
+    [tc_out_AHV{iMouse}] = senzai_getAHV_TCs(HD_neuronsToUse{iMouse}, S, AHVtsd{iMouse}, 'doPlot', 0);
 end
 
 %% Concatenate the mice AHV TCs

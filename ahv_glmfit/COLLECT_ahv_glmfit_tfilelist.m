@@ -1,4 +1,4 @@
-function [cfg_master, out, ts_pca1, ns_pca1] = COLLECT_ahv_glmfit_tfilelist(tfilelist, Z)
+function [cfg_master, out] = COLLECT_ahv_glmfit_tfilelist(tfilelist, Z)
 % JJS. 2024-10-02. This version works from a tfile list of .t files (path included), instead of pushing in and out of each session folder to calculate all neurons.
 %                  This way we can calculate for only NPH neurons, for example.
 % This version plots all points in the AHV and pupil tuning curves (in addition to the mean)

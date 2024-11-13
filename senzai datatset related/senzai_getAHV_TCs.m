@@ -10,7 +10,7 @@ doPlot = 1;
 doSmooth = 0;
 process_varargin(varargin)
 %% Calculate AHV tuning curves
-AHV_dt = median(diff(AHVtsd.tvec));
+% AHV_dt = median(diff(AHVtsd{1}.tvec));
 cfg_tc = [];
 cfg_tc.nBins = 67; % 67 bins from -200 to 200 works out to roughly 6 degree/s bins.
 cfg_tc.binEdges = {linspace(-200, 200, cfg_tc.nBins)};
