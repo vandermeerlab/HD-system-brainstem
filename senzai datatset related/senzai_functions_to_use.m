@@ -1,4 +1,4 @@
-function [AHVtsd, tc_out_AHV] = senzai_functions_to_use(mouseIDs, varargin)
+function [HD_TCs, AHVtsd, tc_out_AHV, X] = senzai_functions_to_use(mouseIDs, varargin)
 %UNTITLED4 Summary of this function goes here
 %   Detailed explanation goes here
 cd('J:\senzai dataset\data files')
@@ -39,9 +39,9 @@ for iMouse = 1:length(tc_out_AHV)
             isHD(neuronCounter_overall) = 0;
         end
     end
-    HD_TCs_all = horzcat(HD_TCs_all, HD_TCs{iMouse}.Maps');
-    HD_zscore__all = horzcat(HD_zscore__all, HD_TCs{iMouse}.z_ppln');
-    HD_pval__all = horzcat(HD_pval__all, HD_TCs{iMouse}.pval_ppln');
+    X.HD_TCs_all = horzcat(HD_TCs_all, HD_TCs{iMouse}.Maps');
+    X.HD_zscore__all = horzcat(HD_zscore__all, HD_TCs{iMouse}.z_ppln');
+    X.HD_pval__all = horzcat(HD_pval__all, HD_TCs{iMouse}.pval_ppln');
 end
 
 %% For plotting ALL ahv tuning curves (n = 6 mice)

@@ -9,7 +9,7 @@ M77_TCs = importdata('YutaTest77c_HeadDirection_OpenField.mat'); % data strcutur
 % Not sure what kappa is. z_ppln might be z-score.
 numCellsM77 = length(M77_TCs.Maps);
 
-spiketrain_1_M77 = importdata('YutaTest77c.res.1'); % Shank 1 from mouse 77. 
+spiketrain_1_M77 = importdata('YutaTest77c.res.1'); % Shank 1 from mouse 77.
 spiketrain_1_M77 = spiketrain_1_M77./20000; % divide by the sampling rate (20kHz) to get seconds
 spiketrain_2_M77 = importdata('YutaTest77c.res.2'); % Shank 2 from mouse 77.
 spiketrain_2_M77 = spiketrain_2_M77./20000;
@@ -25,7 +25,7 @@ assert(length(spiketrain_1_M77) == length(clu_1_M77toUse))
 assert(length(spiketrain_2_M77) == length(clu_2_M77toUse))
 %% Isolate the individual clusters (i.e., the single units)
 clu_1_M77_IDs = unique(clu_1_M77toUse);
-temp1 = ismember(clu_1_M77_IDs, 0:1); % 0 = artifact and 1 = noise. Remove these from consideration.git 
+temp1 = ismember(clu_1_M77_IDs, 0:1); % 0 = artifact and 1 = noise. Remove these from consideration.git
 num_clu_1_M77 = sum(temp1==0); % how many single units (clusters) are there?
 clu_1_M77_IDsToUse = clu_1_M77_IDs(clu_1_M77_IDs ~= 0 & clu_1_M77_IDs ~= 1); % Use clusters that are not zero or one.
 
@@ -83,7 +83,7 @@ M77_low_AHV_minutes = M77_low_AHV_seconds/60;
 fraction_M77_low_AHV = M77_low_AHV_samples / length(M77_heading.t); % 34 percent for M77
 % Get Start/Stop times (for later restrict)
 
-M77_low_AHV_diff = horzcat(NaN, diff(M77_low_AHV)); 
+M77_low_AHV_diff = horzcat(NaN, diff(M77_low_AHV));
 % High to Low
 % ---------------------------------------
 %                                       -
@@ -91,9 +91,9 @@ M77_low_AHV_diff = horzcat(NaN, diff(M77_low_AHV));
 %                                       -
 %                                       -
 %                                       ------------------------------------------------
-low_AHV_ones = find(M77_low_AHV_diff == 1); sum_low_AHV_ones = length(low_AHV_ones); % find the transition points from high(er) AHV to low AHV 
+low_AHV_ones = find(M77_low_AHV_diff == 1); sum_low_AHV_ones = length(low_AHV_ones); % find the transition points from high(er) AHV to low AHV
 low_AHV_tstart = M77_AHVtsd.tvec(low_AHV_ones); low_AHV_tstart = low_AHV_tstart';
-% Low to High 
+% Low to High
 %                                       ------------------------------------------------
 %                                       -
 %                                       -
@@ -103,7 +103,7 @@ low_AHV_tstart = M77_AHVtsd.tvec(low_AHV_ones); low_AHV_tstart = low_AHV_tstart'
 low_AHV_minus_ones = find(M77_low_AHV_diff == -1); sum_low_AHV_minus_ones = length(low_AHV_minus_ones);  % find transitions from low AHV back to high AHV
 low_AHV_tend = M77_AHVtsd.tvec(low_AHV_minus_ones); low_AHV_tend = low_AHV_tend';
 
-% Account for the first value being low or high. *** Need to account for all possiblities *** 
+% Account for the first value being low or high. *** Need to account for all possiblities ***
 
 if low_AHV_tstart(1) > low_AHV_tend(1)   % In other words, if the first transition is from high to low, then the session started out LOW. Make tstart(1) = the first timestamp
     low_AHV_tstart = [M77_AHVtsd.tvec(1) low_AHV_tstart];
@@ -128,21 +128,21 @@ M77_num_saccades = length(M77_saccade.t); % 9065 for M77
 M77_saccade.right = M77_saccade.ampX{1}; % right saccade amplitudes
 M77_saccade.left = M77_saccade.ampX{2};  % left saccade amplitudes
 
-% These threshold values are specific to M77 
+% These threshold values are specific to M77
 clf; plot(M77_saccade.right, M77_saccade.left, '.'); hold on
-posRightLarge = M77_saccade.right > 5; 
-posLeftLarge = M77_saccade.left > 12; 
-posLeftRightLarge = posRightLarge & posLeftLarge; NUMposLeftRightLarge = sum(posLeftRightLarge); 
+posRightLarge = M77_saccade.right > 5;
+posLeftLarge = M77_saccade.left > 12;
+posLeftRightLarge = posRightLarge & posLeftLarge; NUMposLeftRightLarge = sum(posLeftRightLarge);
 plot(M77_saccade.right(posLeftRightLarge), M77_saccade.left(posLeftRightLarge), 'r.')
 
-negRightLarge = M77_saccade.right < -11; 
-negLeftLarge = M77_saccade.left < -6; 
-negLeftRightLarge = negRightLarge & negLeftLarge; NUMnegLeftRightLarge = sum(negLeftRightLarge); 
+negRightLarge = M77_saccade.right < -11;
+negLeftLarge = M77_saccade.left < -6;
+negLeftRightLarge = negRightLarge & negLeftLarge; NUMnegLeftRightLarge = sum(negLeftRightLarge);
 bothLarge = posLeftRightLarge | negLeftRightLarge; sum_bothLarge = sum(bothLarge); disp(sum_bothLarge);
-LargeSaccades = M77_saccade.t(bothLarge); 
+LargeSaccades = M77_saccade.t(bothLarge);
 
 % ***************************** Double check the terminology. Does a positive amplitdue saccade = CW? ***************************
-CCW_large_saccades = M77_saccade.t(negLeftRightLarge); 
+CCW_large_saccades = M77_saccade.t(negLeftRightLarge);
 CW_large_saccades = M77_saccade.t(posLeftRightLarge);
 
 plot(M77_saccade.right(negLeftRightLarge), M77_saccade.left(negLeftRightLarge), 'm.')
@@ -174,15 +174,16 @@ ylabel('left eye amplitude')
 %     end
 % end
 
-%% Generate saccade-triggered AHV PETH                  ...this isn't very interesting will all the data included b/c its just random and noisy. 
-cfg_in.mode = 'interp';
-cfg_in.window = [-.5 .5];
-cfg_in.dt = .02;
-if doPlot
-    [peth_out, all_trials] = TSDpeth_fast(cfg_in, M77_AHVtsd, M77_saccade.t); % I don't think that I can use tsdPETH to do a spikePETH
-end
-a=colorbar;
-a.Label.String = 'AHV (deg/s)';
+%% Generate saccade-triggered AHV PETH                  ...this isn't very interesting will all the data included b/c its just random and noisy.
+% doPlot = 1;
+% cfg_in.mode = 'interp';
+% cfg_in.window = [-.5 .5];
+% cfg_in.dt = .02;
+% if doPlot
+%     [peth_out, all_trials] = TSDpeth_fast(cfg_in, M77_AHVtsd, M77_saccade.t); % I don't think that I can use tsdPETH to do a spikePETH
+% end
+% a=colorbar;
+% a.Label.String = 'AHV (deg/s)';
 
 %% Choose neurons with minimum FR and Strong HD tuning   [M77_neuronsToUse]
 % Find the PFD (peak) for each neuron that has significant HD tuning
@@ -192,7 +193,7 @@ for iC = 1:length(M77_TCs.Maps)
     M77_maxFR(iC) = max(M77_TCs.Maps{iC,1}.rate);
     M77_maxFRsmooth(iC) = max(smoothdata(M77_TCs.Maps{iC,1}.rate));
 end
-FRthresh = 10; % in Hz. The tuning curve peak must be at or above this threshold to include the neuron. 
+FRthresh = 10; % in Hz. The tuning curve peak must be at or above this threshold to include the neuron.
 M77_peakFRtoUse = M77_maxFR > FRthresh;
 M77_peakFRtoUseIDs = find(M77_peakFRtoUse); M77_peakFRtoUseIDs = M77_peakFRtoUseIDs';
 sum_M77_peakFRtoUse = sum(M77_peakFRtoUse); fraction_M77_peakFRtoUse = sum_M77_peakFRtoUse/length(M77_TCs.Maps);
@@ -217,8 +218,8 @@ if doPlot
             ylabel('normalized FR (Hz)')
         else
             plot(TCbinCenters, smoothdata(M77_TCs.Maps{IDtoUse(iC),1}.rate));
-%             line([halfwidth(iC,1) halfwidth(iC,1)], [0 M77_TCs_smoothed(iC, index1(iC))], 'LineStyle', '--', 'Color', 'k', 'LineWidth', 1)
-%             line([halfwidth(iC,2) halfwidth(iC,2)], [0 M77_TCs_smoothed(iC, index2(iC))], 'LineStyle', '--', 'Color', 'k', 'LineWidth', 1)
+            %             line([halfwidth(iC,1) halfwidth(iC,1)], [0 M77_TCs_smoothed(iC, index1(iC))], 'LineStyle', '--', 'Color', 'k', 'LineWidth', 1)
+            %             line([halfwidth(iC,2) halfwidth(iC,2)], [0 M77_TCs_smoothed(iC, index2(iC))], 'LineStyle', '--', 'Color', 'k', 'LineWidth', 1)
             ylabel('FR (Hz)')
         end
         title(strcat('M77 cell num', num2str(IDtoUse)))
@@ -227,12 +228,12 @@ if doPlot
     end
 end
 c = axis;
-axis([0 365 c(3) c(4)]);
+% axis([0 365 c(3) c(4)]);
 %% AWAKE Saccade PETHs, restricted to low AHV.  [M77_heading_degreesTSD_lowAHV]
-    
+
 low_ahv_Interval = iv(low_AHV_tstart, low_AHV_tend);
-large_saccades_ts = ts({LargeSaccades});  
-large_amplitude_low_ahv_saccades = restrict(large_saccades_ts, low_ahv_Interval); 
+large_saccades_ts = ts({LargeSaccades});
+large_amplitude_low_ahv_saccades = restrict(large_saccades_ts, low_ahv_Interval);
 cfg_in = [];
 cfg_in.window = [-.2 .2];
 doPlot = 1;
@@ -250,36 +251,36 @@ if doPlot
         title(num2str(iCell))
         pause
     end
-end    
-    
+end
+
 %% Restrict to PFD times
 % Isolate the PFD peak
 % Estimate PFD range  [half maximum (or whatever fraction)]
 fractiontouse = 0.2;   % lower the value here, the more data is included (more of the tuning curve)
 rangeNaNs = NaN(length(M77_neuronsToUse),36);
 for iC = 1 : sum_M77_HDC_minFR
-    M77_TCs_smoothed(iC,:) = smoothdata(M77_TCs.Maps{IDtoUse(iC),1}.rate);    
-%     [peakFR(iC), peakIndex(iC)] = max(M77_maxFRsmooth(IDtoUse(iC)));
+    M77_TCs_smoothed(iC,:) = smoothdata(M77_TCs.Maps{IDtoUse(iC),1}.rate);
+    %     [peakFR(iC), peakIndex(iC)] = max(M77_maxFRsmooth(IDtoUse(iC)));
     [minFR(iC), minIndex(iC)] = min(M77_TCs_smoothed(iC,:)); minIndexDeg(iC) = TCbinCenters(minIndex(iC));
     [maxFR(iC), maxIndex(iC)] = max(M77_TCs_smoothed(iC,:)); maxIndexDeg(iC) = TCbinCenters(maxIndex(iC));
-%     halfMax(iC) = (minFR(iC) + maxFR(iC))/2;
+    %     halfMax(iC) = (minFR(iC) + maxFR(iC))/2;
     halfMax(iC) = minFR(iC) + ( maxFR(iC) - minFR(iC))*fractiontouse;
     
     % *** next 4 lines are glitchy and don't work right if the first bin is the lowest or highest value ***
     % Find where the data first drops below half the max.
-    index1(iC) = find(M77_TCs_smoothed(iC,:) >= halfMax(iC), 1, 'first'); 
+    index1(iC) = find(M77_TCs_smoothed(iC,:) >= halfMax(iC), 1, 'first');
     halfwidth(iC,1) = TCbinCenters(index1(iC));
     % Find where the data last rises above half the max.
-    index2(iC) = find(M77_TCs_smoothed(iC,:) >= halfMax(iC), 1, 'last');  
+    index2(iC) = find(M77_TCs_smoothed(iC,:) >= halfMax(iC), 1, 'last');
     halfwidth(iC,2) = TCbinCenters(index2(iC));
-
+    
     above(iC,:) = M77_TCs_smoothed(iC,:) > halfMax(iC);
     range{iC} = find(above(iC,:));
-    rangeNaNs(iC,range{iC}) = TCbinCenters(range{iC}); 
+    rangeNaNs(iC,range{iC}) = TCbinCenters(range{iC});
     
-    FWHM{iC} = TCbinCenters(range{iC});
+    FWHM{iC} = TCbinCenters(range{iC});   % **** this gives the wrong answer when the TC peak is at the edge(s)
 end
-% Plot the chosen TCs with the min, max, and half-max lines 
+% Plot the chosen TCs with the min, max, and half-max lines
 for iC = 1 : sum_M77_HDC_minFR
     clf; hold on
     disp(num2str(IDtoUse(iC)))
@@ -295,11 +296,11 @@ for iC = 1 : sum_M77_HDC_minFR
     pause
 end
 %% Break up Saccades into CW or CCW of PFD, and in or out of field    [CW_large_saccades & CCW_large_saccades]
-% define the intervals when the mouse is 
+% define the intervals when the mouse is
 %       (1) in the FWHM of the tuning curve
-%       (2) to the left (or right) of the peak 
+%       (2) to the left (or right) of the peak
 %           and (3) makes a saccade TOWARD (or AWAY) from the peak
-% LEFT -> CW = toward. LEFT -> CCW = away. RIGHT -> CCW = toward. RIGHT -> = AWAY. 
+% LEFT -> CW = toward. LEFT -> CCW = away. RIGHT -> CCW = toward. RIGHT -> = AWAY.
 
 % Example:  FWHM{1,2} = [175   185   195   205   215   225   235   245   255   265]; Need to select headings >= 170 & <= 270
 
@@ -309,22 +310,24 @@ end
 % M77_Q_deg = M77_Q*180/pi;
 % M77_heading_degrees
 clear rangetouse
-%  from 0 degrees to first non-NaN bin, OR from last non-NaN bin to 360 degrees. 
+%  from 0 degrees to first non-NaN bin, OR from last non-NaN bin to 360 degrees.
 for iNeuron = 1: length(M77_neuronsToUse)
-    fwhm = FWHM{1, iNeuron}; 
-    rangetouse(iNeuron,1) = min(fwhm) - 5; % remember that bin centers are at intervals of 5,15,25, etc. BinEdges are 0,10,20, etc. 
+    fwhm = FWHM{1, iNeuron};
+    rangetouse(iNeuron,1) = min(fwhm) - 5; % remember that bin centers are at intervals of 5,15,25, etc. BinEdges are 0,10,20, etc.
     rangetouse(iNeuron,2) = max(fwhm) + 5;
     
     if rangetouse(iNeuron,1) == -180 && rangetouse(iNeuron,2) == 180
-        wrapAroundCell(iNeuron) = 1; 
-%         rangetouse(iNeuron,:) = NaN;
+        wrapAroundCell(iNeuron) = 1;
+        %         rangetouse(iNeuron,:) = NaN;
+        rangetouse(iNeuron,1) = NaN;
+        rangetouse(iNeuron,2) = NaN;
     else
         wrapAroundCell(iNeuron) = 0;
     end
 end
 wrapAroundCell = wrapAroundCell';
 
-%% For each Neuron, restrict to when mouse is in PFD 
+%% For each Neuron, restrict to when mouse is in PFD
 % ******************************************************** Remember that heading is between -180 and +180 here, not 0 - 360 ****************************************
 samples = length(M77_heading_degreesTSD.tvec);
 WRAPrangetouse = NaN(length(M77_neuronsToUse),4);
@@ -345,136 +348,109 @@ for iNeuron = 1: length(M77_neuronsToUse)
             c = a(end) + 1;
         end
         WRAPrangetouse(iNeuron,1) = -180;
-        WRAPrangetouse(iNeuron,2) = TCbinCenters(b) + 5; % remember that bin centers are at intervals of 5,15,25, etc. BinEdges are 0,10,20, etc. 
+        WRAPrangetouse(iNeuron,2) = TCbinCenters(b) + 5; % remember that bin centers are at intervals of 5,15,25, etc. BinEdges are 0,10,20, etc.
         WRAPrangetouse(iNeuron,3) = TCbinCenters(c) - 5;
         WRAPrangetouse(iNeuron,4) = 180;
         
-        M77_headings_to_use{iNeuron} = M77_heading_degreesTSD.data < WRAPrangetouse(iNeuron,2) | M77_heading_degreesTSD.data > WRAPrangetouse(iNeuron,3); 
-        %  **** Need to turn this into tStart and tEnd times 
+        M77_headings_to_use{iNeuron} = M77_heading_degreesTSD.data < WRAPrangetouse(iNeuron,2) | M77_heading_degreesTSD.data > WRAPrangetouse(iNeuron,3);
+        %  **** Need to turn this into tStart and tEnd times
     else
         error('problem')
     end
     fraction_left(iNeuron) = sum(M77_headings_to_use{iNeuron})/samples;
 end
-fraction_left = fraction_left'; if doPlot; clf; plot(fraction_left); end
-%% Find the corresponding START/STOP times for each neuron 
-for iNeuron = 1: length(M77_neuronsToUse)
-    M77_headings_to_use_diff{iNeuron} = horzcat(NaN, diff(M77_headings_to_use)); 
-    low_AHV_ones = find(M77_low_AHV_diff == 1); sum_low_AHV_ones = length(low_AHV_ones); % find the transition points from high(er) AHV to low AHV 
-
-    
+fraction_left = fraction_left'; if doPlot; clf; plot(fraction_left); title('fraction of the session left after restricting to PFD'); end
+%% Get the Peaks
+for iNeuron = 1:length(M77_neuronsToUse)
+    [peakValue(iNeuron), peakIndex(iNeuron)] = max(smoothdata(M77_TCs.Maps{M77_neuronsToUse(iNeuron)}.rate));  % peakIndex = which bin in TCbinCenters is the peak firing rate for that neuron
 end
-% M77_low_AHV_diff = horzcat(NaN, diff(M77_low_AHV)); 
-% % High to Low
-% low_AHV_ones = find(M77_low_AHV_diff == 1); sum_low_AHV_ones = length(low_AHV_ones); % find the transition points from high(er) AHV to low AHV 
-% low_AHV_tstart = M77_AHVtsd.tvec(low_AHV_ones); low_AHV_tstart = low_AHV_tstart';
-% % Low to High
-% low_AHV_minus_ones = find(M77_low_AHV_diff == -1); sum_low_AHV_minus_ones = length(low_AHV_minus_ones);  % find transitions from low AHV back to high AHV
-% low_AHV_tend = M77_AHVtsd.tvec(low_AHV_minus_ones); low_AHV_tend = low_AHV_tend';
-
-%% M79
-%% Import the spike train data
-disp('importing data')
-M79_TCs = importdata('YutaTest79c_HeadDirection_OpenField.mat'); % data strcuture that contains Maps, kappa_ppln, pval_ppln, z_ppln.
-% Maps contains the tuning curves. pval_ppln is presumably a p value for some significance test for head direction selectivity.
-% Not sure what kappa is. z_ppln might be z-score.
-numCellsM79 = length(M79_TCs.Maps);
-
-spiketrain_1_M79 = importdata('YutaTest79c.res.1'); % Shank 1 from mouse 77. I think these spike trains are split in two because of their size.
-spiketrain_1_M79 = spiketrain_1_M79./20000; % divide by the sampling rate (20kHz) to get seconds
-spiketrain_2_M79 = importdata('YutaTest79c.res.2'); % Shank 2 from mouse 77.
-spiketrain_2_M79 = spiketrain_2_M79./20000; % divide by the sampling rate (20kHz) to get seconds
+rangetouse_with_peak(:,1) = rangetouse(:,1);
+rangetouse_with_peak(:,2) = TCbinCenters(peakIndex)';
+rangetouse_with_peak(:,3) = rangetouse(:,2);
+tempNotNaN = ~isnan(rangetouse(:,1));
+tempNaN = isnan(rangetouse(:,1));
+HDnums = 1:length(M77_HDC_IDs);
+nonWrapCells = HDnums(tempNotNaN);
+WrapCells = HDnums(tempNaN);
+% rangetouse_with_peak = rangetouse_with_peak(nonWrapCells,:);  % 12 x 3
 
 
-clu_1_M79 = importdata('YutaTest79c.clu.1');  % 'clu_1' here means the clusters from shank 1. 'clu_2' means the clusters from shank 2.
-M79shank1_num = clu_1_M79(1); % this includes zeros and ones
-clu_1_M79toUse = clu_1_M79(2:end);
-clu_2_M79 = importdata('YutaTest79c.clu.2');
-M79shank2_num = clu_2_M79(1); % this includes zeros and ones
-clu_2_M79toUse = clu_2_M79(2:end);
-
-assert(length(spiketrain_1_M79) == length(clu_1_M79toUse))
-assert(length(spiketrain_2_M79) == length(clu_2_M79toUse))
-%% Isolate the individual clusters (i.e., the single units)
-clu_1_M79_IDs = unique(clu_1_M79toUse);
-temp1 = ismember(clu_1_M79_IDs, 0:1); % 0 = artifact and 1 = noise. Remove these from consideration.
-num_clu_1_M79 = sum(temp1==0); % how many single units (clusters) are there?
-clu_1_M79_IDsToUse = clu_1_M79_IDs(clu_1_M79_IDs ~= 0 & clu_1_M79_IDs ~= 1); % Use clusters that are not zero or one.
-
-clu_2_M79_IDs = unique(clu_2_M79toUse);
-temp2 = ismember(clu_2_M79_IDs, 0:1); % 0 = artifact and 1 = noise. Remove these from consideration.
-num_clu_2_M79 = sum(temp2==0); % how many single units (clusters) are there?
-clu_2_M79_IDsToUse = clu_2_M79_IDs(clu_2_M79_IDs ~= 0 & clu_2_M79_IDs ~= 1); % Use clusters that are not zero or one.
-
-totalCellsM79 = num_clu_1_M79 + num_clu_2_M79;
-if numCellsM79 ~= totalCellsM79
-    warning('M77 neurons do not add up')
-end
-
-%% Create the spike train structure
-clear M79
-counterToUse = 0;
-M79.type = 'ts';
-for iC = 1: totalCellsM79  % combine spike trains from each file into one structure
-    if iC <= num_clu_1_M79
-        M79.t{iC} = spiketrain_1_M79(clu_1_M79toUse == clu_1_M79_IDsToUse(iC));
-    elseif iC > num_clu_1_M79 && iC <= totalCellsM79
-        counterToUse = counterToUse + 1;
-        M79.t{iC} = spiketrain_2_M79(clu_2_M79toUse == clu_2_M79_IDsToUse(counterToUse));
+%% Find samples when the mouse is CW or CCW to the peak.
+% **********check this****************    CCW = (+), CW = (-)
+clear tCW; clear tCCW; clear entering_CW_zone; clear exiting_CW_zone; clear start_stop_table_CW; clear ssInterval_CW; clear entering_CW_zone_timestamps; clear exiting_CW_zone_timestamps; clear CW_large_saccades_ts; clear CW_CW
+tCW = cell(1,length(M77_neuronsToUse));   % Logical where NaNs = not in PFD 
+tCCW = cell(1,length(M77_neuronsToUse));
+numHeadingSamples = length(M77_heading_degreesTSD.tvec);
+heading_sampling_rate = 1/median(diff(M77_heading_degreesTSD.tvec));  % this should be 50 Hz. Each sample = 20ms.  
+% *** Need to add a restriction for cases where the interval is too short, like, less than 200ms?
+for iNeuron = 1:length(M77_neuronsToUse)
+    if ismember(iNeuron, WrapCells)
+        tCW{iNeuron} = {};
+        tCCW{iNeuron} = {};
+        ssInterval_CW{iNeuron} = {};
+        entering_CW_zone_timestamps{iNeuron} = {};
+        exiting_CW_zone_timestamps{iNeuron} = {}; 
+        CW_CW{iNeuron}= {};
+        CCW_CCW{iNeuron} = {}; 
     else
-        warning('problem with neuron count')
-    end
-    M79.label{iC} = 'M79';
+        tCW{iNeuron} = M77_heading_iNeuron{iNeuron}.data > rangetouse_with_peak(iNeuron,1) & M77_heading_iNeuron{iNeuron}.data < rangetouse_with_peak(iNeuron,3);
+        tCCW{iNeuron} = M77_heading_iNeuron{iNeuron}.data < rangetouse_with_peak(iNeuron,3) & M77_heading_iNeuron{iNeuron}.data > rangetouse_with_peak(iNeuron,2);
+        
+        diff_tCW{iNeuron} = diff(tCW{iNeuron}); diff_tCW{iNeuron} = horzcat(NaN, diff_tCW{iNeuron}); 
+        diff_tCCW{iNeuron} = diff(tCCW{iNeuron}); diff_tCCW{iNeuron} = horzcat(NaN, diff_tCCW{iNeuron}); 
+        
+        entering_CW_zone{iNeuron} = find(diff_tCW{iNeuron} == 1); 
+        exiting_CW_zone{iNeuron} = find(diff_tCW{iNeuron} == -1); 
+        
+        start_stop_table_CW(iNeuron,1) = length(entering_CW_zone{iNeuron}); 
+        start_stop_table_CW(iNeuron,2) = length(exiting_CW_zone{iNeuron}); 
+        
+        if start_stop_table_CW(iNeuron,1) > start_stop_table_CW(iNeuron,2)   % in this case, session ended in CW zone. 1 'extra' start time. Make last stop time t(end)
+            exiting_CW_zone{iNeuron} = horzcat(exiting_CW_zone{iNeuron}, numHeadingSamples); % numHeadingSamples is also the index of the last sample
+        end
+        if start_stop_table_CW(iNeuron,2) > start_stop_table_CW(iNeuron,1)   % in this case, session started in CW zone. 1 'extra' end time. Make first stop time t(1)
+            entering_CW_zone{iNeuron} = horzcat(entering_CW_zone{iNeuron}, 1); % numHeadingSamples is also the index of the last sample
+        end  
+        
+        start_stop_table_CW(iNeuron,1) = length(entering_CW_zone{iNeuron}); 
+        start_stop_table_CW(iNeuron,2) = length(exiting_CW_zone{iNeuron}); 
+        assert(start_stop_table_CW(iNeuron,1) == start_stop_table_CW(iNeuron,2))
+        ssInterval_CW{iNeuron} = exiting_CW_zone{iNeuron} - entering_CW_zone{iNeuron}; 
+        
+        entering_CW_zone_timestamps{iNeuron} = M77_heading_degreesTSD.tvec(entering_CW_zone{iNeuron});
+        exiting_CW_zone_timestamps{iNeuron} = M77_heading_degreesTSD.tvec(exiting_CW_zone{iNeuron});
+        
+        CW_large_saccades_ts = ts({CW_large_saccades});  % needs to be a ts structure in order to use restrict
+        CCW_large_saccades_ts = ts({CCW_large_saccades});
+        
+        CW_CW{iNeuron} = restrict(CW_large_saccades_ts, entering_CW_zone_timestamps{iNeuron}, exiting_CW_zone_timestamps{iNeuron});  % CW zone, CW saccade. TOWARD
+        CW_CCW{iNeuron} = restrict(CCW_large_saccades_ts, entering_CW_zone_timestamps{iNeuron}, exiting_CW_zone_timestamps{iNeuron}); % CW zone, CCW saccade. AWAY
+
+        CW_saccade_table(iNeuron,1) = length(CW_CW{iNeuron}.t{1});   % TOWARD 
+        CW_saccade_table(iNeuron,2) = length(CW_CCW{iNeuron}.t{1});  % AWAY 
+    end                                                                                  % stands for start-stop interval
 end
-
-
-%% Get heading and AHV
-M79_heading = importdata('YutaTest79c_OpenField_HeadDirection.mat'); % contains Neck&NoseOmitIdx [value of 1 = omit], rho(distance between nose to neck),
-% theta (heading, in radians), t (timestamp, IN SECONDS)
-M79tracking_dur = (M79_heading.t(end) - M79_heading.t(1))/60; % How many minutes long the tracking was in the open field. This is 98 minutes for M77.
-M79_Q = unwrap(M79_heading.theta);
-M79_Q_deg = M79_Q*180/pi;
-window = 0.1;
-postsmoothing = .05;
-M79_AHV = dxdt(M79_heading.t, M79_Q_deg, 'window', window, 'postsmoothing', postsmoothing);
-M79_AHVtsd = tsd(M79_heading.t, M79_AHV);
-M79_heading_sampling_rate = 1/median(diff(M79_heading.t));  % should be 50Hz
-% Isolate low AHV times
-AHVthresh = 10; % cm/sec
-M79_low_AHV = abs(M79_AHV) < AHVthresh;
-M79_low_AHV_samples = sum(M79_low_AHV);
-M79_low_AHV_seconds = M79_low_AHV_samples/M79_heading_sampling_rate;
-M79_low_AHV_minutes = M79_low_AHV_seconds/60;
-fraction_M79_low_AHV = M79_low_AHV_samples / length(M79_heading.t); % 34 percent for M77
-
-M79_saccade = importdata('YutaTest79c_REMsWAKE.mat');
-%% Get pupil position data, AWAKE
-% M77_pupil = importdata('YutaTest77c_eye_pupil_positions_converted.mat'); % pupil positions during wakefullness. Don't need this (yet), just saccades
-% M77_saccade.CommonStart are the saccade start times, in seconds. ***I think that all saccades (for both eyes) are concatenated
-% M77_saccade.ampX{1}: horizontal amplitude of saccades in RIGHT eye, in degree.
-% M77_saccade.ampX{2}: horizontal amplitude of rapid saccades in LEFT eye, in degree.
-
-M79_saccade.t = M79_saccade.CommonStart;
-M79_num_saccades = length(M79_saccade.t); % 9065 for M77
-M79_saccade.right = M79_saccade.ampX{1}; % right saccade amplitudes
-M79_saccade.left = M79_saccade.ampX{2};  % left saccade amplitudes
+%% Plot the saccade PETHs
 
 cfg_in = [];
 cfg_in.window = [-.2 .2];
 doPlot = 1;
-startCell = 1; endCell = length(M79.t);
+startCell = 1; endCell = length(M77_neuronsToUse);
+% Awake saccade peths, all saccades
 if doPlot
-    for iCell = startCell:endCell
+    for iCell = 1:length(M77_neuronsToUse)   % M77_neuronsToUse(iCell) 
         disp(num2str(iCell))
         clf
-        myCell = SelectTS([], M79, iCell);
+        myCell = SelectTS([], M77, M77_neuronsToUse(iCell));
         myCell.type = 'ts';
         tic
-        [outputS, outputT, outputGau, outputIT, cfg_out] = SpikePETHvdm(cfg_in, myCell, M79_saccade.t, 'doPlot', doPlot);
+        [outputS, outputT, outputGau, outputIT, cfg_out] = SpikePETHvdm(cfg_in, myCell, CW_CW{iNeuron}.t{1}, 'doPlot', doPlot);
+        title('CW zone, CW saccade - TOWARD') 
+        pause
+        [outputS, outputT, outputGau, outputIT, cfg_out] = SpikePETHvdm(cfg_in, myCell, CW_CCW{iNeuron}.t{1}, 'doPlot', doPlot);
+        title('CW zone, CCW saccade - AWAY')
         toc
-        %     [peth_out, all_trials] = TSDpeth_fast(cfg_in, myCell, M77_saccade.t); % I don't think that I can use tsdPETH to do a spikePETH
-        title(num2str(iCell))
-        %     disp('press any key to continue')
+%         title(num2str(iCell))
         pause
     end
 end
@@ -486,13 +462,70 @@ end
 
 
 
-%% extra
-% %% Determine how many neurons are HD cells, based on the p-values provided
-% sig77 = pval_ppln_77 < .05; num_sig77 = sum(sig77); fract_sig_77 = num_sig77/length(Maps77);
-% sig79 = pval_ppln_79 < .05; num_sig79 = sum(sig79); fract_sig_79 = num_sig79/length(Maps79);
-% sig83 = pval_ppln_83 < .05; num_sig83 = sum(sig83); fract_sig_83 = num_sig83/length(Maps83);
-% sig85 = pval_ppln_85 < .05; num_sig85 = sum(sig85); fract_sig_85 = num_sig85/length(Maps85);
-% sig96 = pval_ppln_96 < .05; num_sig96 = sum(sig96); fract_sig_96 = num_sig96/length(Maps96);
-% sig98 = pval_ppln_98 < .05; num_sig98 = sum(sig98); fract_sig_98 = num_sig98/length(Maps98);
-%
-% open_field_sig_fraction = [fract_sig_77 fract_sig_79 fract_sig_83 fract_sig_85 fract_sig_96 fract_sig_98];
+
+
+
+
+
+
+
+
+
+%% Plot the CW and CCW intervals to make sure that they look right
+for iNeuron = 1:length(M77_neuronsToUse)    % plot the Heading data with overlay of the restricted part for each neuron's PFD
+    clf
+    if ~ismember(iNeuron, WrapCells)
+        plot(M77_heading_degreesTSD.tvec, M77_heading_degreesTSD.data, '.'); hold on
+        %     plot(M77_heading_degreesTSD.tvec(M77_headings_to_use{iNeuron}), M77_heading_degreesTSD.data(M77_headings_to_use{iNeuron}), '.');
+        plot(M77_heading_iNeuron{iNeuron}.tvec(tCW{iNeuron}), M77_heading_iNeuron{iNeuron}.data(tCW{iNeuron}), 'r.')    % CW 
+        plot(M77_heading_iNeuron{iNeuron}.tvec(tCCW{iNeuron}), M77_heading_iNeuron{iNeuron}.data(tCCW{iNeuron}), 'g.')  % CCW 
+        title(num2str(iNeuron))   % how much of the TC is included = 1 - fractiontouse. If fractiontouse = 0.2, then data is restricted to that 80% of TC.
+        % If full tuning curve with is 180 deg, then a 0.2 value would mean that we are keeping .8(360-180/360)  40% of the overall session data.
+        xlabel('Heading')
+        ylabel('Heading')
+        a = xlim;
+        xrange = a(2) - a(1);
+        xUnit = xrange/36;
+        binRange = 360;
+        newBinCenters = a(1)+0.5*(xUnit):xUnit:a(2)-0.5*(xUnit);
+        
+        yyaxis right
+        plot(newBinCenters, smoothdata(M77_TCs.Maps{M77_neuronsToUse(iNeuron)}.rate), 'LineWidth', 15)
+        xticks(newBinCenters);
+        xticklabelstouse = {'-175','-165','-155','-145','-135','-125','-115','-105','-95','-85','-75','-65','-55','-45','-35','-25','-15','-5','5','15','25','35','45','55','65','75','85','95','105','115','125','135','145','155','165','175'};
+        xticklabels(xticklabelstouse)
+        set(gca, 'FontSize', 22)
+        line([newBinCenters(index1(iNeuron)) newBinCenters(index1(iNeuron))], [0 halfMax(iNeuron)], 'LineWidth', 15, 'Color', 'Red')
+        line([newBinCenters(index2(iNeuron)) newBinCenters(index2(iNeuron))], [0 halfMax(iNeuron)], 'LineWidth', 15, 'Color', 'Green')
+        line([newBinCenters(maxIndex(iNeuron)) newBinCenters(maxIndex(iNeuron))], [0 maxFR(iNeuron)], 'LineWidth', 15)
+        saveas(gcf, strcat(num2str(iNeuron),'.png'));
+        y = ylim;
+        text(newBinCenters(6), .87*(y(2)), 'CW', 'FontSize', 55, 'Color', 'Red');
+        text(newBinCenters(28), .87*(y(2)), 'CCW', 'FontSize', 55, 'Color', 'Green');
+        disp('saving fig')
+        saveas(gcf,strcat(num2str(iNeuron), '.png'))        
+        pause
+    end
+end
+
+%% For each neuron, get the START/STOP times for Headings within the PFD epochs
+% Additionally, separate out by CW of PFD peak and CCW of PFD peak
+
+for iNeuron = 1:length(M77_neuronsToUse)
+    M77_heading_iNeuron{iNeuron} = M77_heading_degreesTSD;
+    NaNindex = M77_headings_to_use{iNeuron} == 0;
+    M77_heading_iNeuron{iNeuron}.data(NaNindex) = NaN;
+    M77_heading_iNeuron{iNeuron}.tvec(NaNindex) = NaN;
+end
+for iNeuron = 1:length(M77_neuronsToUse)    % plot the Heading data with overlay of the restricted part for each neuron's PFD
+    clf
+    plot(M77_heading_degreesTSD.tvec, M77_heading_degreesTSD.data, '.'); hold on
+    %     plot(M77_heading_degreesTSD.tvec(M77_headings_to_use{iNeuron}), M77_heading_degreesTSD.data(M77_headings_to_use{iNeuron}), '.');
+    plot(M77_heading_iNeuron{iNeuron}.tvec, M77_heading_iNeuron{iNeuron}.data, '.')
+    title(num2str(iNeuron))   % how much of the TC is included = 1 - fractiontouse. If fractiontouse = 0.2, then data is restricted to that 80% of TC.
+    % If full tuning curve with is 180 deg, then a 0.2 value would mean that we are keeping .8(360-180/360)  40% of the overall session data.
+    xlabel('time')
+    ylabel('Heading')
+    pause
+end
+
