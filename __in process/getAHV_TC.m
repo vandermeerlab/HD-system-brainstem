@@ -41,6 +41,7 @@ if cfg_tc.doPlot
         ylabel('FR (Hz)')
         set(groot, 'DefaultLegendInterpreter', 'none')
         c = axis;
+        axis([c(1) c(2) 0 c(4)]);
         line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'k')
         set(gca, 'FontSize', 16)
         disp('press any key')

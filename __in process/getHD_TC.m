@@ -15,7 +15,7 @@ function [tc_out] = getHD_TC(cfg_in, sd)
 % HELP
 % Set 'doPlot'=1 to plot each TC. The default setting will smooth the data. 
 
-[csc_tsd, orientation, samplingrate, dt] = GetOrientationValues([]);
+[csc_tsd, orientation, starttimeUNIX, endtimeUNIX, samplingrate, dt] = GetOrientationValues([]);
 
 cfg_def = [];
 cfg_def.doPlot = 1;
@@ -34,7 +34,7 @@ if cfg_tc.doPlot
     for iCell = 1:length(sd.S.t)
         % Add Tuning Curve
         if cfg_tc.smooth
-            plot(tc_out.binCenters, smoothdata(tc_out.tc(iCell,:)), '.', 'LineWidth', 3, 'Color', 'k'); 
+            plot(tc_out.binCenters, smoothdata(tc_out.tc(iCell,:)), 'LineWidth', 3, 'Color', 'k'); 
         else
             plot(tc_out.usr.binCenters, tc_out.tc(iCell,:), 'LineWidth', 3, 'Color', 'k');
         end

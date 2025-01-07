@@ -58,8 +58,8 @@ if Events
     if exist(events_fn, 'file') ~= 2
         warning('Cannot find events file %s.', events_fn);
     end
-    events_ts = LoadEvents([]);
-    sd.Events = events_ts;
+%     events_ts = LoadEvents([]);
+%     sd.Events = events_ts;
 end
 % New cheetah versions have timestamps that are in Unix Epoch Time, so you have to subtract the start time.
 

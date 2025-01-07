@@ -1,4 +1,4 @@
-function [X, neuronList, numSess, cfg_out] = AHV_pearson_correlation_CONTRA_IPSI(cfg_in, tfilelist)
+function [X, neuronList, numSess, cfg_out] = AHV_pearson_correlation_CONTRA_IPSI_2(cfg_in, tfilelist)
 %2024-11-18. JJS. Calculate the Pearson correlation for each side of the AHV tuning curve (0-90deg/s), as outlined in Graham et al., 2023. This correlation is calculated on the binned
 % (averaged) tuning curve, (not on the raw data).
 %  * Might make sense in future to calcaulte and store the binned tuning curves in each folder, so I don't have to recalculate each time.
@@ -100,7 +100,7 @@ for iNeuron = 1:length(tfilelist)
     else
         warning('hemisphere info not correct')
     end
-    %% See if r-criterion OR slope criterion are met for either IPSI or CONTRA side
+    %% See if r-criterion or slope criterion are met for either IPSI or CONTRA side
     if abs(ipsi.slope(iNeuron)) >= 0.025 || abs(contra.slope(iNeuron)) >= 0.025
         slopeIsGood(iNeuron) = 1;
     else
@@ -121,30 +121,42 @@ for iNeuron = 1:length(tfilelist)
         bothIsGood(iNeuron) = 0;
     end
     
-%     %% See if r-criterion AND slope criterion are met for either the CW or CCW side
-%     % SLOPE
-%     if abs(ipsi.slope(iNeuron)) >= 0.025 
-%         IPSI_slopeIsGood(iNeuron) = 1;
-%     else
-%          IPSI_slopeIsGood(iNeuron) = 0;
-%     end
-%     if abs(contra.slope(iNeuron)) >= 0.025
-%         CONTRA_slopeIsGood(iNeuron) = 1;
-%     else
-%         CONTRA_slopeIsGood(iNeuron) = 0;
-%     end
-%     % r-Value
-%     if abs(ipsi.r(iNeuron)) >= 0.5 
-%         IPSI_rIsGood(iNeuron) = 1;
-%     else
-%          IPSI_rIsGood(iNeuron) = 0;
-%     end
-%     if abs(contra.r(iNeuron)) >= 0.5
-%         CONTRA_rIsGood(iNeuron) = 1;
-%     else
-%         CONTRA_rIsGood(iNeuron) = 0;
-%     end
-    
+    %% See if r-criterion or slope criterion are met for either the CW or CCW side
+    % SLOPE
+    if abs(ipsi.slope(iNeuron)) >= 0.025 
+        IPSI_slopeIsGood(iNeuron) = 1;
+    else
+         IPSI_slopeIsGood(iNeuron) = 0;
+    end
+    if abs(contra.slope(iNeuron)) >= 0.025
+        CONTRA_slopeIsGood(iNeuron) = 1;
+    else
+        CONTRA_slopeIsGood(iNeuron) = 0;
+    end
+    % r-Value
+    if abs(ipsi.r(iNeuron)) >= 0.5 
+        IPSI_rIsGood(iNeuron) = 1;
+    else
+         IPSI_rIsGood(iNeuron) = 0;
+    end
+    if abs(contra.r(iNeuron)) >= 0.5
+        CONTRA_rIsGood(iNeuron) = 1;
+    else
+        CONTRA_rIsGood(iNeuron) = 0;
+    end
+    %% See if r-criterion AND slope criterion are met for the same side 
+    if IPSI_slopeIsGood(iNeuron) && IPSI_rIsGood(iNeuron)
+        IPSI_slope_and_r_IsGood(iNeuron) = 1; 
+    else
+        IPSI_slope_and_r_IsGood(iNeuron) = 0;
+    end 
+    if CONTRA_slopeIsGood(iNeuron) && CONTRA_rIsGood(iNeuron)
+        CONTRA_slope_and_r_IsGood(iNeuron) = 1; 
+    else
+        CONTRA_slope_and_r_IsGood(iNeuron) = 0;
+    end 
+    % In another function, I will check these two criteria against the shuffle test to see if all three conditions are met. 
+        
     %% Which side has the greater value      1 = ispi. 0 = contra
     if ipsi.slope(iNeuron) > contra.slope(iNeuron)
         X.slopeToUse(iNeuron) = 1;
@@ -247,4 +259,14 @@ X.rIsGood = rIsGood;
 % X.bothIsGood = bothIsGood;
 X.ipsi = ipsi; X.contra = contra; 
 
-match = X.rToUse == X.slopeToUse;
+X.IPSI_slopeIsGood = IPSI_slopeIsGood;
+X.IPSI_rIsGood = IPSI_rIsGood; 
+X.IPSI_slope_and_r_IsGood = IPSI_slope_and_r_IsGood;
+
+X.CONTRA_slopeIsGood = CONTRA_slopeIsGood;
+X.CONTRA_rIsGood = CONTRA_rIsGood;
+X.CONTRA_slope_and_r_IsGood = CONTRA_slope_and_r_IsGood;
+
+X.slope_and_r_match = X.rToUse == X.slopeToUse;
+
+X.either_side_slope_and_r_IsGood = X.IPSI_slope_and_r_IsGood | X.CONTRA_slope_and_r_IsGood;
