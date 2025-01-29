@@ -45,8 +45,8 @@ if exist(strcat(SSN, '-saccades-edited.mat'), 'file') == 2 && doEYE == 1
 %     line([tstart tend], [cfg_def.threshN cfg_def.threshN], 'Color', 'g')
 %     line([tstart tend], [cfg.artifactThresh cfg.artifactThresh], 'Color', 'k', 'LineStyle', '--')
 %     line([tstart tend], [-cfg.artifactThresh -cfg.artifactThresh], 'Color', 'k', 'LineStyle', '--')
-    plot(temporalSaccades, temporalAmplitudes, 'r.', 'MarkerSize', 25)
-    plot(nasalSaccades, nasalAmplitudes, 'g.', 'MarkerSize', 25)
+%     plot(temporalSaccades, temporalAmplitudes, 'r.', 'MarkerSize', 25)
+%     plot(nasalSaccades, nasalAmplitudes, 'g.', 'MarkerSize', 25)
     set(gca, 'FontSize', FontSize)
 end
 %% While LOOP

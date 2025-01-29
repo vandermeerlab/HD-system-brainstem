@@ -19,9 +19,9 @@ function [tc_out] = getHD_TC(cfg_in, sd)
 
 cfg_def = [];
 cfg_def.doPlot = 1;
-cfg_def.smooth = 1;
-cfg_def.nBins = 100;
-cfg_def.binEdges = {linspace(-200, 200, 101)};
+cfg_def.smooth = 0;
+cfg_def.nBins = 60;
+cfg_def.binEdges = {linspace(-180, 180, 101)};
 cfg_def.occ_dt = dt;
 cfg_def.minOcc = 200;  % remember that Occ is measured in samples, not in seconds. Usually 5ms per sample, b/c the platform encoder sampling rate is 200Hz,
 
@@ -36,7 +36,7 @@ if cfg_tc.doPlot
         if cfg_tc.smooth
             plot(tc_out.binCenters, smoothdata(tc_out.tc(iCell,:)), 'LineWidth', 3, 'Color', 'k'); 
         else
-            plot(tc_out.usr.binCenters, tc_out.tc(iCell,:), 'LineWidth', 3, 'Color', 'k');
+            plot(tc_out.binCenters, tc_out.tc(iCell,:), 'LineWidth', 3, 'Color', 'k');
         end
         title(sd.S.label{iCell}); 
         xlabel('Head Direction (degrees)')

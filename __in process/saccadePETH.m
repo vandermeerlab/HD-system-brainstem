@@ -71,7 +71,7 @@ end
 if doPlot == 1
     clf
     for iCell = 1:length(sd.S.t)
-        %% Temporal
+        %% Temporal raster
         subplot(2,2,1);
         plot(spkTimes_T{iCell}, eventindexT{iCell} + 0.5, 'k.', 'MarkerSize', 5);
         xlabel('peri-event (sec)');
@@ -91,7 +91,7 @@ if doPlot == 1
         set(gca, 'FontSize', cfg.FontSize)
         
         
-        %% Nasal
+        %% Nasal raster
         subplot(2,2,2);
         plot(spkTimes_N{iCell}, eventindexN{iCell} + 0.5, 'k.', 'MarkerSize', 5);
         xlabel('peri-event (sec)');

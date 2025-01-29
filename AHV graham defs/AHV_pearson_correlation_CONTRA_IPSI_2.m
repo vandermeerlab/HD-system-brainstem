@@ -100,7 +100,7 @@ for iNeuron = 1:length(tfilelist)
     else
         warning('hemisphere info not correct')
     end
-    %% See if r-criterion or slope criterion are met for either IPSI or CONTRA side
+    %% See if r-criterion or slope criterion are met for EITHER the IPSI or CONTRA side
     if abs(ipsi.slope(iNeuron)) >= 0.025 || abs(contra.slope(iNeuron)) >= 0.025
         slopeIsGood(iNeuron) = 1;
     else
@@ -121,8 +121,7 @@ for iNeuron = 1:length(tfilelist)
         bothIsGood(iNeuron) = 0;
     end
     
-    %% See if r-criterion or slope criterion are met for either the CW or CCW side
-    % SLOPE
+    %% Record criterion (or not) for IPSI and CONTRA individually 
     if abs(ipsi.slope(iNeuron)) >= 0.025 
         IPSI_slopeIsGood(iNeuron) = 1;
     else
@@ -157,7 +156,7 @@ for iNeuron = 1:length(tfilelist)
     end 
     % In another function, I will check these two criteria against the shuffle test to see if all three conditions are met. 
         
-    %% Which side has the greater value      1 = ispi. 0 = contra
+    %% Which side has the greater value     -------------------------- 1 = ispi. 0 = contra -------------------------------
     if ipsi.slope(iNeuron) > contra.slope(iNeuron)
         X.slopeToUse(iNeuron) = 1;
     elseif ipsi.slope(iNeuron) < contra.slope(iNeuron)
@@ -166,7 +165,7 @@ for iNeuron = 1:length(tfilelist)
         error('slopes are identical')
     end
     
-    if ipsi.r(iNeuron) > contra.r(iNeuron)    %  1 = ispi. 0 = contra
+    if ipsi.r(iNeuron) > contra.r(iNeuron)  %  -------------------------- 1 = ispi. 0 = contra -------------------------------
         X.rToUse(iNeuron) = 1;
     elseif ipsi.r(iNeuron) < contra.r(iNeuron)
         X.rToUse(iNeuron) = 0;

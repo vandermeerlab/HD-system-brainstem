@@ -91,7 +91,9 @@ if AHV
     orientationtouserange = downsample(orientation.tvec, subsample_factor);
     orientationtouse = tsd(orientationtouserange, orientationtousedata);
     sd.orientation = orientationtouse;
-    sd.orientationsamplingrate = samplingrate/subsample_factor;
+    sd.orientation_dt = dt;
+    sd.orientationsamplingrate = samplingrate;
+    sd.orientation_downsampled_rate = samplingrate/subsample_factor;
     
     if CheckOrientation ==1
         figure;

@@ -5,6 +5,8 @@ function [ipsi, contra, IC] = AHV_criterion_check_ipsi_contra(X, IC, tfilelist)
 % ipsi.r, ipsi.slope, ipsi.rank
 % contra.r, contra.slope, contra.rank
 
+numCells = length(tfilelist); 
+
 ipsi.r_pass = zeros(1,length(tfilelist));
 ipsi.slope_pass = zeros(1,length(tfilelist));
 ipsi.rank_pass = zeros(1,length(tfilelist));

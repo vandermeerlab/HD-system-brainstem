@@ -20,10 +20,10 @@ function [tc_out] = getAHV_TC(cfg_in, sd)
 cfg_def = [];
 cfg_def.doPlot = 1;
 cfg_def.smooth = 1;
-cfg_def.nBins = 100;
+cfg_def.nBins = 60;
 cfg_def.binEdges = {linspace(-200, 200, 101)};
 cfg_def.occ_dt = median(diff(sd.AHV.tvec));
-cfg_def.minOcc = 200;  % remember that Occ is measured in samples, not in seconds. Usually 5ms per sample, b/c the platform encoder sampling rate is 200Hz,
+cfg_def.minOcc = 100;  % remember that Occ is measured in samples, not in seconds. Usually 5ms per sample, b/c the platform encoder sampling rate is 200Hz,
 
 cfg_tc = ProcessConfig2(cfg_def, cfg_in);
 
@@ -45,6 +45,7 @@ if cfg_tc.doPlot
         line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'k')
         set(gca, 'FontSize', 16)
         disp('press any key')
+        title(sd.S.label{iCell});
         pause
         clf
     end

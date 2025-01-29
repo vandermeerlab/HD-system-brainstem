@@ -27,22 +27,22 @@ if skip == 0
     clf
     %% Plot AHV data
     [AHV_tsd] = Get_AHV([]);
-    yyaxis left
+%     yyaxis left
     plot(AHV_tsd.tvec, AHV_tsd.data);
     hold on
     title(SSN)
     ylabel('AHV')
     
-    %% check to see if eyetracking video exists and load pupil data
-    fn = strcat(SSN, '-saccades-edited.mat');
-    if exist(fn) ==2
-        load(fn);
-        yyaxis right
-%         plot(diffH.tvec, diffH.data);
-%         ylabel('Horizontal Pupil Position')
-    else
-        disp('NO PUPIL DATA FOUND FOR THIS SESSION!')
-    end
+%     %% check to see if eyetracking video exists and load pupil data
+%     fn = strcat(SSN, '-saccades-edited.mat');
+%     if exist(fn) ==2
+%         load(fn);
+%         yyaxis right
+% %         plot(diffH.tvec, diffH.data);
+% %         ylabel('Horizontal Pupil Position')
+%     else
+%         disp('NO PUPIL DATA FOUND FOR THIS SESSION!')
+%     end
     
     %% While LOOP
     fprintf(1, '\n');

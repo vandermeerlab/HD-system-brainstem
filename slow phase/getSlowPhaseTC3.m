@@ -301,6 +301,8 @@ axis tight
 
 %% #5  Plot the spikePETH 
 subtightplot(4,2,[5 7], [cfg_out.tightX cfg_out.tightY]);
+cfg_in.doPlot = 1;
+cfg_in.doBar = 0;
 [~, ~, ~, ~, ~] = SpikePETHvdm([], myCellr, combinedSaccadesToUse);
 set(gca, 'FontSize', cfg_out.FontSize)
 xlabel('time peri Saccade (s)')

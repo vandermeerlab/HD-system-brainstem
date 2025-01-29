@@ -29,6 +29,7 @@ cfg_def.contrast_waves = [];
 cfg_def.c_ord = linspecer(4);
 cfg_def.gauss_window = .001;
 cfg_def.gauss_sd = 0.0002;
+cfg_def.window = [-.2 .4];
 cfg = ProcessConfig2(cfg_def, cfg_in);
 extract_varargin;%% compute the spike PETH
 
