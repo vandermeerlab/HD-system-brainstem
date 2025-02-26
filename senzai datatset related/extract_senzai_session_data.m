@@ -111,7 +111,7 @@ end
 if low_AHV_tstart(end) > low_AHV_tend(end) % In other words, if the last transition is from high to low, then the session ended LOW. Make tend(end) = last timestamp
     low_AHV_tend = [low_AHV_tend M77_AHVtsd.tvec(end)];
 end
-assert(length(low_AHV_tstart) == length(low_AHV_tstart))
+assert(length(low_AHV_tstart) == length(low_AHV_tend))
 
 %% RESTRICT THE DATA TO LOW AHV TIMES
 M77_heading_degreesTSD_lowAHV = restrict(M77_AHVtsd, low_AHV_tstart, low_AHV_tend);
