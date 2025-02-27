@@ -7,7 +7,7 @@ function [ipsi_shuff, contra_shuff, neuronList, IC, cfg_out] = calc_circ_shift_A
 %                       X.ipsi.r, X.contra.r  - correlation values (r) for the ispi and contra sides (-90 to +90 deg/s) of the tuning curves
 %                                          Output X should be obtained with this function   AHV_pearson_correlation_CONTRA_IPSI.m
 % Outputs:
-%           ipsi_shuff	- shuffle distribution of r values for circ.-shifted spike train (ipsi half of TC)
+%           ipsi_shuff      - shuffle distribution of r values for circ.-shifted spike train (ipsi half of TC)
 %           IC.r_sign_ipsi 	- direction of slope. -1 = negative slope. +1 = positive slope.
 %           IC.rank_ipsi    - what perentile rank each neuron is in terms of the distribution of shuffled r values. Values closer to 100% indicate a better fit and unlikely due to chance.
 %           IC.ipsi_pass   	- whether the neuron passes the r-value shuffle test. +1 = neuron has passed (>95th percentile)

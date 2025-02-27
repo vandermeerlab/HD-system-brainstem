@@ -1,5 +1,8 @@
 function [X, neuronList, numSess, cfg_out] = AHV_pearson_correlation_CONTRA_IPSI(cfg_in, tfilelist)
-%2024-11-18. JJS. Calculate the Pearson correlation for each side of the AHV tuning curve (0-90deg/s), as outlined in Graham et al., 2023. This correlation is calculated on the binned
+%2024-11-18. JJS. 
+% Nutshell: this function determines if Jalina's slope criterion and/or r-value criterion are met. The next function (calc_circ_shift_AHV_IPSI_CONTRA) determines if shuffle criterion is met.
+
+% Calculates the Pearson correlation for each side of the AHV tuning curve (0-90deg/s), as outlined in Graham et al., 2023. This correlation is calculated on the binned
 % (averaged) tuning curve, (not on the raw data).
 %  * Might make sense in future to calcaulte and store the binned tuning curves in each folder, so I don't have to recalculate each time.
 % Remember: CW = negative AHV values. CCW = positive AHV values. The AHV xaxis will be CW, CCW from left to right.
@@ -8,11 +11,34 @@ function [X, neuronList, numSess, cfg_out] = AHV_pearson_correlation_CONTRA_IPSI
 %       tfilelist       - a cell array with the dir of each NPH neuron. Like {C:\Jeff\U01\datatouse\M039\M039-2020-08-21-1\M039-2020-08-21-1-TT01_1.t}
 %
 % Outputs:
-%       slopes          - the CW and CCW slopes for the best fit lines of the tuning curve (0-90deg/s). For instance,  0.025 spikes/°/s.
-%                               .CW = clockwise slope. .CCW = counterclockwise slope. .CWcrit = 0 or 1 for meeting minimum slope. .CCWcrit = 0 or 1 for meetinging min slope.
-%       rvalues         - Pearson r value for FR vs. AHV for the range from 0 to 90deg/s.
-%                               .CW = r val. for clockwise. .CCW = r val. for counterclockwise. .CWcrit = 0 or 1 for minimum r value. .CCWcrit = 0 or 1 for min value.
 %       neuronList      - easier to read list of neurons that were used in this analysis
+%       numSess         - number of discrete recording sessions from which the data was taken
+
+%       [Numerical values]    
+%       X.ipsi/X.contra - .slope = best fit line slope 
+%                       - .yInt  = y-intercept point
+%                       - .Rsq   = R-squared value  
+%                       - .p     = p-value of whether slope is sig. different from zero
+%                       - .r     = correlation coefficient of the best fit line 
+%
+%       [Thresholding]
+%       X.slopeIsGood           - Indicates whether EITHER half of TC has absolute slope >= 0.025 Hz/deg/s. Value can be either 0 ('no') or 1 ('yes').
+%
+%       X.rIsGood               - Indicates whether EITHER half of TC has absolute r-value > 0.5.  
+%
+%       X.bothIsGood            - Indicates whether slope criterion AND r-value criterion are BOTH met FOR AT LEAST *ONE* SIDE. [this, + passing the shuffle, is Jalina's standard]
+%
+%       X.IPSI_slopeIsGood      - Indicates whether ipsi slope passes threshold INDIVIDUALLY 
+%       X.CONTRA_slopeIsGood    - Indicates whether contra slope passes threshold INDIVIDUALLY 
+%
+%       X.IPSI_rIsGood          - Indicates whether ispi r-value passes threshold INDIVIDUALLY
+%       X.CONTRA_rIsGood        - Indicates whether contra r-value passes threshold INDIVIDUALLY
+%
+%       X.slopeToUse            - Indicates which side to use when it comes to slope; that is, which side has the greater slope
+%
+%       X.rToUse                - Indicates which side to use when it comes to r; that is, which side has a greater r-value
+%
+%       X.match                 - Indicates whether the slopeToUse and the rToUse sides are the same side. 
 
 cfg_def.min_slope = 0.025;   % from Graham et al.
 cfg_def.min_r_value = 0.5;   % from Graham et al.
@@ -121,30 +147,6 @@ for iNeuron = 1:length(tfilelist)
         bothIsGood(iNeuron) = 0;
     end
     
-%     %% See if r-criterion AND slope criterion are met for either the CW or CCW side
-%     % SLOPE
-%     if abs(ipsi.slope(iNeuron)) >= 0.025 
-%         IPSI_slopeIsGood(iNeuron) = 1;
-%     else
-%          IPSI_slopeIsGood(iNeuron) = 0;
-%     end
-%     if abs(contra.slope(iNeuron)) >= 0.025
-%         CONTRA_slopeIsGood(iNeuron) = 1;
-%     else
-%         CONTRA_slopeIsGood(iNeuron) = 0;
-%     end
-%     % r-Value
-%     if abs(ipsi.r(iNeuron)) >= 0.5 
-%         IPSI_rIsGood(iNeuron) = 1;
-%     else
-%          IPSI_rIsGood(iNeuron) = 0;
-%     end
-%     if abs(contra.r(iNeuron)) >= 0.5
-%         CONTRA_rIsGood(iNeuron) = 1;
-%     else
-%         CONTRA_rIsGood(iNeuron) = 0;
-%     end
-    
     %% Which side has the greater value      1 = ispi. 0 = contra
     if ipsi.slope(iNeuron) > contra.slope(iNeuron)
         X.slopeToUse(iNeuron) = 1;
@@ -244,7 +246,7 @@ for iNeuron = 1:length(tfilelist)
 end
 X.slopeIsGood = slopeIsGood; 
 X.rIsGood = rIsGood; 
-% X.bothIsGood = bothIsGood;
+X.bothIsGood = bothIsGood;
 X.ipsi = ipsi; X.contra = contra; 
 
-match = X.rToUse == X.slopeToUse;
+X.match = X.rToUse == X.slopeToUse;
