@@ -24,7 +24,7 @@ for iCell = 1:length(sd.S.t)
     AHV_F = F.data(:,F_idx);
     ymax = max(AHV_F);
     set(gca, 'TickDir', 'out', 'FontSize', 16)
-    plot(sd.AHV.data, AHV_F, '.', 'MarkerSize', .5); hold on
+    plot(sd.AHV.data, AHV_F, '.', 'MarkerSize', .5, 'Color', [0.8500 0.3250 0.0980]); hold on
     xlabel('AHV deg./sec')
     ylabel('Firing Rate (Hz)')
     set(gca, 'Ylim', [0 ymax], 'FontSize', 16)
@@ -34,6 +34,7 @@ for iCell = 1:length(sd.S.t)
     else
         plot(tc_out.binCenters, tc_out.tc(iCell,:), 'LineWidth', 5, 'Color', 'k');
     end
+    title(sd.fn{iCell})
     disp('press any key to continue to the next cell')
     pause
     clf

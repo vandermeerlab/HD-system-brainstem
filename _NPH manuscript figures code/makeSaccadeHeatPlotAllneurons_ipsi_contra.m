@@ -51,9 +51,6 @@ for iNeuron = 1:length(tfilelist)
     else
         error('issue with neuron hemisphere')
     end
-    
-    
-    
     %% Calculate IPSI Saccades
     cfg_in = [];
     cfg_in.doPlot = 0;

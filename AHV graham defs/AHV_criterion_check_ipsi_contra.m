@@ -1,9 +1,10 @@
-function [Z, numCells] = AHV_criterion_check_ipsi_contra(X, IC, tfilelist)
+function [Z, numCells] = AHV_criterion_check_ipsi_contra(X, IC, tb, tfilelist)
 %2024-11-26. JJS.
 %   Determines whether each neuron in tfilelist meets the criteria (sinlgy) for r,slope,shuffle(rank), and jointly for all three.
 %   Criteria are based on Graham et al., 2023.
 % ipsi.r, ipsi.slope, ipsi.rank
 % contra.r, contra.slope, contra.rank
+% Input from [CWs,CCWs,slopeToUse,turn_index] = graham_turnbias_index(C, tb, tfilelist)
 
 numCells = length(tfilelist);
 
@@ -29,7 +30,7 @@ for iNeuron = 1:length(tfilelist)
     if abs(X.ipsi.r(iNeuron)) >= 0.5; Z.ipsi.r_pass(iNeuron) = 1; end
     if abs(X.contra.r(iNeuron)) >= 0.5;  Z.contra.r_pass(iNeuron) = 1; end
     % Rank
-    
+    % This is already calculated in the variables IC.ipsi_pass & IC.contra_pass
     %% All 3 - ipsi
     if Z.ipsi.slope_pass(iNeuron) && Z.ipsi.r_pass(iNeuron) && IC.ipsi_pass(iNeuron)
         Z.ipsi_pass3(iNeuron) = 1;
@@ -50,16 +51,30 @@ for iNeuron = 1:length(tfilelist)
     else 
         Z.either_pass3(iNeuron) = 0; 
     end
-    
-    %% Identify Symmetric Cells
-    
-    
-    
-    
-    
-    
 end
 assert(sum(isnan(Z.ipsi_pass3))==0)
 assert(sum(isnan(Z.contra_pass3))==0)
 assert(sum(isnan(Z.either_pass3))==0)
+
+%% Calculate the fraction of non-AHV, symmetric, asymmetric, asymmetric-unresponsive, and inverted symmetric cells, like Graham et al. Fig. 4C. 
+
+numNonAHV = sum(Z.either_pass3 == 0); perNonAHV = numNonAHV/numCells;
+
+asymmetric = Z.either_pass3 & tb.asymmetric; numAsymmetric = sum(asymmetric); perAsymmetric = numAsymmetric/numCells;
+
+asymmetric_unresponsive = Z.either_pass3 & tb.asymmetric_unresponsive; numAsymmetric_unresponsive = sum(asymmetric_unresponsive); perAsymmetric_unresponsive = numAsymmetric_unresponsive/numCells; 
+
+symmetric = Z.either_pass3 & tb.symmetric_cells; numSymmetric = sum(symmetric); perSymmetric = numSymmetric/numCells; perSymmetric = numSymmetric/numCells;
+
+% there were zero inverted symmetric cells
+
+% bar([perNonAHV perSymmetric perAsymmetric_unresponsive perAsymmetric 0])
+
+
+labels = {'non-AHV', 'Symmetric', 'Asym-Unresp.', 'Asymmetric', 'Inverted'};
+
+% pie([numNonAHV numSymmetric numAsymmetric_unresponsive numAsymmetric 0])
+pie([numNonAHV numSymmetric numAsymmetric_unresponsive numAsymmetric 0], [1 1 1 1 1], labels)
+
+
 

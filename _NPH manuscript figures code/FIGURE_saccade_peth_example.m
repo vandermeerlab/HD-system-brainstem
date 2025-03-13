@@ -1,6 +1,6 @@
 %%
 rng(0)
-% cd('C:\Jeff\U01\datatouse\M052\M052-2020-09-04');
+cd('C:\Jeff\U01\datatouse\M052\M052-2020-09-04');
 sd = LoadSessionData([]);
 
 cfg_master = [];

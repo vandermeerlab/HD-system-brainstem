@@ -1,5 +1,5 @@
-function [X, neuronList, numSess, cfg_out] = AHV_pearson_correlation_CONTRA_IPSI(cfg_in, tfilelist)
-%2024-11-18. JJS. 
+function [X, C, neuronList, numSess, cfg_out] = AHV_pearson_correlation_CONTRA_IPSI(cfg_in, tfilelist)
+%2024-11-18. JJS.
 % Nutshell: this function determines if Jalina's slope criterion and/or r-value criterion are met. The next function (calc_circ_shift_AHV_IPSI_CONTRA) determines if shuffle criterion is met.
 
 % Calculates the Pearson correlation for each side of the AHV tuning curve (0-90deg/s), as outlined in Graham et al., 2023. This correlation is calculated on the binned
@@ -14,22 +14,22 @@ function [X, neuronList, numSess, cfg_out] = AHV_pearson_correlation_CONTRA_IPSI
 %       neuronList      - easier to read list of neurons that were used in this analysis
 %       numSess         - number of discrete recording sessions from which the data was taken
 
-%       [Numerical values]    
-%       X.ipsi/X.contra - .slope = best fit line slope 
+%       [Numerical values]
+%       X.ipsi/X.contra - .slope = best fit line slope
 %                       - .yInt  = y-intercept point
-%                       - .Rsq   = R-squared value  
+%                       - .Rsq   = R-squared value
 %                       - .p     = p-value of whether slope is sig. different from zero
-%                       - .r     = correlation coefficient of the best fit line 
+%                       - .r     = correlation coefficient of the best fit line
 %
 %       [Thresholding]
 %       X.slopeIsGood           - Indicates whether EITHER half of TC has absolute slope >= 0.025 Hz/deg/s. Value can be either 0 ('no') or 1 ('yes').
 %
-%       X.rIsGood               - Indicates whether EITHER half of TC has absolute r-value > 0.5.  
+%       X.rIsGood               - Indicates whether EITHER half of TC has absolute r-value > 0.5.
 %
 %       X.bothIsGood            - Indicates whether slope criterion AND r-value criterion are BOTH met FOR AT LEAST *ONE* SIDE. [this, + passing the shuffle, is Jalina's standard]
 %
-%       X.IPSI_slopeIsGood      - Indicates whether ipsi slope passes threshold INDIVIDUALLY 
-%       X.CONTRA_slopeIsGood    - Indicates whether contra slope passes threshold INDIVIDUALLY 
+%       X.IPSI_slopeIsGood      - Indicates whether ipsi slope passes threshold INDIVIDUALLY
+%       X.CONTRA_slopeIsGood    - Indicates whether contra slope passes threshold INDIVIDUALLY
 %
 %       X.IPSI_rIsGood          - Indicates whether ispi r-value passes threshold INDIVIDUALLY
 %       X.CONTRA_rIsGood        - Indicates whether contra r-value passes threshold INDIVIDUALLY
@@ -38,7 +38,7 @@ function [X, neuronList, numSess, cfg_out] = AHV_pearson_correlation_CONTRA_IPSI
 %
 %       X.rToUse                - Indicates which side to use when it comes to r; that is, which side has a greater r-value
 %
-%       X.match                 - Indicates whether the slopeToUse and the rToUse sides are the same side. 
+%       X.match                 - Indicates whether the slopeToUse and the rToUse sides are the same side.
 
 cfg_def.min_slope = 0.025;   % from Graham et al.
 cfg_def.min_r_value = 0.5;   % from Graham et al.
@@ -47,6 +47,8 @@ doPlot = 0;
 doSave = 0;
 doPause = 0;
 numSess = 0;
+plotSlopes_CW_CCW = 0;
+plotSlopes_contra_ipsi = 0;
 
 if isempty(tfilelist)
     tfilelist = FindFiles('*.t');
@@ -95,7 +97,7 @@ for iNeuron = 1:length(tfilelist)
     %% Corr for Positive AHV values (CCW)
     CCWindex = tc_out.binCenters > 0 & tc_out.binCenters <= 90;
     CCWbins = tc_out.binCenters(CCWindex);
-%     disp(num2str(CCWbins))
+    %     disp(num2str(CCWbins))
     [bCCW,~,~,~,statsCCW] = regress(y(CCWindex),x(CCWindex,:));  % b is the slope (spk/s/deg/s). stats is Rsq, F, p-value, & error variance. Rsq is the coefficient of determination.
     slopeCCW(iNeuron) = bCCW(1);
     CCWyInt(iNeuron) = bCCW(2);
@@ -104,10 +106,10 @@ for iNeuron = 1:length(tfilelist)
     temp2 = corrcoef(x(CCWindex' & ~idx,1),y(CCWindex' & ~idx));
     rCCW(iNeuron) = temp2(1,2);   % this is the r value (correlation coefficient)
     
-    %% Corr for Negative AHV values (CW) 
+    %% Corr for Negative AHV values (CW)
     CWindex = tc_out.binCenters < 0 & tc_out.binCenters >=-90;
     CWbins = tc_out.binCenters(CWindex);
-%     disp(num2str(CWbins))
+    %     disp(num2str(CWbins))
     [bCW,~,~,~,statsCW] = regress(y(CWindex),x(CWindex,:));
     slopeCW(iNeuron) = bCW(1);
     CWyInt(iNeuron) = bCW(2);
@@ -116,12 +118,12 @@ for iNeuron = 1:length(tfilelist)
     temp3 = corrcoef(x(CWindex' & ~idx,1),y(CWindex' & ~idx));
     rCW(iNeuron) = temp3(1,2);
     
-    %% Assign to a hemisphere 
-    if strcmp(HemisphereToUse, 'L')  % Left hemisphere. IPSI = CCW 
-        ipsi.slope(iNeuron) = slopeCCW(iNeuron); ipsi.yInt(iNeuron) = CCWyInt(iNeuron); ipsi.Rsq(iNeuron) = RsqCCW(iNeuron); ipsi.p(iNeuron) = pCCW(iNeuron); ipsi.r(iNeuron) = rCCW(iNeuron); 
+    %% Assign to a hemisphere
+    if strcmp(HemisphereToUse, 'L')  % Left hemisphere. IPSI = CCW
+        ipsi.slope(iNeuron) = slopeCCW(iNeuron); ipsi.yInt(iNeuron) = CCWyInt(iNeuron); ipsi.Rsq(iNeuron) = RsqCCW(iNeuron); ipsi.p(iNeuron) = pCCW(iNeuron); ipsi.r(iNeuron) = rCCW(iNeuron);
         contra.slope(iNeuron) = slopeCW(iNeuron); contra.yInt(iNeuron) = CWyInt(iNeuron); contra.Rsq(iNeuron) = RsqCW(iNeuron); contra.p(iNeuron) = pCW(iNeuron); contra.r(iNeuron) = rCW(iNeuron);
     elseif strcmp(HemisphereToUse, 'R')
-        contra.slope(iNeuron) = slopeCCW(iNeuron); contra.yInt(iNeuron) = CCWyInt(iNeuron); contra.Rsq(iNeuron) = RsqCCW(iNeuron); contra.p(iNeuron) = pCCW(iNeuron); contra.r(iNeuron) = rCCW(iNeuron); 
+        contra.slope(iNeuron) = slopeCCW(iNeuron); contra.yInt(iNeuron) = CCWyInt(iNeuron); contra.Rsq(iNeuron) = RsqCCW(iNeuron); contra.p(iNeuron) = pCCW(iNeuron); contra.r(iNeuron) = rCCW(iNeuron);
         ipsi.slope(iNeuron) = slopeCW(iNeuron); ipsi.yInt(iNeuron) = CWyInt(iNeuron); ipsi.Rsq(iNeuron) = RsqCW(iNeuron); ipsi.p(iNeuron) = pCW(iNeuron); ipsi.r(iNeuron) = rCW(iNeuron);
     else
         warning('hemisphere info not correct')
@@ -164,7 +166,7 @@ for iNeuron = 1:length(tfilelist)
         error('r values are identical')
     end
     
-    %% Plot it 
+    %% Plot it
     if doPlot
         clf
         plot(tc_out.binCenters, tc_out.tc, '.', 'MarkerSize', 25); hold on
@@ -221,7 +223,7 @@ for iNeuron = 1:length(tfilelist)
         text(tclose, ymid, strcat('m= ', num2str(round(bCW(iNeuron),3))), 'FontSize', 20, 'Color', ColorToUse1);
         text(tclose, ymid - yincrement, strcat('r= ', num2str(round(rCW(iNeuron),2))), 'FontSize', 20, 'Color', ColorToUse2);
         
-        % CCW (right hand) side of plot 
+        % CCW (right hand) side of plot
         text(xfar, ymid, strcat('m= ', num2str(round(bCCW(iNeuron),3))), 'FontSize', 20, 'Color', ColorToUse3);
         text(xfar, ymid - yincrement, strcat('r= ', num2str(round(rCCW(iNeuron),2))), 'FontSize', 20, 'Color', ColorToUse4);
         
@@ -237,16 +239,55 @@ for iNeuron = 1:length(tfilelist)
         end
         
     end
-    %% Save it 
+    %% Save it
     if doSave
         disp('saving figure')
         cd('D:\Jeff\U01\analysis\AHV selectivity JG definition')
         saveas(gcf,strcat(num2str(iNeuron), '.png'))
     end
 end
-X.slopeIsGood = slopeIsGood; 
-X.rIsGood = rIsGood; 
+X.slopeIsGood = slopeIsGood;
+X.rIsGood = rIsGood;
 X.bothIsGood = bothIsGood;
-X.ipsi = ipsi; X.contra = contra; 
+X.ipsi = ipsi; X.contra = contra;
 
 X.match = X.rToUse == X.slopeToUse;
+
+% Save CW/CCW info too
+
+C.slopeCCW = slopeCCW;
+C.CCWyInt = CCWyInt;
+C.RsqCCW = RsqCCW; 
+C.pCCW = pCCW;
+C.rCCW = rCCW;
+
+C.slopeCW = slopeCW;
+C.CWyInt = CWyInt;
+C.RsqCW = RsqCW;
+C.pCW = pCW;
+C.rCW = rCW;
+
+if plotSlopes_CW_CCW
+    figure
+    plot(C.slopeCCW, C.slopeCW, '.')
+    set(gca, 'FontSize', 14)
+    c = axis;
+    line([0 0], [c(3) c(4)], 'LineStyle', '--', 'Color', 'k', 'LineWidth', 0.5)
+    line([c(1) c(2)], [0 0], 'LineStyle', '--', 'Color', 'k', 'LineWidth', 0.5)
+    xlabel('CCW slope (Hz/deg/s)')
+    ylabel('CW slope (Hz/deg/s)')
+end
+
+if plotSlopes_contra_ipsi
+    figure
+    plot(X.ipsi.slope, X.contra.slope, '.')
+    set(gca, 'FontSize', 14)
+    c = axis;
+    line([0 0], [c(3) c(4)], 'LineStyle', '--', 'Color', 'k', 'LineWidth', 0.5)
+    line([c(1) c(2)], [0 0], 'LineStyle', '--', 'Color', 'k', 'LineWidth', 0.5)
+    xlabel('IPSI slope (Hz/deg/s)')
+    ylabel('CONTRA slope (Hz/deg/s)')
+end
+
+
+

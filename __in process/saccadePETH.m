@@ -10,7 +10,7 @@ function [spkTimes_N, spkTimes_T, FR_N, FR_T, bins]  = saccadePETH(cfg_in, sd)
 %           - FR        1 x nBins  array of Firing Rate values
 %           - bins      bins for the29*3 Firing Rate values
 
-doPlot = 1;
+cfg_def.doPlot = 1;
 cfg_def.FontSize = 16;
 cfg_def.window = [-.2 .4];
 cfg_def.dt = 0.01;
@@ -68,7 +68,7 @@ for iCell = 1:length(sd.S.t)
     end
 end
 % display
-if doPlot == 1
+if cfg.doPlot == 1
     clf
     for iCell = 1:length(sd.S.t)
         %% Temporal raster
@@ -76,7 +76,7 @@ if doPlot == 1
         plot(spkTimes_T{iCell}, eventindexT{iCell} + 0.5, 'k.', 'MarkerSize', 5);
         xlabel('peri-event (sec)');
         ylabel('Event #');
-        ylim([1 nT])
+%         ylim([1 nT])
         xlim(cfg.window);
         set(gca, 'FontSize', cfg.FontSize)
         title('Temporal Saccades')
@@ -96,7 +96,7 @@ if doPlot == 1
         plot(spkTimes_N{iCell}, eventindexN{iCell} + 0.5, 'k.', 'MarkerSize', 5);
         xlabel('peri-event (sec)');
         ylabel('Event #');
-        ylim([1 nN])
+%         ylim([1 nN])
         xlim(cfg.window);
         set(gca, 'FontSize', cfg.FontSize)
         title('Nasal Saccades')
