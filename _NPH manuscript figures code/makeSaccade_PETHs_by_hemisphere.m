@@ -168,7 +168,7 @@ if cfg.doPlot
     subplot(2,2,1)
     imagesc(Z.binCenters, 1:size(Z.IPSI_normSmooth_LEFT,1), Z.IPSI_normSmooth_LEFT(Z.sIPSI_LEFT,:));
     title('L Hem. IPSI Saccades')
-    xlabel('time (sec)')
+%     xlabel('time (sec)')
     ylabel('neuron #')
     set(gca, 'FontSize', FontSize)
     c = axis;
@@ -177,7 +177,7 @@ if cfg.doPlot
     subplot(2,2,2)
     imagesc(Z.binCenters, 1:size(Z.IPSI_normSmooth_RIGHT,1), Z.IPSI_normSmooth_RIGHT(Z.sIPSI_RIGHT,:));
     title('R. Hem. IPSI Saccades')
-    xlabel('time (sec)')
+%     xlabel('time (sec)')
     ylabel('neuron #')
     set(gca, 'FontSize', FontSize)
     c = axis;
