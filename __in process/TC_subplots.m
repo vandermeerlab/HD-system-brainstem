@@ -15,23 +15,26 @@ Ytight = .02;
 FontSizeToUse = 12;
 AHVmin = -150;
 AHVmax = 150;
+skipwheel = 0;
 
-tic
 %% Calculations
-updownTSD = getQEupdown([]);
-state_tsd = ConvertQEUpDownToState(updownTSD);
-[~, wheel_tsd] = ConvertQEStatesToAngle([], state_tsd);
-[d, speed, cfg_w] = ConvertWheeltoSpeed([], wheel_tsd);   % d = distance.  speed = speed of the wheel in cm/sec
-speed.tvec = speed.tvec - sd.starttime;
-speed.data = -speed.data; % we want forward motion to be displayed as a positive velocity
-
-cfg_wheel = [];
-cfg_wheel.doPlot = 0;
-cfg_wheel.nBins = 50;
-cfg_wheel.binEdges = {linspace(-5, 30, 101)};
-cfg_wheel.occ_dt = median(diff(speed.tvec));
-cfg_wheel.minOcc = 1;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
-toc
+if exist('*CSC34.Ncs')
+    updownTSD = getQEupdown([]);
+    state_tsd = ConvertQEUpDownToState(updownTSD);
+    [~, wheel_tsd] = ConvertQEStatesToAngle([], state_tsd);
+    [d, speed, cfg_w] = ConvertWheeltoSpeed([], wheel_tsd);   % d = distance.  speed = speed of the wheel in cm/sec
+    speed.tvec = speed.tvec - sd.starttime;
+    speed.data = -speed.data; % we want forward motion to be displayed as a positive velocity
+    
+    cfg_wheel = [];
+    cfg_wheel.doPlot = 0;
+    cfg_wheel.nBins = 50;
+    cfg_wheel.binEdges = {linspace(-5, 30, 101)};
+    cfg_wheel.occ_dt = median(diff(speed.tvec));
+    cfg_wheel.minOcc = 1;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
+else
+    skipwheel = 1;
+end
 %% Plot Each Neuron
 for iCell = 1:length(sd.fc)
     clf
@@ -83,18 +86,19 @@ for iCell = 1:length(sd.fc)
     title('AHV TC', 'FontSize', FontSizeToUse)
     
     %% Wheel TC
-    subtightplot(3,3,3,[Xtight Ytight]);
-    set(gca, 'YTick', [])
-    
-    tc_wheel = TuningCurves(cfg_wheel, myCell, speed);
-    plot(tc_wheel.binCenters, tc_wheel.tc, 'k', 'LineWidth', 3); hold on
-    plot(tc_wheel.binCenters, smoothdata(tc_wheel.tc), 'LineWidth', 3, 'Color', 'r', 'LineStyle', '--');
-    
-    ax = gca;
-    ax.XGrid = 'on';
-    ax.GridLineStyle = '-';
-    title('Wheel TC', 'FontSize', FontSizeToUse)
-    
+    if skipwheel == 0
+        subtightplot(3,3,3,[Xtight Ytight]);
+        set(gca, 'YTick', [])
+        
+        tc_wheel = TuningCurves(cfg_wheel, myCell, speed);
+        plot(tc_wheel.binCenters, tc_wheel.tc, 'k', 'LineWidth', 3); hold on
+        plot(tc_wheel.binCenters, smoothdata(tc_wheel.tc), 'LineWidth', 3, 'Color', 'r', 'LineStyle', '--');
+        
+        ax = gca;
+        ax.XGrid = 'on';
+        ax.GridLineStyle = '-';
+        title('Wheel TC', 'FontSize', FontSizeToUse)
+    end
     %% HD Occupancy
     subtightplot(3,3,4,[Xtight Ytight]);
     plot(tc_HD.binCenters, tc_HD.occ_hist)
@@ -117,17 +121,18 @@ for iCell = 1:length(sd.fc)
     
     %% Wheel Occupancy
     subtightplot(3,3,6,[Xtight Ytight]);
-    plot(tc_wheel.binCenters, tc_wheel.occ_hist)
-    c = axis;
-    axis([c(1) c(2) 0 15]);
-    ax = gca;
-    ax.YGrid = 'on';
-    ax.GridLineStyle = '-';
-    ax.GridLineStyle = '-';
-    set(gca, 'YTick', 0:3:15)
-    title('Wheel Occupancy', 'FontSize', FontSizeToUse)
-    
-    %% Pupil Position TC 
+    if skipwheel == 0
+        plot(tc_wheel.binCenters, tc_wheel.occ_hist)
+        c = axis;
+        axis([c(1) c(2) 0 15]);
+        ax = gca;
+        ax.YGrid = 'on';
+        ax.GridLineStyle = '-';
+        ax.GridLineStyle = '-';
+        set(gca, 'YTick', 0:3:15)
+        title('Wheel Occupancy', 'FontSize', FontSizeToUse)
+    end
+    %% Pupil Position TC
     subtightplot(3,3,7,[Xtight Ytight]);
     set(gca, 'YTick', [])
     
@@ -146,7 +151,7 @@ for iCell = 1:length(sd.fc)
     ylabel('FR (Hz)', 'FontSize', FontSizeToUse)
     xlabel('Pixels')
     
-    %% Pupil Velocity TC 
+    %% Pupil Velocity TC
     subtightplot(3,3,8,[Xtight Ytight]);
     set(gca, 'YTick', [])
     cfg_pupil_velocity = [];
@@ -162,7 +167,7 @@ for iCell = 1:length(sd.fc)
     
     c = axis;
     axis([-30 30 0 c(4)]);
-    %% 
+    %%
     subtightplot(3,3,9,[Xtight Ytight]);
     set(gca, 'YTick', [])
     title(sd.fn{iCell})

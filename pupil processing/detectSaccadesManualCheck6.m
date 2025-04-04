@@ -100,8 +100,8 @@ if exist(strcat(SSN, '-VT1.smi'), 'file') == 2
             %% Get the pupil trace dervied from Facemap
             f = FindFiles('*VT1_proc.mat');
             load(f{1}, 'pupil');
-            pupilH = pupil{1}.com(:,2);
-            pupilV = pupil{1}.com(:,1);
+            pupilH = pupil{1}.com(:,2);  % 2nd column = horizontal camera plane
+            pupilV = pupil{1}.com(:,1);  % 1st column = vertical camera plane 
             
             if strcmp(SSN, 'M281-2021-12-23')              % exception for this session where cheetah crashed and .smi is shorter than pupilH
                 tvec = .02*(1:length(pupilH));

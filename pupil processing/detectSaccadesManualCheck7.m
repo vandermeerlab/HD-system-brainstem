@@ -177,7 +177,7 @@ if exist(strcat(SSN, '-VT1.smi'), 'file') == 2
             amp2=amp2-mean(amp2); %removes mean of the signal because the DC component of a signal does not change the correlation
             amp2tsd  = tsd(diffH.tvec, amp2);
             %%
-            % Thresholding the TEMPORAL saccades (positive AHV segments)
+            % Thresholding the TEMPORAL saccades (positive position changes in pixel space)
             tP = diffH.data > cfg.threshT;  % data points above threshold
             [~, index_tP] = find(tP);  % tvec indices for data points above threshold
             [val_discard_tP, ~] = intersect(index_tP, suspectPoints);
@@ -205,7 +205,7 @@ if exist(strcat(SSN, '-VT1.smi'), 'file') == 2
                 index_tP_touse = [];
             end
             
-            %% Thresholding the NASAL saccades (negative AHV segments)
+            %% Thresholding the NASAL saccades (negative deflections in pixel space)
             nP = diffH.data < cfg.threshN;  % data points above threshold
             [~, index_nP] = find(nP);  % tvec indices for data points above threshold
             [val_discard_nP, ~] = intersect(index_nP, suspectPoints);

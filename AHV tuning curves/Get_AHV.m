@@ -15,9 +15,11 @@ tic
 AHV = dxdt(orientationtouse.tvec, orientationtouse.data, 'window', window, 'postsmoothing', postsmoothing);
 toc
 
-AHV = -AHV; % THIS STEP IS NECESSARY BECAUSE dxdt GIVES VALUES THAT ARE CORRECT, BUT WITH A SIGN FLIP.
+AHVflip = -AHV; % THIS STEP IS NECESSARY BECAUSE dxdt GIVES VALUES THAT ARE CORRECT, BUT WITH A SIGN FLIP.
+% 2025-03-28. JJS. The above line of code seems wrong. Not sure why I thought this originally. dxdt gives velocity with the correct sign. This means that figures
+% that were created with this sign flip will have the incorrect sign for AHV. 
 
-AHV_tsd = tsd(orientationtouse.tvec, AHV);
+AHV_tsd = tsd(orientationtouse.tvec, AHVflip);
 
 end
 
