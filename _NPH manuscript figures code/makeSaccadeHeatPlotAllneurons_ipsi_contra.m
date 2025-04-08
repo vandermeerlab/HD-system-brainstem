@@ -1,6 +1,6 @@
 function [Z] = makeSaccadeHeatPlotAllneurons_ipsi_contra(cfg_in, tfilelist)
-% [] = makeSaccadeHeatPlot
-% JJS. 4/2021.
+% [] = makeSaccadeHeatPlot. JJS. 4/2021.
+% Updated to be ipsi/contrat instead of temporal/nasal 3/2025.
 FontSize = 30;
 LineWidth = 3;
 doPlot = 0;
