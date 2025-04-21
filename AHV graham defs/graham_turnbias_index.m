@@ -1,4 +1,4 @@
-function [CWs,CCWs,slopeToUse,turn_index, tb] = graham_turnbias_index(C, tfilelist)
+function [CWs,CCWs,slopeToUse,turn_index, tb, AHV_preferred_side] = graham_turnbias_index(C, tfilelist)
 %2025-02-27. JJS
 %   Calculates the "normalized turn bias score" (what I'm calling "asymmetry index"), as outlined in Graham et al., 2023.
 %   Input comes from ------------   [X, C, neuronList, numSess, cfg_out] = AHV_pearson_correlation_CONTRA_IPSI(cfg_in, tfilelist)   ---------------------
@@ -58,7 +58,18 @@ tb.num_asymmetric = sum(tb.CW_asymmetric) + sum(tb.CCW_asymmetric);
 tb.num_asymmetric_unresponsive = sum(tb.CW_asymmetric_unresponsive) + sum(tb.CCW_asymmetric_unresponsive);
 
 
+for iNeuron = 1:length(turn_index)
+    if turn_index(iNeuron) < 0
+        AHV_preferred_side(iNeuron) = -1; % negative AHV is preferred side. CW cell
+    elseif turn_index(iNeuron) >= 0 
+        AHV_preferred_side(iNeuron) = 1; % positive AHV is preferred side. CCW cell
+    else
+        error('issue with turn index')
+    end
+end
 
+    
+       
 
 
 

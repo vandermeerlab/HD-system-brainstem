@@ -1,8 +1,9 @@
-function [TC_out, TC_out_cat, normTC, normTCsmoothed, neuronList, binCenters, sortmax, normTCsorted, TC_out_occ_cat, hemisphere] = save_AHV_binned_TCs_to_file(tfilelist, varargin)
+function [TC_out, TC_out_cat, normTC, normTCsmoothed, neuronList, binCenters, sortmax, normTCsorted, TC_out_occ_cat, hemisphere] = save_AHV_binned_TCs_to_file(tfilelist, AHV_preferred_side, varargin)
 %2024-11-26. JJS.  calculates each AHV TC (Taube params) and saves to session folder
 
 doPlotCW = 0;
-doPlotIPSI = 1;
+doPlotIPSI = 0;
+doPlotPreferred = 0;
 doSave = 1;
 if isempty(tfilelist)
     tfilelist = FindFiles('*.t');
@@ -77,16 +78,39 @@ end
 normIC = ICmatrix./max(ICmatrix,[],2);
 normICsmoothed = smoothdata(normIC);
 [~, maxi] = max(normIC, [], 2);
-[~, sortmax] = sort(maxi);
-normICsorted = normIC(sortmax,:);
+[~, sortmaxIC] = sort(maxi);
+normICsorted = normIC(sortmaxIC,:);
 
+%% Calculate a Preferred/nonPreferred version according to whether the neuron 'prefers' CW or CCW [based on ...
+% [CWs,CCWs,slopeToUse,turn_index, tb, AHV_preferred_side] = graham_turnbias_index(C, tfilelist).  AHV_preferred side is the variable of interest. 
+% negative AHV is preferred side. CW cell
+% positive AHV is preferred side. CCW cell
+
+for iRow = 1: endNeuron
+    if AHV_preferred_side(iRow) == -1 
+        PnPmatrix(iRow,:) = TC_out_cat(iRow,:);  %
+    
+    elseif AHV_preferred_side(iRow) == 1 
+        PnPmatrix(iRow,:)  = fliplr(TC_out_cat(iRow,:));
+    else
+        error('hemisphere designation is neither left nor right')
+    end
+end
+
+normPnP = PnPmatrix./max(PnPmatrix,[],2);
+normPnPsmoothed = smoothdata(normPnP);
+[~, maxiPnP] = max(normPnP, [], 2);
+[~, sortmaxPnP] = sort(maxiPnP);
+normPnPsorted = normPnP(sortmaxPnP,:);
+
+%% Save it 
 if doSave
     disp('saving')
     cd('C:\Jeff\U01\datatouse\NPH analyses');
     save(strcat('Funnel plot data-', neuronList{iNeuron}));
     popdir;
 end
-toc
+%% Plot CW/CCW version
 if doPlotCW
     clf
     h = imagesc(binCenters, 1:size(TC_out_cat,1), normTCsorted);
@@ -98,13 +122,13 @@ if doPlotCW
     set(gca,'Color','k')
     text(-125, 100, 'CW', 'FontSize', 25, 'Color', 'w')
     text(50, 100, 'CCW', 'FontSize', 25, 'Color', 'w')
-    
 end
+%% Plot IPSI/CONTRA version 
 if doPlotIPSI
     clf
     h = imagesc(binCenters, 1:size(TC_out_cat,1), normICsorted);
     %     h = imagesc(binCenters, 1:size(TC_out_cat,1), normTCsmoothed(sortmax,:));
-    set(h, 'AlphaData', ~isnan(normTC(sortmax,:)))
+    set(h, 'AlphaData', ~isnan(normTC(sortmaxIC,:)))
     ylabel('neuron #')
     xlabel('AHV')
     set(gca, 'FontSize', 24)
@@ -112,18 +136,19 @@ if doPlotIPSI
     text(-125, 100, 'IPSI', 'FontSize', 25, 'Color', 'w')
     text(50, 100, 'CONTRA', 'FontSize', 25, 'Color', 'w')
 end
+%% Plot as Preferred/nonPreferred
+if doPlotPreferred
+    clf
+    h = imagesc(binCenters, 1:size(TC_out_cat,1), normPnPsorted);
+    %     h = imagesc(binCenters, 1:size(TC_out_cat,1), normTCsmoothed(sortmax,:));
+    set(h, 'AlphaData', ~isnan(normTC(sortmax,:)))
+    ylabel('neuron #')
+    xlabel('AHV')
+    set(gca, 'FontSize', 24)
+    set(gca,'Color','k')
+    text(-125, 100, 'Pref', 'FontSize', 25, 'Color', 'w')
+    text(50, 100, 'nonPref', 'FontSize', 25, 'Color', 'w')
 
-
-
-
-
-
-
-
+    
+end
 %%
-
-
-%     h = imagesc(binCenters, 1:size(TC_out_cat,1), normTCsmoothed(sortmax,:));
-%     set(h, 'AlphaData', ~isnan(normTC(sortmax,:)))
-% h = imagesc(binCenters, 1:size(ICmatrix,1), ICmatrix);
-

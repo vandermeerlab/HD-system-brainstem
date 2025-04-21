@@ -1,4 +1,4 @@
-function [FR_temporal_smooth, FR_nasal_smooth, temporal_normSmooth, nasal_normSmooth, sTemporal, sNasal, binCenters, cellname, cfg] = find_preferred_saccaded_direction(tfilelist, cfg_in)
+function [FR_temporal_smooth, FR_nasal_smooth, temporal_normSmooth, nasal_normSmooth, sTemporal, sNasal, binCenters, cellname, preferred_type_subtraction, type_subtraction, cfg] = find_preferred_saccaded_direction(tfilelist, cfg_in)
 % JJS. 2025-04-25. This function determines which saccade type has a higher firing rate
 % Inputs:
 %           tfilelist - cell array list of neurons to use
@@ -6,11 +6,12 @@ function [FR_temporal_smooth, FR_nasal_smooth, temporal_normSmooth, nasal_normSm
 %
 % FontSize = 30;
 % LineWidth = 3;
-% baseline_end = -
-cfg_in.bin1 = -.05; 
-cfg_in.bin2 = 0;
 doPlot = 0;
+doSave = 0;
+doPause = 0;
 doPlotMeans = 0;
+cfg_in.bin1 = -.05;
+cfg_in.bin2 = 0;
 cfg_def.doPlot = 0;
 cfg_def.FRwindow = [-.2 .2];
 cfg_def.dt = 0.005;
@@ -87,25 +88,40 @@ FR_nasal_norm = FR_nasal./mN;       % normalized by FR
 cfg.burst_bins = cfg.bin1 <= binCenters & cfg.bin2 <= .02;
 cfg.baseline_bins = binCenters < cfg.bin1;
 
+first_burst_bin = find(cfg.burst_bins, 1);
 %% This version has baseline subtraction, and takes the ***********MAX********** instead of the mean
 for iNeuron = 1:size(FR_nasal_smooth,1)
+    nasal_window_max(iNeuron) = max(FR_nasal_smooth(iNeuron, cfg.burst_bins));
     nasal_window_averaege(iNeuron) = mean(FR_nasal_smooth(iNeuron, cfg.burst_bins));
     nasal_baseline(iNeuron) = mean(FR_nasal_smooth(iNeuron, cfg.baseline_bins));
     
+    if nasal_window_max(iNeuron) > FR_nasal_smooth(iNeuron, first_burst_bin)
+        nasal_value_touse(iNeuron) = nasal_window_max(iNeuron);
+    else
+        nasal_value_touse(iNeuron) = nasal_window_averaege(iNeuron);
+    end
+    
+    temporal_window_max(iNeuron) = max(FR_temporal_smooth(iNeuron, cfg.burst_bins));
     temporal_window_averaege(iNeuron) = max(FR_temporal_smooth(iNeuron, cfg.burst_bins));
     temporal_baseline(iNeuron) = mean(FR_temporal_smooth(iNeuron, cfg.baseline_bins));
-
+    
+    if temporal_window_max(iNeuron) > FR_temporal_smooth(iNeuron, first_burst_bin)
+        temporal_value_touse(iNeuron) = temporal_window_max(iNeuron);
+    else
+        temporal_value_touse(iNeuron) = temporal_window_averaege(iNeuron);
+    end
+    
     % Subtract the baseline period
-    nasal_subtraction(iNeuron) = nasal_window_averaege(iNeuron) - nasal_baseline(iNeuron);
-    temporal_subtraction(iNeuron) = temporal_window_averaege(iNeuron) - temporal_baseline(iNeuron);
+    nasal_subtraction(iNeuron) = nasal_value_touse(iNeuron)  - nasal_baseline(iNeuron);
+    temporal_subtraction(iNeuron) = temporal_value_touse(iNeuron)  - temporal_baseline(iNeuron);
     
     subtraction_subtraction(iNeuron) = nasal_subtraction(iNeuron) - temporal_subtraction(iNeuron);
-    if subtraction_subtraction(iNeuron) > 0  % nasal-preferring neuron 
+    if subtraction_subtraction(iNeuron) > 0  % nasal-preferring neuron
         preferred_type_subtraction(iNeuron) = 1;
         type_subtraction{iNeuron} = 'nasal';
     elseif subtraction_subtraction(iNeuron) < 0 % temporal-preffering neuron
-        preferred_type_subtraction(iNeuron) = 0; 
-         type_subtraction{iNeuron} = 'temporal';
+        preferred_type_subtraction(iNeuron) = 0;
+        type_subtraction{iNeuron} = 'temporal';
     else
         error('something went wrong')
     end
@@ -120,9 +136,11 @@ assert(numNasal + numTemporal == length(tfilelist));
 
 
 %%
+cd('D:\Jeff\U01\analysis\_daily plots\2025-04-07 preferred-nonpreferred\pref-non-pref saccade peths')
 if doPlotMeans
-    %%
+    %
     for iNeuron = 1:length(tfilelist)
+        disp(num2str(iNeuron))
         clf
         plot(binCenters, FR_nasal_smooth(iNeuron,:), 'LineWidth', 10); hold on
         plot(binCenters, FR_temporal_smooth(iNeuron,:), 'LineWidth', 10)
@@ -138,43 +156,30 @@ if doPlotMeans
         disp(cellname{iNeuron})
         disp(strcat('nasal dFR =', num2str(round(nasal_subtraction(iNeuron),1))))
         disp(strcat('temporal dFR =', num2str(round(temporal_subtraction(iNeuron),1))))
-        pause
+        if doSave
+            disp('saving')
+            saveas(gcf, strcat(num2str(iNeuron),'.png'));
+        end
+        if doPause
+            pause
+        end
     end
-    %%
+    popdir;
 end
 
-
-% %% This version just takes the mean of nasal (window) - mean of temporal (window). There is no baseline subtraction. 
+%%
+% %% This version just takes the mean of nasal (window) - mean of temporal (window). There is no baseline subtraction.
 % for iNeuron = 1:size(FR_nasal_smooth,1)
 %     nasal_ave(iNeuron) = mean(FR_nasal_smooth(iNeuron, cfg.burst_bins));
 %     temporal_ave(iNeuron) = mean(FR_temporal_smooth(iNeuron, cfg.burst_bins));
 %     subtraction_score(iNeuron) = nasal_ave(iNeuron) - temporal_ave(iNeuron);
-%     if subtraction_score(iNeuron) > 0  % nasal-preferring neuron 
+%     if subtraction_score(iNeuron) > 0  % nasal-preferring neuron
 %         preferred_type(iNeuron) = 1;
 %         type{iNeuron} = 'nasal';
 %     elseif subtraction_score(iNeuron) < 0 % temporal-preffering neuron
-%         preferred_type(iNeuron) = 0; 
+%         preferred_type(iNeuron) = 0;
 %          type{iNeuron} = 'temporal';
 %     else
 %         error('something went wrong')
 %     end
-% end
-
-
-
-
-
-
-
-
-
-
-% if strcmp(ExpKeys.Hemisphere{neuronIndex}, 'R')
-%     ipsi_saccade_side = {'n'}; % nasal
-%     contra_saccade_side = {'t'};
-% elseif strcmp(ExpKeys.Hemisphere{neuronIndex}, 'L')
-%     contra_saccade_side = {'n'};
-%     ipsi_saccade_side = {'t'};
-% else
-%     error('issue with neuron hemisphere')
 % end

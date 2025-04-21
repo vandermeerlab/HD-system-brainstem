@@ -157,7 +157,7 @@ for iC = nCells:-1:1
     %this_m = fitglm(p, sd.m.(mn{4}).modelspec, 'Distribution', 'binomial')
     for iM = 1:length(mn)
         fprintf('Model %s:\n', mn{iM});
-        this_m = fitglm(p, sd.m.(mn{iM}).modelspec, 'Distribution', 'poisson')
+        this_m = fitglm(p, sd.m.(mn{iM}).modelspec, 'Distribution', 'poisson');
         
         out(iC).(mn{iM}).rsq = this_m.Rsquared.Adjusted;
     end
