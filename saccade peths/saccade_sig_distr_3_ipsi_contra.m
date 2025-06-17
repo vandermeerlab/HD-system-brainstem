@@ -218,7 +218,9 @@ for iCell = 1:length(tfile)
     
     %% Plot It
     if cfg_out.doPlot == 1
+        figure(1)
         clf;
+        set(gcf, 'Position', get(0, 'Screensize'));
         subplot(321); % IPSI peth
         plot(peth_tvec(iCell,:), out_ipsi{iCell}.data);
         set(gca, 'FontSize', cfg_out.FontSize)
@@ -283,7 +285,7 @@ for iCell = 1:length(tfile)
         xlabel('abs() max diff. of shuffles')
         ylabel('count')
         set(gca, 'FontSize', 15)
-        title(strcat('percentile = ', num2str(percent_ipsi*100)))
+        title(strcat('percentile = ', num2str(percent_ipsi(iCell)*100)))
         text('Units', 'Normalized', 'Position', [0.5, 0.8], 'string', strcat('num shuff = ', num2str(cfg_out.numShuff)))
         
         subplot(326) %
@@ -296,14 +298,15 @@ for iCell = 1:length(tfile)
         z = max([c5(4) c6(4)]);
         axis([c6(1) c6(2) 0 z])
         line([X.max_contra  X.max_contra], [0 z], 'Color', 'g', 'LineWidth', 1, 'LineStyle', '-')
-        title(strcat('percentile = ', num2str(percent_contra*100)))
+        title(strcat('percentile = ', num2str(percent_contra(iCell)*100)))
         text('Units', 'Normalized', 'Position', [0.5, 0.8], 'string', strcat('num shuff = ', num2str(cfg_out.numShuff)))
         
         subplot(325)
         axis([c5(1) c5(2) 0 z])
         line([X.max_ipsi  X.max_ipsi], [0 z], 'Color', 'g', 'LineWidth', 1, 'LineStyle', '-')
-%         pause(1)
-%         close
+        
+        disp('press any key to continue')
+        pause
     end
     % warning('on', 'all')
     disp(strcat('percent nasal = ', num2str(X.percent_ipsi)))
@@ -383,18 +386,3 @@ w.numSig_neither_99 = percent_contra < 0.99 & percent_contra < 0.99; w.sumSig_ne
 w.neither_sig_95 = find(w.numSig_neither_95); w.num_neither_95 = length(w.neither_sig_95); w.per_neither_95 = w.num_neither_95/numCells;
 w.neither_sig_99 = find(w.numSig_neither_99); w.num_neither_99 = length(w.neither_sig_99); w.per_neither_99 = w.num_neither_99/numCells;
 
-
-
-
-% C = {'spn95', 'spt95', 'spn99', 'spt99', 'n_percent_95', 't_percent_95', 'n_percent_99', 't_percent_99', 'f95_n', 'f95_t', ...
-%     'numSig_both', 'percent_sig_both', 'intersect', 'pn95', 'pt95', 'pn99', 'pt99'}; W = orderfields(w, C);
-
-% desktop = com.mathworks.mde.desk.MLDesktop.getInstance;
-% Titles  = desktop.getClientTitles;
-% for k = 1:numel(Titles)
-%    Client = desktop.getClient(Titles(k));
-%    if ~isempty(Client) & ...
-%       strcmp(char(Client.getClass.getName), 'com.mathworks.mde.array.ArrayEditor')
-%       Client.close();
-%    end
-% end

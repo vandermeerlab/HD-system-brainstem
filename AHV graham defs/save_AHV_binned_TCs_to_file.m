@@ -1,5 +1,7 @@
-function [TC_out, TC_out_cat, normTC, normTCsmoothed, neuronList, binCenters, sortmax, normTCsorted, TC_out_occ_cat, hemisphere] = save_AHV_binned_TCs_to_file(tfilelist, AHV_preferred_side, varargin)
+function [TC_out, TC_out_cat, normTC, normTCsmoothed, neuronList, binCenters, sortmax, normTCsorted, TC_out_occ_cat, hemisphere, ...
+    normPnP, normPnPsmoothed, normPnPsorted, PnPmatrix] = save_AHV_binned_TCs_to_file(tfilelist, AHV_preferred_side, varargin)
 %2024-11-26. JJS.  calculates each AHV TC (Taube params) and saves to session folder
+
 
 doPlotCW = 0;
 doPlotIPSI = 0;
@@ -148,7 +150,13 @@ if doPlotPreferred
     set(gca,'Color','k')
     text(-125, 100, 'Pref', 'FontSize', 25, 'Color', 'w')
     text(50, 100, 'nonPref', 'FontSize', 25, 'Color', 'w')
-
+    set(gca,'ColorScale','log')
     
 end
 %%
+
+% normPnP = PnPmatrix./max(PnPmatrix,[],2);
+% normPnPsmoothed = smoothdata(normPnP);
+% [~, maxiPnP] = max(normPnP, [], 2);
+% [~, sortmaxPnP] = sort(maxiPnP);
+% normPnPsorted = normPnP(sortmaxPnP,:);

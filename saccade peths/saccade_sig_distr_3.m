@@ -22,9 +22,9 @@ function [out_n, out_t, peth_tvec, mean_FR_n, mean_FR_t, mn_shuff, mt_shuff, Z, 
 % warning('off', 'all')  % why isnt this working?
 
 cfg_def.FontSize = 15;
-cfg_def.numShuff = 20; % how many shuffles to do
+cfg_def.numShuff = 1000; % how many shuffles to do
 cfg_def.histbinnum = 500;
-cfg_def.doPlot = 1;
+cfg_def.doPlot = 0;
 cfg_def.peth_Window = [-.2 .1]; % the window for doing statistics on. These values should be smaller than cfg_def.window
 cfg_def.window = [-1 1]; % the window for display
 cfg_out = ProcessConfig(cfg_def, cfg_in);
@@ -283,7 +283,8 @@ for iCell = 1:length(tfile)
         subplot(325)
         axis([c5(1) c5(2) 0 z])
         line([X.max_n  X.max_n], [0 z], 'Color', 'g', 'LineWidth', 1, 'LineStyle', '-')
-%         pause(1)
+        disp('press any key to continue')
+        pause
 %         close
     end
     % warning('on', 'all')
