@@ -201,7 +201,7 @@ if exist(WheelencoderCSC)
     cfg_tc.occ_dt = median(diff(sd.speed.tvec));
     cfg_tc.minOcc = 1;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
     tc_speed = TuningCurves(cfg_tc, sd.S, sd.speed);
-    plot(tc_speed.usr.binCenters(tc_speed.occ_hist > cfg.occthresh), smoothdata(tc_speed.tc(1,(tc_speed.occ_hist > cfg.occthresh))), 'k', 'LineWidth', 3);
+    plot(tc_speed.binCenters(tc_speed.occ_hist > cfg.occthresh), smoothdata(tc_speed.tc(1,(tc_speed.occ_hist > cfg.occthresh))), 'k', 'LineWidth', 3);
     axis tight
     yyaxis left
     set(gca, 'YTick', [])

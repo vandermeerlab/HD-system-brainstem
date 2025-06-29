@@ -39,6 +39,7 @@ function [X, C, neuronList, numSess, cfg_out] = AHV_pearson_correlation_CONTRA_I
 %       X.rToUse                - Indicates which side to use when it comes to r; that is, which side has a greater r-value
 %
 %       X.match                 - Indicates whether the slopeToUse and the rToUse sides are the same side.
+%       above outputs are collated together in C.____ 
 
 cfg_def.min_slope = 0.025;   % from Graham et al.
 cfg_def.min_r_value = 0.5;   % from Graham et al.

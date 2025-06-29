@@ -80,7 +80,8 @@ end
 
 if PlotSlopes
     plot(Preferred_slope, nonPreferred_slope, '.')
-    
+end
+
     
        
 
