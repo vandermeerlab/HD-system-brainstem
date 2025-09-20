@@ -273,13 +273,13 @@ if eye
         cfg_1.doPlot = 0;
         cfg_1.window = [-2 2];
         cfg_1.dt = 0.005;
-        [outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, S, sd.nasal_timestamps_REST);
+        [outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, sd.S, sd.nasal_timestamps_REST);
         [mn2, edges] = histcounts(outputS_n, outputIT_n);
         plot(edges(1:end-1), mn2/cfg_1.dt/length(sd.nasal_timestamps_MOVING), 'LineWidth', cfg.LineWidth);
         amax = max(mn2/cfg_1.dt/length(sd.nasal_timestamps_MOVING));
         
         hold on
-        [outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, S, sd.temporal_timestamps_REST);
+        [outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, sd.S, sd.temporal_timestamps_REST);
         [mt2, edges] = histcounts(outputS_t, outputIT_t);
         plot(edges(1:end-1), smoothdata(mt2/cfg_1.dt/length(sd.temporal_timestamps_MOVING)), 'LineWidth', cfg.LineWidth);
         bmax = max(smoothdata(mt2/cfg_1.dt/length(sd.temporal_timestamps_MOVING)));
@@ -316,8 +316,8 @@ title('AHV PETH', 'Units', 'normalized', 'Position', [0.5, 0.5, 0], 'FontSize', 
 
 %% #10 HistISI
 p = subtightplot(6,6,10, [cfg.tightX cfg.tightY]); hold on
-[h, n] = HistISIsubplot(S.t{1});
-HistISIsubplot(S.t{1});
+[h, n] = HistISIsubplot(sd.S.t{1});
+HistISIsubplot(sd.S.t{1});
 c = axis;
 [~, i] = max(h);
 line([n(i) n(i)], [0 c(4)], 'color', 'k');
@@ -353,14 +353,14 @@ if eye
         cfg_1.doPlot = 0;
         cfg_1.window = [-.2 .2];
         cfg_1.dt = 0.01;
-        [outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, S, sd.nasal_timestamps_MOVING);
+        [outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, sd.S, sd.nasal_timestamps_MOVING);
         [mn3, edges] = histcounts(outputS_n, outputIT_n);
         plot(edges(1:end-1), mn3/cfg_1.dt/length(sd.nasal_timestamps_MOVING), 'LineWidth', cfg.LineWidth);
         amax = max( mn3/cfg_1.dt/length(sd.nasal_timestamps_MOVING));
         set(gca, 'FontSize', cfg.FontSize)
         
         hold on
-        [outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, S, sd.temporal_timestamps_MOVING);
+        [outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, sd.S, sd.temporal_timestamps_MOVING);
         [mt3, edges] = histcounts(outputS_t, outputIT_t);
         plot(edges(1:end-1), mt3/cfg_1.dt/length(sd.temporal_timestamps_MOVING), 'LineWidth', cfg.LineWidth);
         bmax = max(mt3/cfg_1.dt/length(sd.temporal_timestamps_MOVING));
@@ -380,12 +380,12 @@ if eye
         cfg_1.doPlot = 0;
         cfg_1.window = [-.2 .2];
         cfg_1.dt = 0.01;
-        [outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, S, sd.nasal_timestamps_REST);
+        [outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, sd.S, sd.nasal_timestamps_REST);
         [mn4, edges] = histcounts(outputS_n, outputIT_n);
         plot(edges(1:end-1), mn4/cfg_1.dt/length(sd.nasal_timestamps_MOVING), 'LineWidth', cfg.LineWidth);
         amax = max(mn4/cfg_1.dt/length(sd.nasal_timestamps_MOVING));
         hold on
-        [outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, S, sd.temporal_timestamps_REST);
+        [outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, sd.S, sd.temporal_timestamps_REST);
         [mt4, edges] = histcounts(outputS_t, outputIT_t);
         plot(edges(1:end-1), mt4/cfg_1.dt/length(sd.temporal_timestamps_MOVING), 'LineWidth', cfg.LineWidth);
         bmax = max(mt4/cfg_1.dt/length(sd.temporal_timestamps_MOVING));
