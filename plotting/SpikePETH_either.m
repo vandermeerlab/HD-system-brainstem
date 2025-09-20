@@ -1,6 +1,6 @@
 function [outputS, outputT, outputGau, outputIT, cfg] = SpikePETH_either(cfg_in, S,t,varargin)
 %% SpikePETH: computes the perievent histogram for spike data "S" at events
-%             "t".  
+%             "t".
 %
 %
 %
@@ -47,14 +47,17 @@ for iT = 1:nT
     
     S0 = restrict(S, t(iT)+cfg.window(1)-cfg.excessBounds, t(iT)+cfg.window(2)+cfg.excessBounds);
     %     if length(S0.t{1}) > 0
-    tic
+    %     tic
     S0 = restrict(S0, t(iT)+cfg.window(1), t(iT)+cfg.window(2));
-    toc
+%     toc
     if length(S0.t{1}) > 0
         outputT = [outputT; repmat(iT, length(S0.t{1}),1)];
-                outputS = [outputS; S0.t{1}-t(iT)];        %convolve with gaussian for firing rate.
-        temp = outputS;
-        outputS = cat(1, temp, S0.t{1}-t(iT));   % JJS hack. Error with cat dim not consistent.
+        outputS = [outputS; S0.t{1}-t(iT)];        %convolve with gaussian for firing rate.  %% JJS. 2025-09-20-25. Prev. comment doesn't make sense. This line concatenates.
+        %         temp = outputS;
+        %         outputS = cat(1, temp, S0.t{1}-t(iT));   % JJS hack. Error with cat dim not consistent.  %% JJS. 2025-09-20. This line doesn't make sense. It duplicates outputS. Removing it.
+        
+        assert(length(outputS) == length(outputT)); % JJS. 2025-09-20. Weird issue where length of outputS is always twice the length of outputT.
+        
         tbin_edges = t(iT)+cfg.window(1):cfg.binsize:t(iT)+cfg.window(2);
         tbin_centers = tbin_edges(1:end-1)+cfg.binsize/2;
         spk_count = histc(S0.t{1},tbin_edges);
@@ -92,7 +95,7 @@ if cfg.doPlot == 1
     %% display
     if cfg.doRaster ==1
         % spike raster
-%         	imagesc(window,[1 nT], outputID);
+        %         	imagesc(window,[1 nT], outputID);
         % 	colormap(1-0.25*gray);
         % 	hold on;
         plot(outputS, outputT+0.5, 'k.', 'MarkerSize', 5);

@@ -38,7 +38,7 @@ end
 %% Isolate the spike train for the single neuron indicated in the function input. This is so that restrict() can operate within spikePETH()
 spikefiles = FindFiles('*.t');
 cfg.fc = {spikefiles{iCell}}; % limit to one neuron
-S = LoadSpikesJeff(cfg);  % using this loader to subtract out starttime from unix time
+% S = LoadSpikesJeff(cfg);  % using this loader to subtract out starttime from unix time   %% JJS. 2025-09-20. This is superceded by sd = LoadSession
 
 %% Change the .t filename from having an underscore '_' to a dash '-', for ease of use later. Most filenames use a dash '-'.
 [fc] = FindFiles(strcat(sd.SSN, '*.t'));
@@ -249,11 +249,11 @@ if eye
     cfg_1.doPlot = 0;
     cfg_1.window = [-2 2];
     cfg_1.dt = 0.05;
-    [outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, S, sd.nasal_timestamps_MOVING);
+    [outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, sd.S, sd.nasal_timestamps_MOVING);
     [mn1, edges] = histcounts(outputS_n, outputIT_n);
     plot(edges(1:end-1), mn1/cfg_1.dt/length(sd.nasal_timestamps_MOVING), 'LineWidth', cfg.LineWidth); % this is a hack. should replace binedgges with bincenters
     hold on
-    [outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, S, sd.temporal_timestamps_MOVING);
+    [outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, sd.S, sd.temporal_timestamps_MOVING);
     [mt1, edges] = histcounts(outputS_t, outputIT_t);
     plot(edges(1:end-1), mt1/cfg_1.dt/length(sd.temporal_timestamps_MOVING), 'LineWidth', cfg.LineWidth);
     c = axis;
@@ -413,10 +413,10 @@ if cfg.doLaser == 1
         cfg_laser.doPlot = 1;
         cfg_laser.doRaster = 1;
         cfg_laser.doBar = 0;
-        [~, ~, ~, ~, ~] = SpikePETH_either(cfg_laser, S, laser_on); hold on
+        [~, ~, ~, ~, ~] = SpikePETH_either(cfg_laser, sd.S, laser_on); hold on
         c = axis;
         rectangle(Position = [0, 0, dur, c(4)], FaceColor=[0 1 1], EdgeColor=[0 1 1])    % change the 3rd entry in rectangle to the diff of laser_off and laser_on
-        [~, ~, ~, ~, ~] = SpikePETH_either(cfg_laser, S, laser_on);  % repeating spikepeth here is a hack to get the background color 'in back'. otherwise it occludes the spikes.
+        [~, ~, ~, ~, ~] = SpikePETH_either(cfg_laser, sd.S, laser_on);  % repeating spikepeth here is a hack to get the background color 'in back'. otherwise it occludes the spikes.
         line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'w')
         line([1 1], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'w')
         set(gca, 'YTick', [])
@@ -431,7 +431,7 @@ if cfg.doLaser == 1
         cfg_laser.doPlot = 0;
         cfg_laser.doRaster = 0;
         cfg_laser.doBar = 0;
-        [outputS_laser, ~, ~, outputIT_laser, ~] = SpikePETH_either(cfg_laser, S, laser_on);
+        [outputS_laser, ~, ~, outputIT_laser, ~] = SpikePETH_either(cfg_laser, sd.S, laser_on);
         m = histc(outputS_laser, outputIT_laser);
         yyaxis right
         if ~isempty(outputS_laser)
@@ -460,10 +460,10 @@ if cfg.doLaser == 1
         cfg_dummy.doPlot = 1;
         cfg_dummy.doRaster = 1;
         cfg_dummy.doBar = 0;
-        [~, ~, ~, ~, ~] = SpikePETH_either(cfg_dummy, S, sound_times); hold on
+        [~, ~, ~, ~, ~] = SpikePETH_either(cfg_dummy, sd.S, sound_times); hold on
         c = axis;
         rectangle(Position = [0, 0, dur, c(4)], FaceColor=[0 .9 .4], EdgeColor=[0 .9 .4])    % change the 3rd entry in rectangle to the diff of laser_off and laser_on
-        [~, ~, ~, ~, ~] = SpikePETH_either(cfg_dummy, S, sound_times);  % this is a hack to get the background color 'in back'. otherwise it occludes the spikes.
+        [~, ~, ~, ~, ~] = SpikePETH_either(cfg_dummy, sd.S, sound_times);  % this is a hack to get the background color 'in back'. otherwise it occludes the spikes.
         line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'w')
         line([1 1], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'w')
         set(gca, 'YTick', [])
@@ -478,7 +478,7 @@ if cfg.doLaser == 1
         cfg_dummy.doPlot = 0;
         cfg_dummy.doRaster = 0;
         cfg_dummy.doBar = 0;
-        [outputS_dummy, ~, ~, outputIT_dummy, ~] = SpikePETH_either(cfg_dummy, S, sound_times);
+        [outputS_dummy, ~, ~, outputIT_dummy, ~] = SpikePETH_either(cfg_dummy, sd.S, sound_times);
         m = histc(outputS_dummy, outputIT_dummy); %#ok<*HISTC>
         % m = histcounts(outputS, outputIT);
         yyaxis right
@@ -574,7 +574,7 @@ end
 %%  #25:30 FIRING RATE and AHV
 plot25 = subtightplot(6,6,25:30, [cfg.tightX cfg.tightY]); hold on
 cfg_Q = []; cfg_Q.dt = 0.001; cfg_Q.gausswin_sd = 0.05;cfg_Q.smooth = 'gauss';
-Q = MakeQfromS(cfg_Q, S);
+Q = MakeQfromS(cfg_Q, sd.S);
 tvec = Q.tvec - Q.tvec(1);
 yyaxis left
 h = plot(Q.tvec, Q.data./cfg_Q.dt);

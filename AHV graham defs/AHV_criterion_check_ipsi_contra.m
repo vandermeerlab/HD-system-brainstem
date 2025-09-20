@@ -1,4 +1,4 @@
-function [S, numCells] = AHV_criterion_check_ipsi_contra(X, IC, tb, tfilelist)
+function [S] = AHV_criterion_check_ipsi_contra(X, IC, tb, tfilelist)
 %2024-11-26. JJS.
 %   Determines whether each neuron in tfilelist meets the criteria (sinlgy) for r,slope,shuffle(rank), and jointly for all three.
 %   Criteria are based on Graham et al., 2023.
@@ -6,7 +6,7 @@ function [S, numCells] = AHV_criterion_check_ipsi_contra(X, IC, tb, tfilelist)
 % contra.r, contra.slope, contra.rank
 % Input from [CWs,CCWs,slopeToUse,turn_index] = graham_turnbias_index(C, tb, tfilelist)
 
-numCells = length(tfilelist);
+S.numCells = length(tfilelist);
 
 S.ipsi.r_pass = zeros(1,length(tfilelist));
 S.ipsi.slope_pass = zeros(1,length(tfilelist));
@@ -58,29 +58,28 @@ assert(sum(isnan(S.either_pass3))==0)
 
 %% Calculate the fraction of non-AHV, symmetric, asymmetric, asymmetric-unresponsive, and inverted symmetric cells, like Graham et al. Fig. 4C. 
 
-numNonAHV = sum(S.either_pass3 == 0); perNonAHV = numNonAHV/numCells;
-S.nonAHV = S.either_pass3 == 0;
+S.numNonAHV = sum(S.either_pass3 == 0); S.perNonAHV = S.numNonAHV/S.numCells;
 
-asymmetric = S.either_pass3 & tb.asymmetric; numAsymmetric = sum(asymmetric); perAsymmetric = numAsymmetric/numCells;
-S.asymmetric = asymmetric;
+S.asymmetric = S.either_pass3 & tb.asymmetric; S.numAsymmetric = sum(S.asymmetric); S.perAsymmetric = S.numAsymmetric/S.numCells;
 
-asymmetric_unresponsive = S.either_pass3 & tb.asymmetric_unresponsive; numAsymmetric_unresponsive = sum(asymmetric_unresponsive); perAsymmetric_unresponsive = numAsymmetric_unresponsive/numCells; 
-S.asymmetric_unresponsive = asymmetric_unresponsive;
+S.asymmetric_unresponsive = S.either_pass3 & tb.asymmetric_unresponsive; S.numAsymmetric_unresponsive = sum(S.asymmetric_unresponsive); S.perAsymmetric_unresponsive = S.numAsymmetric_unresponsive/S.numCells; 
 
-symmetric = S.either_pass3 & tb.symmetric_cells; numSymmetric = sum(symmetric); perSymmetric = numSymmetric/numCells; perSymmetric = numSymmetric/numCells;
-S.symmetric = symmetric;
+S.symmetric = S.either_pass3 & tb.symmetric_cells; S.numSymmetric = sum(S.symmetric); S.perSymmetric = S.numSymmetric/S.numCells; S.perSymmetric = S.numSymmetric/S.numCells;
+
+
 
 % there were zero inverted symmetric cells
 
 % bar([perNonAHV perSymmetric perAsymmetric_unresponsive perAsymmetric 0])
 
 
-labels = {'non-AHV', 'Symmetric', 'Asym-Unresp.', 'Asymmetric', 'Inverted'};
+labels = {strcat(num2str(S.perNonAHV*100,'%.1f'),'%'), strcat(num2str(S.perSymmetric*100,'%.1f'),'%'), strcat(num2str(S.perAsymmetric_unresponsive*100,'%.1f'),'%'), strcat(num2str(S.perAsymmetric*100,'%.1f'),'%'), strcat(num2str(0*100,3),'%')};
 
 % pie([numNonAHV numSymmetric numAsymmetric_unresponsive numAsymmetric 0])
-pie([numNonAHV numSymmetric numAsymmetric_unresponsive numAsymmetric 0], [1 1 1 1 1], labels)
-
+pie([S.perNonAHV S.perSymmetric S.perAsymmetric_unresponsive S.perAsymmetric 0], [1 1 1 1 1], labels)
+legend('non-AHV', 'Symmetric', 'Asym.-Unresp.', 'Asymmetric', 'Inverted')
 
 
 S.function_used = 'AHV_criterion_check_ipsi_contra';
-S.date = datetime;
+S.date = date;
+S.IC = IC; 

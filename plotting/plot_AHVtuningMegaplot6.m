@@ -31,30 +31,34 @@ cfg = [];
 cfg.uint = '64';
 spikefiles = FindFiles('*.t');
 cfg.fc = {spikefiles{iCell}};
-Sold = LoadSpikes(cfg);
 
-if subtractStartTime == 1 % New cheetah versions have timestamps
-    if exist('events_ts.mat') == 2
-        load('events_ts.mat');
-    else
-        events_ts = LoadEvents([]);
-    end
-    wrapper = @(events_ts) strcmp(events_ts, 'Starting Recording');
-    A = cellfun(wrapper, events_ts.label);
-    Startindex = find(A); % index which label says 'Start Recording'
-    starttime = events_ts.t{Startindex}(1); % use the very first start record time
-    for iC = 1:length(Sold.t)
-        if strcmp(SSN, 'M054-2020-03-03') == 1
-            S.t{iC} = Sold.t{iC} - Sold.t{iC}(1);
-        else
-            S.t{iC} = Sold.t{iC} - starttime;  % subtract the very first time stamp to convert from Unix time to 'start at zero' time.
-        end
-    end
-end
+% Sold = LoadSpikes(cfg);   %% This is superceded by the loading function     sd = LoadSessionData([]);
+% 
+% if subtractStartTime == 1 % New cheetah versions have timestamps
+%     if exist('events_ts.mat') == 2
+%         load('events_ts.mat');
+%     else
+%         events_ts = LoadEvents([]);
+%     end
+%     wrapper = @(events_ts) strcmp(events_ts, 'Starting Recording');
+%     A = cellfun(wrapper, events_ts.label);
+%     Startindex = find(A); % index which label says 'Start Recording'
+%     starttime = events_ts.t{Startindex}(1); % use the very first start record time
+%     for iC = 1:length(Sold.t)
+%         if strcmp(SSN, 'M054-2020-03-03') == 1
+%             S.t{iC} = Sold.t{iC} - Sold.t{iC}(1);
+%         else
+%             S.t{iC} = Sold.t{iC} - starttime;  % subtract the very first time stamp to convert from Unix time to 'start at zero' time.
+%         end
+%     end
+% end
+
+sd = LoadSessionData([]);   % JJS. Added 2025-09-20. 
+
 % get AHV Tuning Curve
 cfg_AHV = [];
 cfg_AHV.subsample_factor = 10;
-[AHV_tsd, tc_out] = AHV_tuning(cfg_AHV, S);
+[AHV_tsd, tc_out] = AHV_tuning(cfg_AHV, sd.S);
 AHV_dt = median(diff(AHV_tsd.tvec));
 %--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 %% #1 plot scatterplot
@@ -64,7 +68,7 @@ cfg_Q.smooth = 'gauss';
 cfg_Q.gausswin_sd = 0.05;
 cfg_Q.dt = AHV_dt;
 cfg_Q.tvec_edges = AHV_tsd.tvec(1):AHV_dt:AHV_tsd.tvec(end);
-F = MakeQfromS(cfg_Q, S); % convert to FR
+F = MakeQfromS(cfg_Q, sd.S); % convert to FR
 F.data = F.data ./ cfg_Q.dt;
 F_idx = nearest_idx3(AHV_tsd.tvec, F.tvec);
 AHV_F = F.data(:,F_idx);
@@ -101,7 +105,7 @@ cfg_Q.smooth = 'gauss';
 cfg_Q.gausswin_sd = 0.05;
 cfg_Q.dt = tsdH_dt;
 cfg_Q.tvec_edges = tsdH.tvec(1):tsdH_dt:tsdH.tvec(end);
-F = MakeQfromS(cfg_Q, S); % convert to FR
+F = MakeQfromS(cfg_Q, sd.S); % convert to FR
 F.data = F.data ./ cfg_Q.dt;
 
 % find FR corresponding to each AHV sample
@@ -115,7 +119,7 @@ cfg_tc.nBins = 50;
 cfg_tc.binEdges = {linspace(-60, 60, 101)};
 cfg_tc.occ_dt = median(diff(tsdH.tvec));
 cfg_tc.minOcc = 10;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
-tc_pupil = TuningCurves(cfg_tc, S, tsdH);
+tc_pupil = TuningCurves(cfg_tc, sd.S, tsdH);
 plot(tc_pupil.binCenters(tc_pupil.occ_hist>occthresh), smoothdata(tc_pupil.tc(1,(tc_pupil.occ_hist>occthresh))), 'k', 'LineWidth', 3);
 set(gca, 'FontSize', FontSize)
 title('Pupil Position (pixels)')
@@ -137,7 +141,7 @@ cfg_acf.smooth = 1; % set to 1 to compute ccf on SDF, 0 for raw spikes
 cfg_acf.gauss_w = 1; % width of Gaussian convolution window (in s)
 cfg_acf.gauss_sd = 0.005; % SD of Gaussian convolution window (in s)
 set(gca, 'TickDir', 'out', 'FontSize', FontSize)
-[acf, tvec] = ccf(cfg_acf, S.t{1}, S.t{1});
+[acf, tvec] = ccf(cfg_acf, sd.S.t{1}, sd.S.t{1});
 midpoint = ceil(length(acf)./2);
 acf(midpoint) = 0;
 plot(tvec, acf, 'LineWidth', 1);
@@ -155,7 +159,7 @@ cfg_acf.smooth = 1; % set to 1 to compute ccf on SDF, 0 for raw spikes
 cfg_acf.gauss_w = 1; % width of Gaussian convolution window (in s)
 cfg_acf.gauss_sd = 0.005; % SD of Gaussian convolution window (in s)
 set(gca, 'TickDir', 'out', 'FontSize', FontSize)
-[acf, tvec] = ccf(cfg_acf, S.t{1}, S.t{1});
+[acf, tvec] = ccf(cfg_acf, sd.S.t{1}, sd.S.t{1});
 midpoint = ceil(length(acf)./2);
 acf(midpoint) = 0;
 plot(tvec, acf, 'LineWidth', 1);
@@ -194,8 +198,8 @@ if doShow == 1
 end
 %% #10 HistISI
 p = subtightplot(6,6,10, [tightX tightY]); hold on
-[h, n] = HistISIsubplot(S.t{1});
-HistISIsubplot(S.t{1});
+[h, n] = HistISIsubplot(sd.S.t{1});
+HistISIsubplot(sd.S.t{1});
 c = axis;
 [~, i] = max(h);
 line([n(i) n(i)], [0 c(4)], 'color', 'k');
@@ -211,7 +215,8 @@ set(gca, 'XTick', [])
 p = subtightplot(6,6,15, [tightX tightY]); hold on
 % -----------------------------------------------------------------------------------------------------------------------------------------------------
 % -----------------------------------------------------------------------------------------------------------------------------------------------------
-laser_on = events_ts.t{1}-events_ts.t{2};                % this needs to be fixed. laser_on and laser_off occur at variable positions
+% laser_on = events_ts.t{1}-events_ts.t{2};                % this needs to be fixed. laser_on and laser_off occur at variable positions
+[start_time, stop_time, laser_on, laser_off, arraysize, difflaser] = SortBrainstemEventLabels3;
 % -----------------------------------------------------------------------------------------------------------------------------------------------------
 % -----------------------------------------------------------------------------------------------------------------------------------------------------
 cfg_laser.window = [-1.1 2];
@@ -220,10 +225,10 @@ cfg_laser.binsize = cfg_laser.dt; % used for gaussian kernal.  select a small bi
 cfg_laser.doPlot = 1;
 cfg_laser.doRaster = 1;
 cfg_laser.doBar = 0;
-[~, ~, ~, ~, ~] = SpikePETH_either(cfg_laser, S, laser_on); hold on
+[~, ~, ~, ~, ~] = SpikePETH_either(cfg_laser, sd.S, laser_on); hold on
 c = axis;
 rectangle(Position=[0,0,1,c(4)], FaceColor=[0 1 1], EdgeColor=[0 1 1])
-[~, ~, ~, ~, ~] = SpikePETH_either(cfg_laser, S, laser_on);  % this is a hack to get the background color 'in back'. otherwise it occludes the spikes.
+[~, ~, ~, ~, ~] = SpikePETH_either(cfg_laser, sd.S, laser_on);  % this is a hack to get the background color 'in back'. otherwise it occludes the spikes.
 set(gca, 'YTick', [])
 set(gca, 'FontSize', FontSize)
 title('Laser PETH', 'FontSize', FontSize)
@@ -273,12 +278,12 @@ subtightplot(6,6,7, [tightX tightY]); hold on
 cfg_1.doPlot = 0;
 cfg_1.window = [-2 2];
 cfg_1.dt = 0.05;
-[outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, S, nasal_timestamps_MOVING);
+[outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, sd.S, nasal_timestamps_MOVING);
 [mn1, edges] = histcounts(outputS_n, outputIT_n);
 plot(edges(1:end-1), mn1/cfg_1.dt/length(nasal_timestamps_MOVING), 'LineWidth', LineWidth); % this is a hack. should replace binedgges with bincenters
 
 hold on
-[outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, S, temporal_timestamps_MOVING);
+[outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, sd.S, temporal_timestamps_MOVING);
 [mt1, edges] = histcounts(outputS_t, outputIT_t);
 plot(edges(1:end-1), mt1/cfg_1.dt/length(temporal_timestamps_MOVING), 'LineWidth', LineWidth);
 c = axis;
@@ -295,13 +300,13 @@ subtightplot(6,6,8, [tightX tightY]); hold on
 cfg_1.doPlot = 0;
 cfg_1.window = [-2 2];
 cfg_1.dt = 0.005;
-[outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, S, nasal_timestamps_REST);
+[outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, sd.S, nasal_timestamps_REST);
 [mn2, edges] = histcounts(outputS_n, outputIT_n);
 plot(edges(1:end-1), mn2/cfg_1.dt/length(nasal_timestamps_MOVING), 'LineWidth', LineWidth);
 amax = max(mn2/cfg_1.dt/length(nasal_timestamps_MOVING));
 
 hold on
-[outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, S, temporal_timestamps_REST);
+[outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, sd.S, temporal_timestamps_REST);
 [mt2, edges] = histcounts(outputS_t, outputIT_t);
 plot(edges(1:end-1), smoothdata(mt2/cfg_1.dt/length(temporal_timestamps_MOVING)), 'LineWidth', LineWidth);
 bmax = max(smoothdata(mt2/cfg_1.dt/length(temporal_timestamps_MOVING)));
@@ -319,14 +324,14 @@ subtightplot(6,6,13, [tightX tightY]); hold on
 cfg_1.doPlot = 0;
 cfg_1.window = [-.2 .2];
 cfg_1.dt = 0.01;
-[outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, S, nasal_timestamps_MOVING);
+[outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, sd.S, nasal_timestamps_MOVING);
 [mn3, edges] = histcounts(outputS_n, outputIT_n);
 plot(edges(1:end-1), mn3/cfg_1.dt/length(nasal_timestamps_MOVING), 'LineWidth', LineWidth);
 amax = max( mn3/cfg_1.dt/length(nasal_timestamps_MOVING));
 set(gca, 'FontSize', FontSize)
 
 hold on
-[outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, S, temporal_timestamps_MOVING);
+[outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, sd.S, temporal_timestamps_MOVING);
 [mt3, edges] = histcounts(outputS_t, outputIT_t);
 plot(edges(1:end-1), mt3/cfg_1.dt/length(temporal_timestamps_MOVING), 'LineWidth', LineWidth);
 bmax = max(mt3/cfg_1.dt/length(temporal_timestamps_MOVING));
@@ -343,12 +348,12 @@ subtightplot(6,6,14, [tightX tightY]); hold on
 cfg_1.doPlot = 0;
 cfg_1.window = [-.2 .2];
 cfg_1.dt = 0.01;
-[outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, S, nasal_timestamps_REST);
+[outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, sd.S, nasal_timestamps_REST);
 [mn4, edges] = histcounts(outputS_n, outputIT_n);
 plot(edges(1:end-1), mn4/cfg_1.dt/length(nasal_timestamps_MOVING), 'LineWidth', LineWidth);
 amax = max(mn4/cfg_1.dt/length(nasal_timestamps_MOVING));
 hold on
-[outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, S, temporal_timestamps_REST);
+[outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, sd.S, temporal_timestamps_REST);
 [mt4, edges] = histcounts(outputS_t, outputIT_t);
 plot(edges(1:end-1), mt4/cfg_1.dt/length(temporal_timestamps_MOVING), 'LineWidth', LineWidth);
 bmax = max(mt4/cfg_1.dt/length(temporal_timestamps_MOVING));
@@ -396,7 +401,7 @@ t = title('AHV PETH', 'Units', 'normalized', 'Position', [0.5, 0.5, 0], 'FontSiz
 %%  #25:30 FIRING RATE and AHV
 plot7 = subtightplot(6,6,25:30, [tightX tightY]); hold on
 cfg_Q = []; cfg_Q.dt = 0.001; cfg_Q.gausswin_sd = 0.05;cfg_Q.smooth = 'gauss';
-Q = MakeQfromS(cfg_Q, S);
+Q = MakeQfromS(cfg_Q, sd.S);
 tvec = Q.tvec - Q.tvec(1);
 yyaxis left
 plot(Q.tvec, Q.data./cfg_Q.dt)
