@@ -29,6 +29,7 @@ cfg_def.LineWidth = 3;      % General line width for plotting
 
 cfg = ProcessConfig2(cfg_def, cfg_in);
 
+myCell = SelectTS([], sd.S, iCell);
 %% Is there Eyetracking data for this session?
 if exist(strcat(sd.SSN, '-VT1_proc.mat'))
     eye = 1;
@@ -107,7 +108,7 @@ if eye
     cfg_tc.occ_dt = median(diff(sd.tsdH.tvec));
     cfg_tc.minOcc = 10;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
     tc_pupil = TuningCurves(cfg_tc, sd.S, sd.tsdH);
-    plot(tc_pupil.binCenters(tc_pupil.occ_hist > cfg.occthresh), smoothdata(tc_pupil.tc(1,(tc_pupil.occ_hist > cfg.occthresh))), 'k', 'LineWidth', 3);
+    plot(tc_pupil.binCenters(tc_pupil.occ_hist > cfg.occthresh), smoothdata(tc_pupil.tc(iCell,(tc_pupil.occ_hist > cfg.occthresh))), 'k', 'LineWidth', 3);
     set(gca, 'FontSize', cfg.FontSize)
     title('Pupil Position (pixels)')
     % axis tight
@@ -130,7 +131,7 @@ cfg_acf.smooth = 1; % set to 1 to compute ccf on SDF, 0 for raw spikes
 cfg_acf.gauss_w = 1; % width of Gaussian convolution window (in s)
 cfg_acf.gauss_sd = 0.005; % SD of Gaussian convolution window (in s)
 set(gca, 'TickDir', 'out', 'FontSize', cfg.FontSize)
-[acf, tvec] = ccf(cfg_acf, sd.S.t{1}, sd.S.t{1});
+[acf, tvec] = ccf(cfg_acf, sd.S.t{iCell}, sd.S.t{iCell});
 midpoint = ceil(length(acf)./2);
 acf(midpoint) = 0;
 plot(tvec, acf, 'LineWidth', 1);
@@ -148,7 +149,7 @@ cfg_acf.smooth = 1; % set to 1 to compute ccf on SDF, 0 for raw spikes
 cfg_acf.gauss_w = 1; % width of Gaussian convolution window (in s)
 cfg_acf.gauss_sd = 0.005; % SD of Gaussian convolution window (in s)
 set(gca, 'TickDir', 'out', 'FontSize', cfg.FontSize)
-[acf, tvec] = ccf(cfg_acf, sd.S.t{1}, sd.S.t{1});
+[acf, tvec] = ccf(cfg_acf, sd.S.t{iCell}, sd.S.t{iCell});
 midpoint = ceil(length(acf)./2);
 acf(midpoint) = 0;
 plot(tvec, acf, 'LineWidth', 1);
@@ -181,9 +182,11 @@ if exist(WheelencoderCSC)
     % Plot the raw speed data
     z = sd.speed.data > cfg.speedthresh | sd.speed.data < -cfg.speedthresh;  % remove data at very low speeds
     plot(sd.speed.data(z), tsdH_F(1,z), '.', 'MarkerSize', .5, 'color', [.8 .8 .8]); hold on
-    h = lsline;
-    set(h(1), 'Color', 'k')
-    set(h(1), 'LineWidth', 2)
+    if ~isempty(sd.speed.data(z));
+        h = lsline;
+        set(h(1), 'Color', 'k')
+        set(h(1), 'LineWidth', 2)
+    end
     
     % Plot a regression line, overlaid
     speeddata = sd.speed.data(z)';
@@ -201,7 +204,7 @@ if exist(WheelencoderCSC)
     cfg_tc.occ_dt = median(diff(sd.speed.tvec));
     cfg_tc.minOcc = 1;  % remember that Occ is measured in samples (usually 5ms per sample), not in seconds
     tc_speed = TuningCurves(cfg_tc, sd.S, sd.speed);
-    plot(tc_speed.binCenters(tc_speed.occ_hist > cfg.occthresh), smoothdata(tc_speed.tc(1,(tc_speed.occ_hist > cfg.occthresh))), 'k', 'LineWidth', 3);
+    plot(tc_speed.binCenters(tc_speed.occ_hist > cfg.occthresh), smoothdata(tc_speed.tc(iCell,(tc_speed.occ_hist > cfg.occthresh))), 'k', 'LineWidth', 3);
     axis tight
     yyaxis left
     set(gca, 'YTick', [])
@@ -249,11 +252,11 @@ if eye
     cfg_1.doPlot = 0;
     cfg_1.window = [-2 2];
     cfg_1.dt = 0.05;
-    [outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, sd.S, sd.nasal_timestamps_MOVING);
+    [outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, myCell, sd.nasal_timestamps_MOVING);
     [mn1, edges] = histcounts(outputS_n, outputIT_n);
     plot(edges(1:end-1), mn1/cfg_1.dt/length(sd.nasal_timestamps_MOVING), 'LineWidth', cfg.LineWidth); % this is a hack. should replace binedgges with bincenters
     hold on
-    [outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, sd.S, sd.temporal_timestamps_MOVING);
+    [outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, myCell, sd.temporal_timestamps_MOVING);
     [mt1, edges] = histcounts(outputS_t, outputIT_t);
     plot(edges(1:end-1), mt1/cfg_1.dt/length(sd.temporal_timestamps_MOVING), 'LineWidth', cfg.LineWidth);
     c = axis;
@@ -273,13 +276,13 @@ if eye
         cfg_1.doPlot = 0;
         cfg_1.window = [-2 2];
         cfg_1.dt = 0.005;
-        [outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, sd.S, sd.nasal_timestamps_REST);
+        [outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, myCell, sd.nasal_timestamps_REST);
         [mn2, edges] = histcounts(outputS_n, outputIT_n);
         plot(edges(1:end-1), mn2/cfg_1.dt/length(sd.nasal_timestamps_MOVING), 'LineWidth', cfg.LineWidth);
         amax = max(mn2/cfg_1.dt/length(sd.nasal_timestamps_MOVING));
         
         hold on
-        [outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, sd.S, sd.temporal_timestamps_REST);
+        [outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, myCell, sd.temporal_timestamps_REST);
         [mt2, edges] = histcounts(outputS_t, outputIT_t);
         plot(edges(1:end-1), smoothdata(mt2/cfg_1.dt/length(sd.temporal_timestamps_MOVING)), 'LineWidth', cfg.LineWidth);
         bmax = max(smoothdata(mt2/cfg_1.dt/length(sd.temporal_timestamps_MOVING)));
@@ -311,13 +314,14 @@ c = axis;
 axis([-2 2 c(3) c(4)])
 line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '-')
 legend('nasal', 'temporal', '', 'FontSize', cfg.smallfont)
-set(gca, 'XTick', [-2 2])
+set(gca, 'XTick', [-2 0 2])
 title('AHV PETH', 'Units', 'normalized', 'Position', [0.5, 0.5, 0], 'FontSize', cfg.FontSize);
 
 %% #10 HistISI
 p = subtightplot(6,6,10, [cfg.tightX cfg.tightY]); hold on
-[h, n] = HistISIsubplot(sd.S.t{1});
-HistISIsubplot(sd.S.t{1});
+% [h, n] = HistISIsubplot(sd.S.t{1});
+[h, n] = HistISIsubplot(myCell.t{1});
+HistISIsubplot(myCell.t{1});
 c = axis;
 [~, i] = max(h);
 line([n(i) n(i)], [0 c(4)], 'color', 'k');
@@ -326,8 +330,11 @@ set(gca, 'TickDir', 'out', 'XLim', [cfg.histXmin cfg.histXmax], 'FontSize', cfg.
 title('HIST ISI', 'Units', 'normalized', 'Position', [0.5, 0.5, 0], 'FontSize', cfg.FontSize);
 set(gca, 'XTick', [])
 
-%% #10 laser-triggered EYE movement
+%% #11 laser-triggered EYE movement
 subtightplot(6,6,11, [cfg.tightX cfg.tightY]); hold on
+set(gca, 'XTick', [])
+set(gca, 'YTick', [])
+
 % out: tsd with PETH
 % cfg options:
 %
@@ -335,17 +342,37 @@ subtightplot(6,6,11, [cfg.tightX cfg.tightY]); hold on
 %     if cfg.doLaser == 1
 %         [~, ~, laser_on, laser_off, arraysize, ~] = SortBrainstemEventLabels3;
 %         dur = mode(laser_off - laser_on);
-%         
+%
 %         cfg_eye.window = [-2 2];
 %         cfg_eye.dt = .1;
 %         title('Laser-Aligned Eye Movement')
-%         out = TSDpeth(cfg_eye, sd.tsdH, laser_on);   
+%         out = TSDpeth(cfg_eye, sd.tsdH, laser_on);
 %     end
 % end
-%% #11 BLANK
+%% #12 ExpKeys Info
 
-%% #12 BLANK
+% % ExpKeys.MarkingLesion.made = 1;
+% if isfield(sd.ExpKeys.Lesion, 'present'); MLp = 0; end
+% if isfield(sd.ExpKeys.MarkingLesion, 'present'); MLp = 1; end
 
+set(gca, 'XTick', [])
+set(gca, 'YTick', [])
+if length(sd.ExpKeys.LesionStructureConfirmed) > 0
+    text(.1, .9, strcat('Confirmed= ', sd.ExpKeys.LesionStructureConfirmed{iCell}))
+end
+if  ~isempty(sd.ExpKeys.RecordingStructureBestGuess)
+    text(.1, .9, strcat('BestGuess= ', sd.ExpKeys.RecordingStructureBestGuess{iCell}))
+    % end
+    % text(.1, .75, strcat('LesionMade= ', num2str(sd.ExpKeys.MarkingLesion.made)))
+    % if MLp == 0; text(.1, .6, strcat('LesionPresent= ', num2str(sd.ExpKeys.Lesion.present))); end
+    % if MLp == 1; text(.1, .6, strcat('MarkingLesionPresent= ', num2str(sd.ExpKeys.MarkingLesion.present))); end
+    
+    % text(.1, .45, strcat('DIOlabel= ', num2str(sd.ExpKeys.DIOlabel)))
+    % text(.1, .3, strcat('DIOpresent= ', num2str(sd.ExpKeys.DIOpresent)))
+    % text(.1, .15, strcat('LaserOn= ', num2str(sd.ExpKeys.LaserOn)))
+    % text(.6, .15, strcat('IgnoreOpto= ', num2str(sd.ExpKeys.IgnoreOpto)))
+    
+end
 %% #13 MOVING SACCADE peth: narrow
 if eye
     subtightplot(6,6,13, [cfg.tightX cfg.tightY]); hold on
@@ -353,14 +380,14 @@ if eye
         cfg_1.doPlot = 0;
         cfg_1.window = [-.2 .2];
         cfg_1.dt = 0.01;
-        [outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, sd.S, sd.nasal_timestamps_MOVING);
+        [outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, myCell, sd.nasal_timestamps_MOVING);
         [mn3, edges] = histcounts(outputS_n, outputIT_n);
         plot(edges(1:end-1), mn3/cfg_1.dt/length(sd.nasal_timestamps_MOVING), 'LineWidth', cfg.LineWidth);
         amax = max( mn3/cfg_1.dt/length(sd.nasal_timestamps_MOVING));
         set(gca, 'FontSize', cfg.FontSize)
         
         hold on
-        [outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, sd.S, sd.temporal_timestamps_MOVING);
+        [outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, myCell, sd.temporal_timestamps_MOVING);
         [mt3, edges] = histcounts(outputS_t, outputIT_t);
         plot(edges(1:end-1), mt3/cfg_1.dt/length(sd.temporal_timestamps_MOVING), 'LineWidth', cfg.LineWidth);
         bmax = max(mt3/cfg_1.dt/length(sd.temporal_timestamps_MOVING));
@@ -380,12 +407,12 @@ if eye
         cfg_1.doPlot = 0;
         cfg_1.window = [-.2 .2];
         cfg_1.dt = 0.01;
-        [outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, sd.S, sd.nasal_timestamps_REST);
+        [outputS_n, ~, ~, outputIT_n, ~] = SpikePETH_either(cfg_1, myCell, sd.nasal_timestamps_REST);
         [mn4, edges] = histcounts(outputS_n, outputIT_n);
         plot(edges(1:end-1), mn4/cfg_1.dt/length(sd.nasal_timestamps_MOVING), 'LineWidth', cfg.LineWidth);
         amax = max(mn4/cfg_1.dt/length(sd.nasal_timestamps_MOVING));
         hold on
-        [outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, sd.S, sd.temporal_timestamps_REST);
+        [outputS_t, ~, ~, outputIT_t, ~] = SpikePETH_either(cfg_1, myCell, sd.temporal_timestamps_REST);
         [mt4, edges] = histcounts(outputS_t, outputIT_t);
         plot(edges(1:end-1), mt4/cfg_1.dt/length(sd.temporal_timestamps_MOVING), 'LineWidth', cfg.LineWidth);
         bmax = max(mt4/cfg_1.dt/length(sd.temporal_timestamps_MOVING));
@@ -413,10 +440,10 @@ if cfg.doLaser == 1
         cfg_laser.doPlot = 1;
         cfg_laser.doRaster = 1;
         cfg_laser.doBar = 0;
-        [~, ~, ~, ~, ~] = SpikePETH_either(cfg_laser, sd.S, laser_on); hold on
+        [~, ~, ~, ~, ~] = SpikePETH_either(cfg_laser, myCell, laser_on); hold on
         c = axis;
         rectangle(Position = [0, 0, dur, c(4)], FaceColor=[0 1 1], EdgeColor=[0 1 1])    % change the 3rd entry in rectangle to the diff of laser_off and laser_on
-        [~, ~, ~, ~, ~] = SpikePETH_either(cfg_laser, sd.S, laser_on);  % repeating spikepeth here is a hack to get the background color 'in back'. otherwise it occludes the spikes.
+        [~, ~, ~, ~, ~] = SpikePETH_either(cfg_laser, myCell, laser_on);  % repeating spikepeth here is a hack to get the background color 'in back'. otherwise it occludes the spikes.
         line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'w')
         line([1 1], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'w')
         set(gca, 'YTick', [])
@@ -431,7 +458,7 @@ if cfg.doLaser == 1
         cfg_laser.doPlot = 0;
         cfg_laser.doRaster = 0;
         cfg_laser.doBar = 0;
-        [outputS_laser, ~, ~, outputIT_laser, ~] = SpikePETH_either(cfg_laser, sd.S, laser_on);
+        [outputS_laser, ~, ~, outputIT_laser, ~] = SpikePETH_either(cfg_laser, myCell, laser_on);
         m = histc(outputS_laser, outputIT_laser);
         yyaxis right
         if ~isempty(outputS_laser)
@@ -460,10 +487,10 @@ if cfg.doLaser == 1
         cfg_dummy.doPlot = 1;
         cfg_dummy.doRaster = 1;
         cfg_dummy.doBar = 0;
-        [~, ~, ~, ~, ~] = SpikePETH_either(cfg_dummy, sd.S, sound_times); hold on
+        [~, ~, ~, ~, ~] = SpikePETH_either(cfg_dummy, myCell, sound_times); hold on
         c = axis;
         rectangle(Position = [0, 0, dur, c(4)], FaceColor=[0 .9 .4], EdgeColor=[0 .9 .4])    % change the 3rd entry in rectangle to the diff of laser_off and laser_on
-        [~, ~, ~, ~, ~] = SpikePETH_either(cfg_dummy, sd.S, sound_times);  % this is a hack to get the background color 'in back'. otherwise it occludes the spikes.
+        [~, ~, ~, ~, ~] = SpikePETH_either(cfg_dummy, myCell, sound_times);  % this is a hack to get the background color 'in back'. otherwise it occludes the spikes.
         line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'w')
         line([1 1], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--', 'Color', 'w')
         set(gca, 'YTick', [])
@@ -478,7 +505,7 @@ if cfg.doLaser == 1
         cfg_dummy.doPlot = 0;
         cfg_dummy.doRaster = 0;
         cfg_dummy.doBar = 0;
-        [outputS_dummy, ~, ~, outputIT_dummy, ~] = SpikePETH_either(cfg_dummy, sd.S, sound_times);
+        [outputS_dummy, ~, ~, outputIT_dummy, ~] = SpikePETH_either(cfg_dummy, myCell, sound_times);
         m = histc(outputS_dummy, outputIT_dummy); %#ok<*HISTC>
         % m = histcounts(outputS, outputIT);
         yyaxis right
@@ -538,9 +565,10 @@ p.YAxisLocation = 'right';
 
 %% #18 Session ID
 subtightplot(6,6, 18, [cfg.tightX cfg.tightY]);
-title(newID, 'Color', 'r', 'FontSize', 20)
+% title(newID, 'Color', 'r', 'FontSize', 20)
 set(gca, 'XTick', [])
 set(gca, 'YTick', [])
+text(.02, .9, newID, 'Color', 'r', 'FontSize', 16)
 
 %% #19:24 WHEEL SPEED and AHV
 plot19 = subtightplot(6,6,19:24, [cfg.tightX cfg.tightY]);
@@ -574,7 +602,7 @@ end
 %%  #25:30 FIRING RATE and AHV
 plot25 = subtightplot(6,6,25:30, [cfg.tightX cfg.tightY]); hold on
 cfg_Q = []; cfg_Q.dt = 0.001; cfg_Q.gausswin_sd = 0.05;cfg_Q.smooth = 'gauss';
-Q = MakeQfromS(cfg_Q, sd.S);
+Q = MakeQfromS(cfg_Q, myCell);
 tvec = Q.tvec - Q.tvec(1);
 yyaxis left
 h = plot(Q.tvec, Q.data./cfg_Q.dt);
