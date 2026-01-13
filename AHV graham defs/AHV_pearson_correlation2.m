@@ -227,3 +227,15 @@ X.slopeIsGood = slopeIsGood;
 X.rIsGood = rIsGood;
 X.bothIsGood = bothIsGood;
 toc
+
+% JJS. 1/11/2026. 
+% % Determine "preferred" side. Which side has greater (absolute) slope?
+% for iNeuron = 1:length(tfilelist)
+%     AHV_pref(iNeuron) = 
+%     
+%     
+    
+    
+    
+    
+    

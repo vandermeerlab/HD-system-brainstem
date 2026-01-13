@@ -58,7 +58,7 @@ for iNeuron = 1:length(tfilelist)
     else
         error('issue with neuron designation')
     end
-    %% Calculate IPSI Saccades
+    %% Calculate Preferred Saccades
     cfg_in = [];
     cfg_in.doPlot = 0;
     cfg_in.doBar = 0;
@@ -70,7 +70,7 @@ for iNeuron = 1:length(tfilelist)
     mPreferred = histcounts(outputPreferred, outputIT_preferred);
     FR_preferred(iNeuron,:) = mPreferred/cfg.dt/length(preferred_saccades);
     
-    %% Calculate CONTRA Saccades
+    %% Calculate nonPreferred Saccades
     [outputNonPreferred, ~, ~, outputIT_nonpreferred, ~] = SpikePETHvdm(cfg_in, myCell, nonpreferred_saccades, 'doPlot', doPlot);
     mNonPreferred = histcounts(outputNonPreferred, outputIT_nonpreferred);
     FR_nonpreferred(iNeuron,:) = mNonPreferred/cfg.dt/length(nonpreferred_saccades);

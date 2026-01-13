@@ -1,42 +1,28 @@
-title('This_title has an underline', 'Interpreter', 'none');
-
-
-
-cellcounter = 0;
-fd = FindFiles('*keys.m');
-for iSess = 1:length(fd)
-    pushdir(fileparts(fd{iSess}))
-    SSN = HD_GetSSN; disp(SSN);
-    spikefiles = FindFiles('*.t');
-    [a b c] = fileparts(spikefiles);
-    ind = strfind(b, 'TT');
-    for iCell = 1:length(ind);
-        cellcounter = cellcounter + 1;
-        tt_place(iCell) = b{iCell}(ind{iCell}+3);
-    end
-    popdir;
-end
-arrayfun(@(s) set(s,'EdgeColor','none'), findobj(gcf,'type','surface'))
-
-
-fd = FindFiles('*keys.m');
-temporalSaccades = nan(1,length(fd));
-nasalSaccades = nan(1,length(fd));
-for iSess = 1:length(fd)
-    pushdir(fileparts(fd{iSess}))
-    SSN = HD_GetSSN; disp(SSN);
-    sd = LoadSessionData([], 'EYE', false);
-    if exist(strcat(SSN, '-VT1.nvt')) == 2;
-    [temporalSaccades(iSess), nasalSaccades(iSess), combinedSaccades(iSess), index_tP_final, index_nP_final, tsdH, tsdV, diffH, diffV] = processPupilData2([]);
-    else
-        disp('skipping')
-    end
-    popdir;
+clf
+for iNeuron = 1:104;
+    plot(TC_out{iNeuron}.tc)
+    title(num2str(iNeuron))
+    disp('press any key')
+    pause
 end
 
 
-    t = temporalSaccades;
-    cfg_in = [];
-    cfg_in.window = [-.5 .5];
-    cfg_in.dt = 0.005;
-    [outputS, outputT, outputGau, outputIT, cfg] = SpikePETHvdm(cfg_in, S, t); 
+box off
+set(gca, 'FontSize', 18)
+set(gca, 'TickDir', 'out');
+ylabel('Firing Rate (Hz)')
+xlabel('Time (s)')
+c = axis;
+line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '-', 'Color', 'k');
+
+
+box off
+set(gca, 'FontSize', 18)
+set(gca, 'TickDir', 'out');
+axis([-210 210 0 175]);
+c = axis;
+line([0 0], [c(3) c(4)], 'Color', 'k', 'LineWidth', 1, 'LineStyle', '-', 'Color', 'k');
+ylabel('Firing Rate (Hz)')
+xlabel('AHV (deg/s)')
+
+

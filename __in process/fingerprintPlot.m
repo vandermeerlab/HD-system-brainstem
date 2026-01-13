@@ -357,21 +357,24 @@ set(gca, 'YTick', [])
 
 set(gca, 'XTick', [])
 set(gca, 'YTick', [])
-if length(sd.ExpKeys.LesionStructureConfirmed) > 0
-    text(.1, .9, strcat('Confirmed= ', sd.ExpKeys.LesionStructureConfirmed{iCell}))
+if isfield(sd.ExpKeys, 'LesionStructureConfirmed')
+    if length(sd.ExpKeys.LesionStructureConfirmed) > 0
+        text(.1, .9, strcat('Confirmed= ', sd.ExpKeys.LesionStructureConfirmed{iCell}))
+    end
 end
-if  ~isempty(sd.ExpKeys.RecordingStructureBestGuess)
-    text(.1, .9, strcat('BestGuess= ', sd.ExpKeys.RecordingStructureBestGuess{iCell}))
-    % end
-    % text(.1, .75, strcat('LesionMade= ', num2str(sd.ExpKeys.MarkingLesion.made)))
-    % if MLp == 0; text(.1, .6, strcat('LesionPresent= ', num2str(sd.ExpKeys.Lesion.present))); end
-    % if MLp == 1; text(.1, .6, strcat('MarkingLesionPresent= ', num2str(sd.ExpKeys.MarkingLesion.present))); end
-    
-    % text(.1, .45, strcat('DIOlabel= ', num2str(sd.ExpKeys.DIOlabel)))
-    % text(.1, .3, strcat('DIOpresent= ', num2str(sd.ExpKeys.DIOpresent)))
-    % text(.1, .15, strcat('LaserOn= ', num2str(sd.ExpKeys.LaserOn)))
-    % text(.6, .15, strcat('IgnoreOpto= ', num2str(sd.ExpKeys.IgnoreOpto)))
-    
+if isfield(sd.ExpKeys, 'RecordingStructureBestGuess')
+    if  ~isempty(sd.ExpKeys.RecordingStructureBestGuess)
+        text(.1, .9, strcat('BestGuess= ', sd.ExpKeys.RecordingStructureBestGuess{iCell}))
+        % end
+        % text(.1, .75, strcat('LesionMade= ', num2str(sd.ExpKeys.MarkingLesion.made)))
+        % if MLp == 0; text(.1, .6, strcat('LesionPresent= ', num2str(sd.ExpKeys.Lesion.present))); end
+        % if MLp == 1; text(.1, .6, strcat('MarkingLesionPresent= ', num2str(sd.ExpKeys.MarkingLesion.present))); end
+        
+        % text(.1, .45, strcat('DIOlabel= ', num2str(sd.ExpKeys.DIOlabel)))
+        % text(.1, .3, strcat('DIOpresent= ', num2str(sd.ExpKeys.DIOpresent)))
+        % text(.1, .15, strcat('LaserOn= ', num2str(sd.ExpKeys.LaserOn)))
+        % text(.6, .15, strcat('IgnoreOpto= ', num2str(sd.ExpKeys.IgnoreOpto)))
+    end
 end
 %% #13 MOVING SACCADE peth: narrow
 if eye

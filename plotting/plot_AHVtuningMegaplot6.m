@@ -33,7 +33,7 @@ spikefiles = FindFiles('*.t');
 cfg.fc = {spikefiles{iCell}};
 
 % Sold = LoadSpikes(cfg);   %% This is superceded by the loading function     sd = LoadSessionData([]);
-% 
+%
 % if subtractStartTime == 1 % New cheetah versions have timestamps
 %     if exist('events_ts.mat') == 2
 %         load('events_ts.mat');
@@ -52,8 +52,17 @@ cfg.fc = {spikefiles{iCell}};
 %         end
 %     end
 % end
+if exist('events_ts.mat') == 2
+    load('events_ts.mat');
+else
+    events_ts = LoadEvents([]);
+end
+wrapper = @(events_ts) strcmp(events_ts, 'Starting Recording');
+A = cellfun(wrapper, events_ts.label);
+Startindex = find(A); % index which label says 'Start Recording'
+starttime = events_ts.t{Startindex}(1); % use the very first start record time
 
-sd = LoadSessionData([]);   % JJS. Added 2025-09-20. 
+sd = LoadSessionData([]);   % JJS. Added 2025-09-20.
 
 % get AHV Tuning Curve
 cfg_AHV = [];
@@ -220,7 +229,7 @@ p = subtightplot(6,6,15, [tightX tightY]); hold on
 % -----------------------------------------------------------------------------------------------------------------------------------------------------
 % -----------------------------------------------------------------------------------------------------------------------------------------------------
 cfg_laser.window = [-1.1 2];
-cfg_laser.dt = 0.01;
+cfg_laser.dt = 0.05;
 cfg_laser.binsize = cfg_laser.dt; % used for gaussian kernal.  select a small bin size for good time resolution
 cfg_laser.doPlot = 1;
 cfg_laser.doRaster = 1;
@@ -228,13 +237,17 @@ cfg_laser.doBar = 0;
 [~, ~, ~, ~, ~] = SpikePETH_either(cfg_laser, sd.S, laser_on); hold on
 c = axis;
 rectangle(Position=[0,0,1,c(4)], FaceColor=[0 1 1], EdgeColor=[0 1 1])
-[~, ~, ~, ~, ~] = SpikePETH_either(cfg_laser, sd.S, laser_on);  % this is a hack to get the background color 'in back'. otherwise it occludes the spikes.
+[outputS, outputT, outputGau, outputIT, cfg] = SpikePETH_either(cfg_laser, sd.S, laser_on);  % this is a hack to get the background color 'in back'. otherwise it occludes the spikes.
 set(gca, 'YTick', [])
 set(gca, 'FontSize', FontSize)
 title('Laser PETH', 'FontSize', FontSize)
 set(gca, 'XTick', [-1 0 1 2])
 
-%% #16 Laser PETH
+yyaxis right
+m = histc(outputS, outputIT);
+plot(outputIT,smoothdata(m/cfg.dt/length(laser_on)), 'LineWidth', 6);
+
+%% #16 Laser waveform
 p = subtightplot(6,6,16, [tightX tightY]); hold on
 title('Average Waveform', 'FontSize', FontSize)
 waveName = strcat(otherID, '-wv.mat');

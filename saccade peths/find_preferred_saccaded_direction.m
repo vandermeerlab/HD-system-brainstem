@@ -136,7 +136,6 @@ assert(numNasal + numTemporal == length(tfilelist));
 
 
 %%
-cd('D:\Jeff\U01\analysis\_daily plots\2025-04-07 preferred-nonpreferred\pref-non-pref saccade peths')
 if doPlotMeans
     %
     for iNeuron = 1:length(tfilelist)

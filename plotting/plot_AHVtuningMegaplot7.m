@@ -221,7 +221,7 @@ cfg_laser.binsize = cfg_laser.dt; % used for gaussian kernal.  select a small bi
 cfg_laser.doPlot = 1;
 cfg_laser.doRaster = 1;
 cfg_laser.doBar = 0;
-[~, ~, ~, ~, ~] = SpikePETH_either(cfg_laser, S, laser_on); hold on
+[outputS, outputT, outputGau, outputIT, cfg] = SpikePETH_either(cfg_laser, S, laser_on); hold on
 c = axis;
 rectangle(Position = [0, 0, dur, c(4)], FaceColor=[0 1 1], EdgeColor=[0 1 1])    % change the 3rd entry in rectangle to the diff of laser_off and laser_on
 [~, ~, ~, ~, ~] = SpikePETH_either(cfg_laser, S, laser_on);  % this is a hack to get the background color 'in back'. otherwise it occludes the spikes.
@@ -229,6 +229,10 @@ set(gca, 'YTick', [])
 set(gca, 'FontSize', FontSize)
 title('Laser PETH', 'FontSize', FontSize)
 set(gca, 'XTick', [-1 0 1 2])
+
+yyaxis right
+m = histc(outputS, outputIT);
+plot(outputIT,smoothdata(m/cfg.dt/length(laser_on)), 'LineWidth', 6);
 
 %% #16 Average Waveform
 p = subtightplot(6,6,16, [tightX tightY]); hold on

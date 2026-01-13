@@ -21,7 +21,8 @@ AHV_tsd = GetAHV_values(hd_ss_tsd);
 % I can see a number of use cases where you want to get AHV but don't care
 % about tuning curves.
 
-cfg_TC.occ_dt = median(diff(AHV_tsd.tvec));
+cfg_to_use.occ_dt = median(diff(AHV_tsd.tvec));
 tc_out = TuningCurves(cfg_to_use, S, AHV_tsd);
 
+cfg_TC = cfg_to_use;
 end

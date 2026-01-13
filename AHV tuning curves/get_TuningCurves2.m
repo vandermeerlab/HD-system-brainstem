@@ -6,6 +6,7 @@ function [TC_all, TC_norm, TC_cellID, sessCounter] = get_TuningCurves2(cfg_in, t
 % Outputs:
 %           sessCounter: how many sessions the function went in to to generate the data. This should equal 109 for NPH neurons (as of 2024-10-01).
 
+doPlot = 0;
 subtractStartTime = 1;
 cfg_def = [];
 cfg = ProcessConfig(cfg_def,cfg_in);
@@ -65,17 +66,25 @@ for iCell = 1:size(TC_all.tc,1)
     TC_norm.tc(iCell,:) = TC_all.tc(iCell,:)./max(TC_all.tc(iCell,:));
 end
 
-[M, I] = max(TC_all.tc');
-[B, isort] = sort(I);
-imagesc(TC_all.bins(1,:), 1:length(TC_norm.tc), TC_norm.tc(isort, :))
-cmap = parula(256);
-% Make lowest one white
-cmap(1,:) = 0;
-colormap(cmap);
-xlabel('time (sec)')
-ylabel('neuron #')
-set(gca, 'FontSize', 30)
+if doPlot == 0
+    [M, I] = max(TC_all.tc');
+    [B, isort] = sort(I);
+    imagesc(TC_all.bins(1,:), 1:length(TC_norm.tc), TC_norm.tc(isort, :))
+    cmap = parula(256);
+    % Make lowest one white
+    cmap(1,:) = 0;
+    colormap(cmap);
+    xlabel('time (sec)')
+    ylabel('neuron #')
+    set(gca, 'FontSize', 30)
+end
 
+AHVtc_norm_pref = TC_norm.tc;
+AHVtc_norm_pref(toflipnums,:) = fliplr(AHVtc_norm_pref(toflipnums,:));
+optoAHVtc_norm_pref = AHVtc_norm_pref(optofilelist,:);
 
-
-
+clf
+h = pcolor(TC_all.bins(1,:), 1:8, optoAHVtc_norm_pref_pad);
+set(h, 'EdgeColor', 'none');
+set(gca, 'Color', 'black');
+set(gca, 'YDir', 'reverse');

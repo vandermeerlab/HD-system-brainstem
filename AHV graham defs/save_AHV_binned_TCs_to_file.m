@@ -6,7 +6,7 @@ function [TC_out, TC_out_cat, normTC, normTCsmoothed, neuronList, binCenters, so
 doPlotCW = 0;
 doPlotIPSI = 0;
 doPlotPreferred = 0;
-doSave = 1;
+doSave = 0;
 if isempty(tfilelist)
     tfilelist = FindFiles('*.t');
 end
@@ -47,8 +47,10 @@ for iNeuron = startNeuron : endNeuron
     cfg_AHV.binEdges = {linspace(-204, 204, cfg_AHV.nBins)};  % cfg_AHV.binEdges(36) == 0.
     cfg_AHV.binSize = median(diff(cfg_AHV.binEdges{1}));
     
-    [AHV_tsd, tc_out, ~]  = AHV_tuning(cfg_AHV, myCell); % position of 'cfg' and 'S' got reversed at some point
-    cfg_AHV.occ_dt = median(diff(AHV_tsd.tvec));
+    [AHVtsd, ~] = get_AHVtsd([]);
+    cfg_AHV.occ_dt = median(diff(AHVtsd.tvec));
+    [~, tc_out, ~]  = AHV_tuning(cfg_AHV, myCell); % position of 'cfg' and 'S' got reversed at some point
+    
     
     binCenters = tc_out.binCenters;
     TC_out{iNeuron} = tc_out;
