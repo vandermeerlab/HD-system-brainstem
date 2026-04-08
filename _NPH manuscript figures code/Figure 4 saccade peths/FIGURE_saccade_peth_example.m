@@ -1,11 +1,12 @@
+function FIGURE_saccade_peth_example(sd)
 %%
 rng(0)
-cd('C:\Jeff\U01\datatouse\M052\M052-2020-09-04');
-sd = LoadSessionData([]);
-
+% cd('C:\Jeff\U01\datatouse\M282\M282-2022-02-10');
+% sd = LoadSessionData([]);
+clf
 cfg_master = [];
-cfg_master.iCell = 1; % which cell to plot
-cfg_master.nSaccades = 10; % if empty, plot all; if some number N, pick N random saccades
+cfg_master.iCell = 2; % which cell to plot
+cfg_master.nSaccades = []; % if empty, plot all; if some number N, pick N random saccades
 
 %% Top Left Subplot. Do TEMPORAL saccades first 
 cfg_peth = [];
@@ -95,10 +96,8 @@ cfg_peth.doPlot = 0;
 
 subplot(224)
 for iT = 1:length(keep_idx)
-
     this_idx = find(outputT == keep_idx(iT)); % spikePETH idxs for this trial
     plot(outputS(this_idx), iT, '|k', 'MarkerSize', 20); hold on;
-
 end
 set(gca, 'XLim', cfg_peth.window, 'TickDir', 'out', 'FontSize', 24, 'XTick', [-0.25:0.125:0.25], 'XTickLabel', {'-0.25', '', '0', '', '0.25'}, 'YTick', [], 'YColor', [1 1 1]); box off;
 ax = gca; ax.YAxis.Visible = 'off'; ax.Color = 'none'

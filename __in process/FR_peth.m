@@ -10,7 +10,7 @@ function [FR, bins]  = FR_peth(cfg_in, S, t)
 %           - 
 %           -
 doPlot = 1;
-cfg_def.window = [-1 2];
+cfg_def.window = [-.2 .2];
 cfg_def.dt = 0.01;
 cfg_def.excessBounds = 1;
 cfg = ProcessConfig2(cfg_def, cfg_in);

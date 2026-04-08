@@ -1,3 +1,5 @@
+function [] = plot_laser_PETH(sd, iCell)
+FontSize = 16;
 %% #15 Laser PETH
 % p = subtightplot(6,6,15, [tightX tightY]); hold on
 % -----------------------------------------------------------------------------------------------------------------------------------------------------
@@ -7,8 +9,7 @@
 
 dur = mode(laser_off(1:arraysize) - laser_on(1:arraysize));
 
- sd = LoadSessionData([]);  
-iCell = 2;
+%  sd = LoadSessionData([]);  
 myCell = SelectTS([], sd.S, iCell);
 
 %%
@@ -38,4 +39,12 @@ cfg_laser.doBar = 0;
 [outputS, outputT, outputGau, outputIT, cfg] = SpikePETH_either(cfg_laser, myCell, laser_on);
 m = histc(outputS, outputIT);
 yyaxis right
-plot(outputIT,m/cfg.dt/length(laser_on), 'LineWidth', 6);
+laser_evoked_avereage_FR = m/cfg.dt/length(laser_on);
+plot(outputIT(1:end-1), laser_evoked_avereage_FR(1:end-1), 'LineWidth', 6, 'Color', 'r');
+box off
+set(gca, 'FontSize', 18)
+set(gca, 'TickDir', 'out');
+xlabel('Time (s)')
+ylabel('Firing Rate (Hz)', 'Color', 'r')
+ax = gca();
+ax.YAxis(2).Color = 'r'; % Sets right axis, ticks, and labels to red

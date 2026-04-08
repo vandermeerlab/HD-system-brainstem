@@ -1,3 +1,7 @@
+function plot_AHV_TC_w_raw_data(sd, iCell)
+
+SSN = HD_GetSSN; disp(SSN);
+FontSize = 18;
 % Load Spikes
 cfg = [];
 cfg.uint = '64';
@@ -5,6 +9,7 @@ spikefiles = FindFiles('*.t');
 cfg.fc = {spikefiles{iCell}};
 Sold = LoadSpikes(cfg);
 
+subtractStartTime = 1;
 if subtractStartTime == 1 % New cheetah versions have timestamps
     if exist('events_ts.mat') == 2
         load('events_ts.mat');
@@ -52,7 +57,7 @@ c = axis;
 axis([-175 175 0 c(4)]);
 
 LineWidth = 5;
-plot(tc_out.binCenters, tc_out.tc, 'LineWidth', LineWidth, 'Color', 'k');
+plot(tc_out.binCenters, smoothdata(tc_out.tc), 'LineWidth', LineWidth, 'Color', 'k');
 
 
 

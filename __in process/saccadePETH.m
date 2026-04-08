@@ -89,6 +89,7 @@ if cfg.doPlot == 1
         ylabel('FR (Hz)')
         xlabel('peri-event (sec)');
         set(gca, 'FontSize', cfg.FontSize)
+        title(sd.fn{iCell})
         
         
         %% Nasal raster
